@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gocharts/pkg/ir"
+	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
 // Scanner is an object capable of taking in a reader and scanning over to create a valid

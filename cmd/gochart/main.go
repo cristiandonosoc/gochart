@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cristiandonosoc/gocharts/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
 func internalMain() error {
 	if len(os.Args) != 2 {
-		return fmt.Errorf("Usage: gocharts <relpath>")
+		return fmt.Errorf("Usage: gochart <relpath>")
 	}
 
 	// Read the input file.
