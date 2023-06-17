@@ -11,15 +11,15 @@ const (
 	// Single character tokens.
 	Token_LeftParen    // (
 	Token_RightParen   // )
-	Token_LeftBrace    // [
-	Token_RightBrace   // ]
-	Token_LeftBracket  // {
-	Token_RightBracket // }
+	Token_LeftBrace    // {
+	Token_RightBrace   // }
+	Token_LeftBracket  // [
+	Token_RightBracket // ]
 	Token_Slash        // /
 
 	// literals.
-	Token_String // "content"
-	Token_Number // 123456
+	Token_StringLiteral // "content"
+	Token_Number        // 123456
 
 	// Keywords
 	Token_Statechart // statechart

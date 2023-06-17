@@ -52,6 +52,16 @@ func (s *Scanner) reset() {
 }
 
 func (s *Scanner) Scan(r io.Reader) (*ir.Statechart, []error) {
+	// Get all the tokens in this input.
+	_, errors := s.gatherTokens(r)
+	if errors != nil {
+		return nil, errors
+	}
+
+	return &ir.Statechart{}, nil
+}
+
+func (s *Scanner) gatherTokens(r io.Reader) ([]*Token, []error) {
 	// Forget any previous state before scanning.
 	s.reset()
 
@@ -63,16 +73,6 @@ func (s *Scanner) Scan(r io.Reader) (*ir.Statechart, []error) {
 	}
 	s.totalRunes = utf8.RuneCountInString(s.source)
 
-	// Get all the tokens in this input.
-	_, errors := s.gatherTokens()
-	if errors != nil {
-		return nil, errors
-	}
-
-	return &ir.Statechart{}, nil
-}
-
-func (s *Scanner) gatherTokens() ([]*Token, []error) {
 	var tokens []*Token
 	var errors []error
 
@@ -90,7 +90,7 @@ func (s *Scanner) gatherTokens() ([]*Token, []error) {
 }
 
 func (s *Scanner) nextToken() (*Token, error) {
-	id := Token_Invalid
+	token := &Token{}
 
 	// We do this in a loop because there are certain operators that discard a lot of input before
 	// detecting where the "next" token should be (eg. comments). So we use this token to return to the
@@ -99,7 +99,7 @@ NEXT_TOKEN_LOOP:
 	for {
 		// If we're at the end, we simply return a nice EOF.
 		if s.atEnd() {
-			id = Token_EOF
+			token.id = Token_EOF
 			break
 		}
 
@@ -111,22 +111,22 @@ NEXT_TOKEN_LOOP:
 		// Go over one-rune tokens.
 		switch r {
 		case '(':
-			id = Token_LeftParen
+			token.id = Token_LeftParen
 			break
 		case ')':
-			id = Token_RightParen
+			token.id = Token_RightParen
 			break
 		case '{':
-			id = Token_LeftBrace
+			token.id = Token_LeftBrace
 			break
 		case '}':
-			id = Token_RightBrace
+			token.id = Token_RightBrace
 			break
 		case '[':
-			id = Token_LeftBracket
+			token.id = Token_LeftBracket
 			break
 		case ']':
-			id = Token_RightBracket
+			token.id = Token_RightBracket
 			break
 		// We ignore any whitespace.
 		case ' ', '\t', '\r':
@@ -136,33 +136,24 @@ NEXT_TOKEN_LOOP:
 			s.line++
 			s.currentRuneCountInLine = 0
 			continue NEXT_TOKEN_LOOP
+		// Strings.
+		case '"':
+			if tk, err := s.handleString(); err != nil {
+				return nil, fmt.Errorf("handling string: %w", err)
+			} else {
+				token = tk
+			}
+			break
 		// We check for comments.
 		case '/':
-			if isSlash, err := s.match('/'); err != nil {
-				return nil, fmt.Errorf("matchingn '/': %w", err)
-			} else if isSlash {
-				// We found a comment! It goes until the end of line.
-				for !s.atEnd() {
-					peek, err := s.peek()
-					if err != nil {
-						return nil, fmt.Errorf("peeking: %w", err)
-					}
-
-					if peek != '\n' && !s.atEnd() {
-						s.advance(peek)
-						continue
-					}
-
-					// We go to scan for the next token.
-					continue NEXT_TOKEN_LOOP
-				}
-			} else {
-				// Single slash doesn't mean anything in our language.
-				return nil, fmt.Errorf("single '/' token found")
+			if err := s.handleComment(); err != nil {
+				return nil, fmt.Errorf("handling comment: %w", err)
 			}
+			// Comment consumed. We go to scan for the next token.
+			continue NEXT_TOKEN_LOOP
 		}
 
-		if id == Token_Invalid {
+		if token.id == Token_Invalid {
 			return nil, fmt.Errorf("unknown rune %q", r)
 		}
 
@@ -170,11 +161,11 @@ NEXT_TOKEN_LOOP:
 		break
 	}
 
-	return &Token{
-		id:   id,
-		line: s.line,
-		char: s.currentRuneCountInLine,
-	}, nil
+	// Fill in the last details of the token.
+	token.line = s.line
+	token.char = s.currentRuneCountInLine
+
+	return token, nil
 }
 
 // pop reads the current rune and advances the current index
@@ -232,4 +223,69 @@ func (s *Scanner) match(expected rune) (bool, error) {
 
 func (s *Scanner) atEnd() bool {
 	return s.currentRuneCount >= s.totalRunes
+}
+
+// INDIVIDUAL TOKEN CASES --------------------------------------------------------------------------
+
+// handleString gets called when a '"' character is found. Will create the string token and add it
+// to the list.
+func (s *Scanner) handleString() (*Token, error) {
+	// We found a string. We consume until we find another '"' token.
+	matched := false
+	var literal []rune
+
+	for !s.atEnd() {
+		peek, err := s.peek()
+		if err != nil {
+			return nil, fmt.Errorf("peeking: %w", err)
+		}
+
+		// In any case, we consume the literal.
+		s.advance(peek)
+
+		// If we found the the other '"' character, we stop searching.
+		if peek == '"' {
+			matched = true
+			// Consume the
+			break
+		}
+
+		// We consume the character and advance.
+		literal = append(literal, peek)
+	}
+
+	if !matched {
+		return nil, fmt.Errorf("unterminated string literal")
+	}
+
+	return &Token{
+		id:      Token_StringLiteral,
+		literal: string(literal),
+	}, nil
+}
+
+func (s *Scanner) handleComment() error {
+	if isSlash, err := s.match('/'); err != nil {
+		return fmt.Errorf("matching '/': %w", err)
+	} else if isSlash {
+		// We found a comment! It goes until the end of line.
+		for !s.atEnd() {
+			peek, err := s.peek()
+			if err != nil {
+				return fmt.Errorf("peeking: %w", err)
+			}
+
+			if peek != '\n' && !s.atEnd() {
+				s.advance(peek)
+				continue
+			}
+
+			break
+		}
+	} else {
+		// Single slash doesn't mean anything in our language.
+		return fmt.Errorf("single '/' token found")
+	}
+
+	return nil
 }
