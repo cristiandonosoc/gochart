@@ -133,8 +133,7 @@ NEXT_TOKEN_LOOP:
 			continue NEXT_TOKEN_LOOP
 			// New lines add to our current line. Also restart our current character counter.
 		case '\n':
-			s.line++
-			s.currentRuneCountInLine = 0
+			s.newLineFound()
 			continue NEXT_TOKEN_LOOP
 		// Strings.
 		case '"':
@@ -161,9 +160,14 @@ NEXT_TOKEN_LOOP:
 		break
 	}
 
-	// Fill in the last details of the token.
-	token.line = s.line
-	token.char = s.currentRuneCountInLine
+	// Fill in the last details of the token if needed, as some tokens come already filled, like the
+	// case of string literals.
+	if token.line == 0 {
+		token.line = s.line
+	}
+	if token.char == 0 {
+		token.char = s.currentRuneCountInLine
+	}
 
 	return token, nil
 }
@@ -187,6 +191,12 @@ func (s *Scanner) advance(r rune) {
 	s.currentByteCount += utf8.RuneLen(r)
 	s.currentRuneCount += 1
 	s.currentRuneCountInLine += 1
+}
+
+// newLineFound updates the scanner to correctly account for new lines being found.
+func (s *Scanner) newLineFound() {
+	s.line++
+	s.currentRuneCountInLine = 0
 }
 
 // peek looks at the current rune pointed by the scanner.
@@ -230,10 +240,13 @@ func (s *Scanner) atEnd() bool {
 // handleString gets called when a '"' character is found. Will create the string token and add it
 // to the list.
 func (s *Scanner) handleString() (*Token, error) {
-	// We found a string. We consume until we find another '"' token.
+	// We cache the start of the token to then returning when creating the token.
+	startLine := s.line
+	startChar := s.currentRuneCountInLine
+
+	// We consume until we find another '"' token.
 	matched := false
 	var literal []rune
-
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
@@ -252,6 +265,11 @@ func (s *Scanner) handleString() (*Token, error) {
 
 		// We consume the character and advance.
 		literal = append(literal, peek)
+
+		// Special case: if we find a new line, we need to update the current line tracking.
+		if peek == '\n' {
+			s.newLineFound()
+		}
 	}
 
 	if !matched {
@@ -261,6 +279,8 @@ func (s *Scanner) handleString() (*Token, error) {
 	return &Token{
 		id:      Token_StringLiteral,
 		literal: string(literal),
+		line:    startLine,
+		char:    startChar,
 	}, nil
 }
 
