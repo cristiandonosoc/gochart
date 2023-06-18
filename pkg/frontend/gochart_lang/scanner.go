@@ -5,6 +5,7 @@ package gochart_lang
 import (
 	"fmt"
 	"io"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/cristiandonosoc/gochart/pkg/ir"
@@ -37,11 +38,21 @@ type Scanner struct {
 	currentRuneCount       int
 	currentRuneCountInLine int
 	totalRunes             int
+
+	keywords map[string]TokenIdentifier
 }
 
 // NewScanner returns a scanner ready to process input.
+// Here all the keywords are defined.
 func NewScanner() *Scanner {
-	return &Scanner{}
+	return &Scanner{
+		keywords: map[string]TokenIdentifier{
+			"statechart": Token_KeywordStatechart,
+			"state":      Token_KeywordState,
+			"transition": Token_KeywordTransition,
+			"trigger":    Token_KeywordTrigger,
+		},
+	}
 }
 
 func (s *Scanner) reset() {
@@ -108,43 +119,10 @@ NEXT_TOKEN_LOOP:
 			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 
-		// Go over one-rune tokens.
-		switch r {
-		case '(':
-			token.id = Token_LeftParen
-			break
-		case ')':
-			token.id = Token_RightParen
-			break
-		case '{':
-			token.id = Token_LeftBrace
-			break
-		case '}':
-			token.id = Token_RightBrace
-			break
-		case '[':
-			token.id = Token_LeftBracket
-			break
-		case ']':
-			token.id = Token_RightBracket
-			break
-		// We ignore any whitespace.
-		case ' ', '\t', '\r':
-			continue NEXT_TOKEN_LOOP
-			// New lines add to our current line. Also restart our current character counter.
-		case '\n':
-			s.newLineFound()
-			continue NEXT_TOKEN_LOOP
-		// Strings.
-		case '"':
-			if tk, err := s.handleString(); err != nil {
-				return nil, fmt.Errorf("handling string: %w", err)
-			} else {
-				token = tk
-			}
-			break
-		// We check for comments.
-		case '/':
+		// We check for comments. Comments are one lines with //.
+		// We consume the tokens until the end of line and then return to the processing of the next
+		// token as if we had never found the comment.
+		if r == '/' {
 			if err := s.handleComment(); err != nil {
 				return nil, fmt.Errorf("handling comment: %w", err)
 			}
@@ -152,12 +130,64 @@ NEXT_TOKEN_LOOP:
 			continue NEXT_TOKEN_LOOP
 		}
 
-		if token.id == Token_Invalid {
-			return nil, fmt.Errorf("unknown rune %q", r)
+		// Ignore any whitespace. We consume and go back to processing the node.
+		if r == ' ' || r == '\t' || r == '\r' {
+			continue NEXT_TOKEN_LOOP
 		}
 
-		// We found a valid token, so we stop searching.
-		break
+		// New lines add to our current line. Also restart our current character counter.
+		if r == '\n' {
+			s.newLineFound()
+			continue NEXT_TOKEN_LOOP
+		}
+
+		// Identifier start with a letter, and could be keywords.
+		if unicode.IsLetter(r) {
+			if tk, err := s.handleIdentifier(r); err != nil {
+				return nil, fmt.Errorf("handling identifier: %w", err)
+			} else {
+				token = tk
+			}
+			break
+		}
+
+		// String literals are between '"' characters.
+		if r == '"' {
+			if tk, err := s.handleString(); err != nil {
+				return nil, fmt.Errorf("handling string: %w", err)
+			} else {
+				token = tk
+			}
+			break
+		}
+
+		// Single rune tokens. They get translated
+		switch r {
+		case '(':
+			token.id = Token_LeftParen
+			break NEXT_TOKEN_LOOP
+		case ')':
+			token.id = Token_RightParen
+			break NEXT_TOKEN_LOOP
+		case '{':
+			token.id = Token_LeftBrace
+			break NEXT_TOKEN_LOOP
+		case '}':
+			token.id = Token_RightBrace
+			break NEXT_TOKEN_LOOP
+		case '[':
+			token.id = Token_LeftBracket
+			break NEXT_TOKEN_LOOP
+		case ']':
+			token.id = Token_RightBracket
+			break NEXT_TOKEN_LOOP
+		}
+
+		return nil, fmt.Errorf("unsupported rune %q", r)
+	}
+
+	if token == nil || token.id == Token_Invalid {
+		return nil, fmt.Errorf("invalid token parsing. Likely a bug")
 	}
 
 	// Fill in the last details of the token if needed, as some tokens come already filled, like the
@@ -236,6 +266,51 @@ func (s *Scanner) atEnd() bool {
 }
 
 // INDIVIDUAL TOKEN CASES --------------------------------------------------------------------------
+
+func (s *Scanner) handleIdentifier(firstRune rune) (*Token, error) {
+	// We cache the start of the token to then returning when creating the token.
+	startLine := s.line
+	startChar := s.currentRuneCountInLine
+
+	// We consume the literal as much as we can. We later see if it matches any keyword.
+	runes := []rune{firstRune}
+	for !s.atEnd() {
+		peek, err := s.peek()
+		if err != nil {
+			return nil, fmt.Errorf("peeking: %w", err)
+		}
+
+		// If it's alphanumerical or _, we consider it part of an identifier. Otherwise, we consider
+		// this token terminated.
+		isIdentifierChar := unicode.IsLetter(peek) || unicode.IsNumber(peek) || peek == '_'
+		if !isIdentifierChar {
+			break
+		}
+
+		// We pop the peeked character and add it to the current identifier.
+		popped, err := s.pop()
+		if err != nil {
+			return nil, fmt.Errorf("popping: %w", err)
+		}
+		runes = append(runes, popped)
+	}
+
+	identifier := string(runes)
+	token := &Token{
+		literal: identifier,
+		line:    startLine,
+		char:    startChar,
+	}
+
+	// We check if the identifier is a keyword.
+	if id, ok := s.keywords[identifier]; ok {
+		token.id = id
+	} else {
+		token.id = Token_Identifier
+	}
+
+	return token, nil
+}
 
 // handleString gets called when a '"' character is found. Will create the string token and add it
 // to the list.

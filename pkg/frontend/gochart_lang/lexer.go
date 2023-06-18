@@ -22,10 +22,12 @@ const (
 	Token_Number        // 123456
 
 	// Keywords
-	Token_Statechart // statechart
-	Token_State      // state
-	Token_Transition // transition
-	Token_Trigger    // trigger
+	Token_KeywordStatechart // statechart
+	Token_KeywordState      // state
+	Token_KeywordTransition // transition
+	Token_KeywordTrigger    // trigger
+
+	Token_Identifier
 
 	Token_EOF
 )

@@ -14,7 +14,8 @@ func TestGatherTokens(t *testing.T) {
 [["this is a string literal"]]
 "literal"
    "multiline
-  string""after_line"`
+  string""after_line"
+  statechart state transition trigger aabb a0123456789b`
 	r := strings.NewReader(input)
 
 	want := []*Token{
@@ -35,13 +36,22 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_StringLiteral, literal: `multiline
   string`, line: 6, char: 4},
 		{id: Token_StringLiteral, literal: "after_line", line: 7, char: 10},
+
+		{id: Token_KeywordStatechart, literal: "statechart", line: 8, char: 3},
+		{id: Token_KeywordState, literal: "state", line: 8, char: 14},
+		{id: Token_KeywordTransition, literal: "transition", line: 8, char: 20},
+		{id: Token_KeywordTrigger, literal: "trigger", line: 8, char: 31},
+
+		{id: Token_Identifier, literal: "aabb", line: 8, char: 39},
+		{id: Token_Identifier, literal: "a0123456789b", line: 8, char: 44},
 	}
 
 	s := NewScanner()
 	got, errors := s.gatherTokens(r)
 	assert.Empty(t, errors)
-
-	compareTokens(t, want, got)
+	if errors == nil {
+		compareTokens(t, want, got)
+	}
 }
 
 func compareTokens(t *testing.T, want, got []*Token) {
