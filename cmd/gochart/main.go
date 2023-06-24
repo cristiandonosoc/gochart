@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
 func internalMain() error {
@@ -21,12 +18,7 @@ func internalMain() error {
 
 	}
 
-	scanner := frontend.NewScanner()
-
-	_, err = scanner.Scan(bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("scanning statechart at %q: %w", filepath, err)
-	}
+	fmt.Println(string(data))
 
 	return nil
 }

@@ -2,15 +2,12 @@
 // language to describe statecharts.
 package gochart_lang
 
-import (
+import ()
 
-)
-
-type frontend struct {
-
+type GochartLangFrontend struct {
 }
 
 // NewFrontend returns a frontend capable of parting the gochart language.
-func NewFrontend() *frontend {
-	return &frontend{}
+func NewGochartLangFrontend() *GochartLangFrontend {
+	return &GochartLangFrontend{}
 }
