@@ -8,12 +8,21 @@ import (
 
 // Statechart represents a single statechart state machine.
 type Statechart struct {
-	Name    string
-	Roots   []*State
-	Triggers []*Trigger
+	Name     string
+	Triggers map[string]*Trigger
+	Roots    []*State
 
-	states       map[string]*State
+	stateMap     map[string]*State
 	frontendData *frontend.StatechartData
+}
+
+// TRIGGER -----------------------------------------------------------------------------------------
+
+type Trigger struct {
+	Name string
+	Args []*TriggerArgument
+
+	frontendData *frontend.TriggerData
 }
 
 // STATE -------------------------------------------------------------------------------------------
@@ -57,9 +66,7 @@ type Transition struct {
 	Trigger *Trigger
 }
 
-// TRIGGER -----------------------------------------------------------------------------------------
-
-type Trigger struct {
-	Name      string
-	Arguments []string
+type TriggerArgument struct {
+	Type string
+	Name string
 }
