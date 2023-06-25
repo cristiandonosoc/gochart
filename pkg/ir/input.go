@@ -124,15 +124,45 @@ func (ih *inputHandler) collectStates() error {
 func (ih *inputHandler) collectTransitions() error {
 	// We go over all the transitions and generate the actual mapping.
 	for _, tdata := range ih.scdata.Transitions {
-		_, err := ih.createTransition(tdata)
+		transition, fromState, err := ih.createTransition(tdata)
 		if err != nil {
 			return fmt.Errorf("creating transition %q: %w", tdata.String(), err)
 		}
+
+		fromState.Transitions = append(fromState.Transitions, transition)
 	}
 
-	return fmt.Errorf("IMPLEMENT ME")
+	return nil
 }
 
-func (ih *inputHandler) createTransition(tdata *frontend.TransitionData) (*Transition, error) {
-	return nil, fmt.Errorf("IMPLEMENT ME")
+// createTransition returns a new transition, as well as the state it stems from.
+func (ih *inputHandler) createTransition(tdata *frontend.TransitionData) (*Transition, *State, error) {
+	from, ok := ih.allStates[tdata.From]
+	if !ok {
+		return nil, nil, fmt.Errorf("cannot find from state %q", tdata.From)
+	}
+
+	to, ok := ih.allStates[tdata.To]
+	if !ok {
+		return nil, nil, fmt.Errorf("cannot find to state %q", tdata.To)
+	}
+
+	// See if there is a trigger available (if not, it's a null transition).
+	var trigger *Trigger
+	if tdata.Trigger != "" {
+		t, ok := ih.triggers[tdata.Trigger]
+		if !ok {
+			return nil, nil, fmt.Errorf("cannot find trigger %q", tdata.Trigger)
+		}
+		trigger = t
+	}
+
+	transition := &Transition{
+		From:         from,
+		To:           to,
+		Trigger:      trigger,
+		frontendData: tdata,
+	}
+
+	return transition, from, nil
 }

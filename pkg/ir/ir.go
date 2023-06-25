@@ -25,6 +25,11 @@ type Trigger struct {
 	frontendData *frontend.TriggerData
 }
 
+type TriggerArgument struct {
+	Type string
+	Name string
+}
+
 // STATE -------------------------------------------------------------------------------------------
 
 // State represents a single state withing a statechart.
@@ -64,9 +69,11 @@ type Transition struct {
 	From    *State
 	To      *State
 	Trigger *Trigger
+
+	frontendData *frontend.TransitionData
 }
 
-type TriggerArgument struct {
-	Type string
-	Name string
+func (t *Transition) IsNullTransition() bool {
+	return t.Trigger == nil
 }
+
