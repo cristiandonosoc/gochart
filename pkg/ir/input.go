@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+
+	"github.com/bradenaw/juniper/xslices"
 )
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
@@ -115,10 +117,46 @@ func (ih *inputHandler) collectStates() error {
 		state.parent = parent
 	}
 
+	// We collect the transition reactions.
+	for name, state := range stateMap {
+		// Collect the enter reactions.
+		state.DefaultEnter = state.frontendData.DefaultEnter
+		enters, err := ih.collectReactions(state.frontendData.EnterReactionTriggers)
+		if err != nil {
+			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
+		}
+		state.EnterReactions = enters
+
+		// Collect the exit reactions.
+		state.DefaultExit = state.frontendData.DefaultExit
+		exits, err := ih.collectReactions(state.frontendData.ExitReactionTriggers)
+		if err != nil {
+			return fmt.Errorf("state %q: collecting exit reactions: %w", name, err)
+		}
+		state.ExitReactions = exits
+	}
+
 	ih.rootStates = roots
 	ih.allStates = stateMap
 
 	return nil
+}
+
+func (ih *inputHandler) collectReactions(triggerNames []string) ([]*TransitionReaction, error) {
+	var triggers []*Trigger
+	for _, triggerName := range triggerNames {
+		trigger, ok := ih.triggers[triggerName]
+		if !ok {
+			return nil, fmt.Errorf("cannot find trigger %q", triggerName)
+		}
+		triggers = append(triggers, trigger)
+	}
+
+	return xslices.Map(triggers, func(t *Trigger) *TransitionReaction {
+		return &TransitionReaction{
+			Trigger: t,
+		}
+	}), nil
 }
 
 func (ih *inputHandler) collectTransitions() error {

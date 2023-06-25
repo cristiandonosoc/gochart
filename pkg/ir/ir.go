@@ -40,6 +40,12 @@ type State struct {
 	States      []*State
 	Transitions []*Transition
 
+	DefaultEnter bool
+	EnterReactions []*TransitionReaction
+
+	DefaultExit bool
+	ExitReactions []*TransitionReaction
+
 	parent       *State
 	frontendData *frontend.StateData
 }
@@ -60,6 +66,10 @@ func (s *State) Contains(other *State) bool {
 	}
 
 	return false
+}
+
+type TransitionReaction struct {
+	Trigger *Trigger
 }
 
 // TRANSITION --------------------------------------------------------------------------------------

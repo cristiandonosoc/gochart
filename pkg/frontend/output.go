@@ -25,6 +25,12 @@ type StateData struct {
 	Name   string
 	Parent string
 
+	DefaultEnter bool
+	EnterReactionTriggers []string
+
+	DefaultExit bool
+	ExitReactionTriggers []string
+
 	// Index represents in what order it was found.
 	Index int
 }
