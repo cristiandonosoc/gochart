@@ -86,4 +86,3 @@ type Transition struct {
 func (t *Transition) IsNullTransition() bool {
 	return t.Trigger == nil
 }
-

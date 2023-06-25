@@ -3,22 +3,25 @@ package main
 import (
 	"fmt"
 	"os"
+	"io"
+
+	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 )
 
 func internalMain() error {
-	if len(os.Args) != 2 {
-		return fmt.Errorf("Usage: gochart <relpath>")
-	}
 
-	// Read the input file.
-	filepath := os.Args[1]
-	data, err := os.ReadFile(filepath)
+	backend := cpp.NewCppGochartBackend()
+	headerData, err := backend.Generate(nil)
 	if err != nil {
-		return fmt.Errorf("reading %q: %w", filepath, err)
-
+		return fmt.Errorf("generating header: %w", err)
 	}
 
-	fmt.Println(string(data))
+	header, err := io.ReadAll(headerData)
+	if err != nil {
+		return fmt.Errorf("reading the header data: %w", err)
+	}
+
+	fmt.Println(string(header))
 
 	return nil
 }
