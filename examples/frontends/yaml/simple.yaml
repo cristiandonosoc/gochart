@@ -1,0 +1,16 @@
+name: Simple
+triggers:
+  - name: trigger1
+    arguments_string: "const std::string& foo"
+states:
+  - name: StateA
+  - name: StateB
+    parent: StateA
+  - name: StateC
+    parent: StateA
+transitions:
+  - from: StateB
+    to: StateC
+    trigger: trigger1
+
+
