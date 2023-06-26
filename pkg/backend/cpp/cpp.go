@@ -33,7 +33,7 @@ func (cpp *cppGochartBackend) GenerateToFiles(sc *ir.Statechart, headerPath, bod
 }
 
 func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (header io.Reader, err error) {
-	return generateHeader()
+	return generateHeader(sc)
 }
 
 func ensureDirExists(path string) (bool, error) {

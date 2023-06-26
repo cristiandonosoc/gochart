@@ -7,6 +7,8 @@ import (
 	"io"
 	"text/template"
 	"time"
+
+	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
 //go:embed header.template.h
@@ -29,15 +31,16 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 }
 
 type commonContext struct {
-	Version string
-	Time    time.Time
+	Version    string
+	Time       time.Time
+	Statechart *ir.Statechart
 }
 
 type headerContext struct {
 	commonContext
 }
 
-func generateHeader() (io.Reader, error) {
+func generateHeader(sc *ir.Statechart) (io.Reader, error) {
 	tmpl, err := readTemplate(headerFilename)
 	if err != nil {
 		return nil, fmt.Errorf("reading header template: %w", err)
@@ -45,8 +48,9 @@ func generateHeader() (io.Reader, error) {
 
 	context := &headerContext{
 		commonContext{
-			Version: "DEVELOPMENT",
-			Time:    time.Now(),
+			Version:    "DEVELOPMENT",
+			Time:       time.Now(),
+			Statechart: sc,
 		},
 	}
 

@@ -10,9 +10,14 @@ import (
 type Statechart struct {
 	Name     string
 	Triggers map[string]*Trigger
-	Roots    []*State
 
-	stateMap     map[string]*State
+	// Roots are the list of states that are "roots" (have no parents) within the state tree.
+	Roots []*State
+
+	// States are all the states, as defined in the order from the frontend.
+	States []*State
+
+	StateMap     map[string]*State
 	frontendData *frontend.StatechartData
 }
 
@@ -40,10 +45,10 @@ type State struct {
 	States      []*State
 	Transitions []*Transition
 
-	DefaultEnter bool
+	DefaultEnter   bool
 	EnterReactions []*TransitionReaction
 
-	DefaultExit bool
+	DefaultExit   bool
 	ExitReactions []*TransitionReaction
 
 	parent       *State

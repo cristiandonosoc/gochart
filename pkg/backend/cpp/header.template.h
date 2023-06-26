@@ -2,4 +2,44 @@
 
 #pragma once
 
-AAAAA
+#include <array>
+#include <assert.h>
+
+
+class Statechart {
+  using ElementType = uint32_t;
+
+ public:
+	enum class States {
+		{{- range .Statechart.States }}
+		{{ .Name }},
+		{{- end }}
+	};
+
+ public:
+	bool IsEmpty() const {
+		return ReadIndex == WriteIndex;
+	}
+
+  bool IsFull() const {
+		return ((WriteIndex + 1) % TriggerQueue.size()) == ReadIndex;
+  }
+
+  void Enqueue(const ElementType &element) {
+		assert(!IsFull());
+		TriggerQueue[WriteIndex] = element;
+		WriteIndex = (WriteIndex + 1) % TriggerQueue.size();
+  }
+
+  void Dequeue(ElementType *out) {
+		assert(!IsEmpty());
+
+		*out = TriggerQueue[ReadIndex];
+		ReadIndex = (ReadIndex + 1) % TriggerQueue.size();
+  }
+
+private:
+  std::array<ElementType, 32> TriggerQueue;
+  std::size_t ReadIndex;
+  std::size_t WriteIndex;
+};
