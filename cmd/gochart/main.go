@@ -7,23 +7,36 @@ import (
 	"os"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
+	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
+func readFrontend(path string) (*frontend.StatechartData, error) {
+	yf := yaml.NewYamlFrontend()
+
+	scdata, err := yf.ProcessFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("processign statechart yaml %q: %w", path, err)
+	}
+
+	return scdata, nil
+}
+
 func internalMain() error {
-	if len(os.Args) < 2 {
+	var yamlPath string
+
+	if len(os.Args) == 2 {
+		yamlPath = os.Args[1]
+	} else {
 		return fmt.Errorf("Usage: gochart <PATH>")
 	}
 
 	fmt.Println("-----------------------------------------------------------------------------------")
 
-	yf := yaml.NewYamlFrontend()
-
-	path := os.Args[1]
-	scdata, err := yf.ProcessFromFile(path)
+	scdata, err := readFrontend(yamlPath)
 	if err != nil {
-		return fmt.Errorf("processign statechart yaml %q: %w", path, err)
+		return fmt.Errorf("reading frontend: %w", err)
 	}
 
 	{

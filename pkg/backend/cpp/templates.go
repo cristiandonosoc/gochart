@@ -21,6 +21,41 @@ const (
 	bodyFilename   embedPath = "body.template.cpp"
 )
 
+// commonContext is context that is common to all templates (header, body, etc.)
+type commonContext struct {
+	// Version is the version of gochart used to generate the files.
+	Version string
+	Time    time.Time
+}
+
+// templateManager is a helper struct to handle the common context for template loading.
+type templateManager struct {
+	headerTemplate *template.Template
+	bodyTemplate   *template.Template
+
+	sc     *ir.Statechart
+	common *commonContext
+}
+
+func newTemplateManager(sc *ir.Statechart, common *commonContext) (*templateManager, error) {
+	headerTemplate, err := readTemplate(headerFilename)
+	if err != nil {
+		return nil, fmt.Errorf("reading header template: %w", err)
+	}
+
+	bodyTemplate, err := readTemplate(bodyFilename)
+	if err != nil {
+		return nil, fmt.Errorf("reading body template: %w", err)
+	}
+
+	return &templateManager{
+		headerTemplate: headerTemplate,
+		bodyTemplate:   bodyTemplate,
+		sc:             sc,
+		common:         common,
+	}, nil
+}
+
 func readTemplate(ep embedPath) (*template.Template, error) {
 	epstr := string(ep)
 
@@ -31,61 +66,35 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-type commonContext struct {
-	Version    string
-	Time       time.Time
-	Statechart *ir.Statechart
-}
-
-type headerContext struct {
-	commonContext
-}
-
-type bodyContext struct {
-	commonContext
-}
-
-func generateHeader(sc *ir.Statechart) (io.Reader, error) {
-	tmpl, err := readTemplate(headerFilename)
-	if err != nil {
-		return nil, fmt.Errorf("reading header template: %w", err)
-	}
-
-	// TODO(cdc): Context should come from a single place so that it's shared between header and body.
-	context := &headerContext{
-		commonContext{
-			Version:    "DEVELOPMENT",
-			Time:       time.Now(),
-			Statechart: sc,
-		},
+func (tm *templateManager) generateHeader() (io.Reader, error) {
+	context := &struct {
+		commonContext
+		Statechart *ir.Statechart
+	}{
+		commonContext: *tm.common,
+		Statechart:    tm.sc,
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, context); err != nil {
-		return nil, fmt.Errorf("executing header template: %w", err)
+	if err := tm.headerTemplate.Execute(&buf, context); err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
 
 	return &buf, nil
 }
 
-func generateBody(sc *ir.Statechart) (io.Reader, error) {
-	tmpl, err := readTemplate(bodyFilename)
-	if err != nil {
-		return nil, fmt.Errorf("reading body template: %w", err)
-	}
-
-	// TODO(cdc): Context should come from a single place so that it's shared between header and body.
-	context := &bodyContext{
-		commonContext{
-			Version:    "DEVELOPMENT",
-			Time:       time.Now(),
-			Statechart: sc,
-		},
+func (tm *templateManager) generateBody() (io.Reader, error) {
+	context := &struct {
+		commonContext
+		Statechart *ir.Statechart
+	}{
+		commonContext: *tm.common,
+		Statechart:    tm.sc,
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, context); err != nil {
-		return nil, fmt.Errorf("executing body template: %w", err)
+	if err := tm.bodyTemplate.Execute(&buf, context); err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
 
 	return &buf, nil

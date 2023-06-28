@@ -4,7 +4,7 @@ States Statechart::ParentState(States state) {
 	// clang-format off
 	switch (state) {
 		{{- range.Statechart.States }}
-		case {{.Name}}: return {{if .Parent}}{{.Parent}}{{else}}States::None{{end}};
+		case {{.Name}}: return {{if .Parent}}{{.Parent.Name}}{{else}}States::None{{end}};
 		{{- end }}
 	}
 	// clang-format on
