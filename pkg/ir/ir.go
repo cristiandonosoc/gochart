@@ -51,7 +51,7 @@ type State struct {
 	DefaultExit   bool
 	ExitReactions []*TransitionReaction
 
-	parent       *State
+	Parent       *State
 	frontendData *frontend.StateData
 }
 
@@ -59,11 +59,7 @@ func (s *State) Equals(other *State) bool {
 	return s.Name == other.Name
 }
 
-func (s *State) IsLeaf() bool {
-	return len(s.States) == 0
-}
-
-func (s *State) Contains(other *State) bool {
+func (s *State) IsParentOf(other *State) bool {
 	for _, child := range s.States {
 		if child.Equals(other) {
 			return true

@@ -51,9 +51,9 @@ func internalMain() error {
 	fmt.Println("-----------------------------------------------------------------------------------")
 
 	backend := cpp.NewCppGochartBackend()
-	headerData, err := backend.Generate(sc)
+	headerData, bodyData, err := backend.Generate(sc)
 	if err != nil {
-		return fmt.Errorf("generating header: %w", err)
+		return fmt.Errorf("generating backend: %w", err)
 	}
 
 	header, err := io.ReadAll(headerData)
@@ -61,7 +61,15 @@ func internalMain() error {
 		return fmt.Errorf("reading the header data: %w", err)
 	}
 
+	body, err := io.ReadAll(bodyData)
+	if err != nil {
+		return fmt.Errorf("reading the body data: %w", err)
+	}
+
+	fmt.Println("HEADER *****")
 	fmt.Println(string(header))
+	fmt.Println("BODY *****")
+	fmt.Println(string(body))
 
 	return nil
 }

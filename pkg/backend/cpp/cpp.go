@@ -32,8 +32,18 @@ func (cpp *cppGochartBackend) GenerateToFiles(sc *ir.Statechart, headerPath, bod
 	panic("IMPLEMENT ME")
 }
 
-func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (header io.Reader, err error) {
-	return generateHeader(sc)
+func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (_header, _body io.Reader, _err error) {
+	header, err := generateHeader(sc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generating header: %w", err)
+	}
+
+	body, err := generateBody(sc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generating body: %w", err)
+	}
+
+	return header, body, nil
 }
 
 func ensureDirExists(path string) (bool, error) {

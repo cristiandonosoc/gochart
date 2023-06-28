@@ -5,41 +5,40 @@
 #include <array>
 #include <assert.h>
 
+class Statechart
+{
+public:
+    using ElementType = uint32_t;
 
-class Statechart {
-  using ElementType = uint32_t;
-
- public:
-	enum class States {
-		{{- range .Statechart.States }}
-		{{ .Name }},
-		{{- end }}
+public:
+  // clang-format off
+  enum class States {
+		None,
+		{{- range.Statechart.States}}
+		{{.Name}},
+		{{- end}}
 	};
-
- public:
-	bool IsEmpty() const {
-		return ReadIndex == WriteIndex;
-	}
-
-  bool IsFull() const {
-		return ((WriteIndex + 1) % TriggerQueue.size()) == ReadIndex;
-  }
-
-  void Enqueue(const ElementType &element) {
-		assert(!IsFull());
-		TriggerQueue[WriteIndex] = element;
-		WriteIndex = (WriteIndex + 1) % TriggerQueue.size();
-  }
-
-  void Dequeue(ElementType *out) {
-		assert(!IsEmpty());
-
-		*out = TriggerQueue[ReadIndex];
-		ReadIndex = (ReadIndex + 1) % TriggerQueue.size();
-  }
+  // clang-format on
 
 private:
-  std::array<ElementType, 32> TriggerQueue;
-  std::size_t ReadIndex;
-  std::size_t WriteIndex;
+	States ParentState(States state);
+
+private:
+    class RingBuffer
+    {
+    public:
+        bool IsEmpty() const { return ReadIndex == WriteIndex; }
+        bool IsFull() const { return ((WriteIndex + 1) % TriggerQueue.size()) == ReadIndex; }
+
+        void Enqueue(const ElementType &element);
+        void Dequeue(ElementType *out);
+
+    private:
+        // TODO(cdc): Make queue size configurable.
+        std::array<ElementType, 32> TriggerQueue;
+        std::size_t ReadIndex;
+        std::size_t WriteIndex;
+    };
+
+private:
 };

@@ -124,11 +124,11 @@ func (ih *inputHandler) collectStates() error {
 
 		// The parent should not have have this state already.
 		// We mark the parent <=> child relationship.
-		if parent.Contains(state) {
+		if parent.IsParentOf(state) {
 			return fmt.Errorf("state %q already has state %q as child", parent.Name, state.Name)
 		}
 		parent.States = append(parent.States, state)
-		state.parent = parent
+		state.Parent = parent
 	}
 
 	// We collect the transition reactions.
