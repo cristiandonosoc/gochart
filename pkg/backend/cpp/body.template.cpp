@@ -7,51 +7,56 @@
 
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
 #ifdef _MSC_VER
-#define DEBUG_BREAK __debugbreak()
+#define GOCHART_DEBUG_BREAK __debugbreak()
 #else
-#define DEBUG_BREAK ___builtin_debugtrap()
+#define GOCHART_DEBUG_BREAK ___builtin_debugtrap()
 #endif
 
-const char* Statechart::ToString(States state)
+namespace gochart
 {
-  // clang-format off
+
+const char* {{.ImplName}}::ToString(States state)
+{
 	switch (state) {
-		{{- range.Statechart.States }}
+		{{- range .Statechart.States }}
 		case States::{{.Name}}: return "{{.Name}}";
 		{{- end }}
 		case States::None: return "None";
 	}
-  // clang-format on
 
-	DEBUG_BREAK;
+	GOCHART_DEBUG_BREAK;
 	return "<invalid>";
 }
 
-Statechart::States Statechart::ParentState(States state)
+{{.ImplName}}::States {{.ImplName}}::ParentState(States state)
 {
   // clang-format off
 	switch (state) {
-		{{- range.Statechart.States }}
+		{{- range .Statechart.States }}
 		case States::{{.Name}}: return {{if .Parent}}States::{{.Parent.Name}}{{else}}States::None{{end}};
 		{{- end }}
-		case States::None: DEBUG_BREAK; return States::None;
+		case States::None: GOCHART_DEBUG_BREAK; return States::None;
 	}
   // clang-format on
 }
 
-// Statechart::RingBuffer --------------------------------------------------------------------------
+// {{.ImplName}}::RingBuffer --------------------------------------------------------------------------
 
-void Statechart::RingBuffer::Enqueue(const ElementType &element)
+void {{.ImplName}}::RingBuffer::Enqueue(const ElementType &element)
 {
     assert(!IsFull());
     TriggerQueue[WriteIndex] = element;
     WriteIndex = (WriteIndex + 1) % TriggerQueue.size();
 }
 
-void Statechart::RingBuffer::Dequeue(ElementType *out)
+void {{.ImplName}}::RingBuffer::Dequeue(ElementType *out)
 {
     assert(!IsEmpty());
 
     *out = TriggerQueue[ReadIndex];
     ReadIndex = (ReadIndex + 1) % TriggerQueue.size();
 }
+
+} // namespace gochart
+
+#undef GOCHART_DEBUG_BREAK

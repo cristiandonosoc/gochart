@@ -6,20 +6,20 @@
 #include <array>
 #include <assert.h>
 
-class Statechart
+namespace gochart {
+
+class {{.ImplName}}
 {
 public:
     using ElementType = uint32_t;
 
 public:
-  // clang-format off
   enum class States {
 		{{- range.Statechart.States}}
 		{{.Name}},
 		{{- end}}
 		None,
 	};
-  // clang-format on
 
 	static const char* ToString(States state);
 	static States ParentState(States state);
@@ -43,3 +43,6 @@ private:
 
 private:
 };
+
+
+} // namespace gochart

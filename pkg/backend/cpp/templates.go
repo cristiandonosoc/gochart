@@ -56,14 +56,19 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, error) {
-	context := &struct {
-		BackendOptions
-		Statechart *ir.Statechart
-	}{
-		BackendOptions: *options,
-		Statechart:     tm.sc,
+func (tm *templateManager) generateBody(options *BackendOptions) (io.Reader, error) {
+	context := newTemplateContext(tm.sc, options)
+
+	var buf bytes.Buffer
+	if err := tm.bodyTemplate.Execute(&buf, context); err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
+
+	return &buf, nil
+}
+
+func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, error) {
+	context := newTemplateContext(tm.sc, options)
 
 	var buf bytes.Buffer
 	if err := tm.headerTemplate.Execute(&buf, context); err != nil {
@@ -73,19 +78,22 @@ func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, e
 	return &buf, nil
 }
 
-func (tm *templateManager) generateBody(options *BackendOptions) (io.Reader, error) {
-	context := &struct {
-		BackendOptions
-		Statechart *ir.Statechart
-	}{
+// templateContext is a common struct that has helpers and information needed by the templates.
+type templateContext struct {
+	BackendOptions
+	Statechart *ir.Statechart
+
+	// Common Use strings.
+	ImplName string
+}
+
+func newTemplateContext(sc *ir.Statechart, options *BackendOptions) *templateContext {
+	tc := &templateContext{
 		BackendOptions: *options,
-		Statechart:     tm.sc,
+		Statechart:     sc,
+
+		ImplName: fmt.Sprintf("Statechart%sImpl", sc.Name),
 	}
 
-	var buf bytes.Buffer
-	if err := tm.bodyTemplate.Execute(&buf, context); err != nil {
-		return nil, fmt.Errorf("executing template: %w", err)
-	}
-
-	return &buf, nil
+	return tc
 }
