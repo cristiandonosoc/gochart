@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
@@ -23,45 +23,81 @@ func readFrontend(path string) (*frontend.StatechartData, error) {
 	return scdata, nil
 }
 
+func writeToFile(path string, r io.Reader) error {
+	// Create or truncate the target file.
+	out, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("creating/truncating file %q: %w", path, err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, r); err != nil {
+		return fmt.Errorf("copying contents to %q: %w", path, err)
+	}
+
+	// Ensure the file is written.
+	if err := out.Sync(); err != nil {
+		return fmt.Errorf("calling sync on %q: %w", path, err)
+	}
+
+	return nil
+}
+
+func ensureDirectoriesExists(headerPath, bodyPath string) error {
+	if ok, err := ensureDirExists(filepath.Dir(headerPath)); err != nil {
+		return fmt.Errorf("ensuring %q owning directory exists: %w", headerPath, err)
+	} else if !ok {
+		return fmt.Errorf("parent path for %q is not a directory", headerPath)
+	}
+
+	if ok, err := ensureDirExists(filepath.Dir(bodyPath)); err != nil {
+		return fmt.Errorf("ensuring %q owning directory exists: %w", bodyPath, err)
+	} else if !ok {
+		return fmt.Errorf("parent path for %q is not a directory", bodyPath)
+	}
+
+	return nil
+}
+
+func ensureDirExists(path string) (bool, error) {
+	if info, err := os.Stat(path); err != nil {
+		return false, fmt.Errorf("stat %q: %w", path, err)
+	} else {
+		if !info.IsDir() {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func internalMain() error {
 	var yamlPath string
+	var headerPath string
+	var bodyPath string
+	onlyPrint := true
 
 	if len(os.Args) == 2 {
 		yamlPath = os.Args[1]
-	} else {
-		return fmt.Errorf("Usage: gochart <PATH>")
-	}
+	} else if len(os.Args) == 4 {
+		onlyPrint = false
 
-	fmt.Println("-----------------------------------------------------------------------------------")
+		yamlPath = os.Args[1]
+		headerPath = os.Args[2]
+		bodyPath = os.Args[3]
+	} else {
+		return fmt.Errorf("Usage: gochart <PATH> [<HEADER_PATH> <BODY_PATH>]")
+	}
 
 	scdata, err := readFrontend(yamlPath)
 	if err != nil {
 		return fmt.Errorf("reading frontend: %w", err)
 	}
 
-	{
-		encoded, err := json.MarshalIndent(scdata, "", "  ")
-		if err != nil {
-			return fmt.Errorf("marshalling to json: %w", err)
-		}
-
-		fmt.Println(string(encoded))
-	}
-
-	fmt.Println("-----------------------------------------------------------------------------------")
-
 	sc, err := ir.ProcessStatechartData(scdata)
 	if err != nil {
 		return fmt.Errorf("processing statechart data: %w", err)
 	}
-
-	{
-		for _, state := range sc.States {
-			fmt.Printf("State %s\n", state.Name)
-		}
-	}
-
-	fmt.Println("-----------------------------------------------------------------------------------")
 
 	backend := cpp.NewCppGochartBackend()
 	headerData, bodyData, err := backend.Generate(sc)
@@ -69,20 +105,32 @@ func internalMain() error {
 		return fmt.Errorf("generating backend: %w", err)
 	}
 
-	header, err := io.ReadAll(headerData)
-	if err != nil {
-		return fmt.Errorf("reading the header data: %w", err)
-	}
+	if onlyPrint {
+		header, err := io.ReadAll(headerData)
+		if err != nil {
+			return fmt.Errorf("reading the header data: %w", err)
+		}
 
-	body, err := io.ReadAll(bodyData)
-	if err != nil {
-		return fmt.Errorf("reading the body data: %w", err)
-	}
+		body, err := io.ReadAll(bodyData)
+		if err != nil {
+			return fmt.Errorf("reading the body data: %w", err)
+		}
 
-	fmt.Println("HEADER *****")
-	fmt.Println(string(header))
-	fmt.Println("BODY *****")
-	fmt.Println(string(body))
+		fmt.Println("HEADER *****")
+		fmt.Println(string(header))
+		fmt.Println("BODY *****")
+		fmt.Println(string(body))
+	} else {
+		if err := writeToFile(headerPath, headerData); err != nil {
+			return fmt.Errorf("writing header: %w", err)
+		}
+		fmt.Printf("Wrote header to %s\n", headerPath)
+
+		if err := writeToFile(bodyPath, bodyData); err != nil {
+			return fmt.Errorf("writing body: %w", err)
+		}
+		fmt.Printf("Wrote body to %s\n", bodyPath)
+	}
 
 	return nil
 }
