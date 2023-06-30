@@ -99,7 +99,12 @@ func internalMain() error {
 		return fmt.Errorf("processing statechart data: %w", err)
 	}
 
-	backend := cpp.NewCppGochartBackend()
+	backend := cpp.NewCppGochartBackend(func(o *cpp.BackendOptions) {
+		// For now we just assume the include is in the same directory.
+		if headerPath != "" {
+			o.HeaderInclude = filepath.Base(headerPath)
+		}
+	})
 	headerData, bodyData, err := backend.Generate(sc)
 	if err != nil {
 		return fmt.Errorf("generating backend: %w", err)

@@ -8,6 +8,7 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
+
 // GochartBackend is the abstract interface for all backends, regardless of the type of language
 // they are meant to generate for. This is to decouple generated languages from the input (frontend)
 // language defined to specify them.

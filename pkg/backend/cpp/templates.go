@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
@@ -21,23 +20,15 @@ const (
 	bodyFilename   embedPath = "body.template.cpp"
 )
 
-// commonContext is context that is common to all templates (header, body, etc.)
-type commonContext struct {
-	// Version is the version of gochart used to generate the files.
-	Version string
-	Time    time.Time
-}
-
 // templateManager is a helper struct to handle the common context for template loading.
 type templateManager struct {
 	headerTemplate *template.Template
 	bodyTemplate   *template.Template
 
-	sc     *ir.Statechart
-	common *commonContext
+	sc *ir.Statechart
 }
 
-func newTemplateManager(sc *ir.Statechart, common *commonContext) (*templateManager, error) {
+func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
 	headerTemplate, err := readTemplate(headerFilename)
 	if err != nil {
 		return nil, fmt.Errorf("reading header template: %w", err)
@@ -52,7 +43,6 @@ func newTemplateManager(sc *ir.Statechart, common *commonContext) (*templateMana
 		headerTemplate: headerTemplate,
 		bodyTemplate:   bodyTemplate,
 		sc:             sc,
-		common:         common,
 	}, nil
 }
 
@@ -66,13 +56,13 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateHeader() (io.Reader, error) {
+func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, error) {
 	context := &struct {
-		commonContext
+		BackendOptions
 		Statechart *ir.Statechart
 	}{
-		commonContext: *tm.common,
-		Statechart:    tm.sc,
+		BackendOptions: *options,
+		Statechart:     tm.sc,
 	}
 
 	var buf bytes.Buffer
@@ -83,13 +73,13 @@ func (tm *templateManager) generateHeader() (io.Reader, error) {
 	return &buf, nil
 }
 
-func (tm *templateManager) generateBody() (io.Reader, error) {
+func (tm *templateManager) generateBody(options *BackendOptions) (io.Reader, error) {
 	context := &struct {
-		commonContext
+		BackendOptions
 		Statechart *ir.Statechart
 	}{
-		commonContext: *tm.common,
-		Statechart:    tm.sc,
+		BackendOptions: *options,
+		Statechart:     tm.sc,
 	}
 
 	var buf bytes.Buffer
