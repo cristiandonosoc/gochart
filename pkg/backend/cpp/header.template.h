@@ -14,15 +14,15 @@ public:
 public:
   // clang-format off
   enum class States {
-		None,
 		{{- range.Statechart.States}}
 		{{.Name}},
 		{{- end}}
+		None,
 	};
   // clang-format on
 
-private:
-	States ParentState(States state);
+	static const char* ToString(States state);
+	static States ParentState(States state);
 
 private:
     class RingBuffer

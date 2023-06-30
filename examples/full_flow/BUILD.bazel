@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+	name = "full_flow",
+
+	includes = [
+		"statechart.generated.h",
+	],
+
+	srcs = [
+		"main.cpp",
+		"statechart.generated.cpp",
+	]
+)
+

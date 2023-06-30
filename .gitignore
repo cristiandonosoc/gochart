@@ -1,2 +1,8 @@
+# Generated test files.
 examples/full_flow/*.h
+examples/full_flow/*.h.BACKUP
 examples/full_flow/*.cpp
+examples/full_flow/*.cpp.BACKUP
+
+# Bazel ignores.
+bazel-*/

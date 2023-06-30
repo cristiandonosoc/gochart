@@ -12,16 +12,31 @@
 #define DEBUG_BREAK ___builtin_debugtrap()
 #endif
 
+const char* Statechart::ToString(States state)
+{
+  // clang-format off
+	switch (state) {
+		{{- range.Statechart.States }}
+		case States::{{.Name}}: return "{{.Name}}";
+		{{- end }}
+		case States::None: return "None";
+	}
+  // clang-format on
+
+	DEBUG_BREAK;
+	return "<invalid>";
+}
+
 Statechart::States Statechart::ParentState(States state)
 {
-    // clang-format off
+  // clang-format off
 	switch (state) {
 		{{- range.Statechart.States }}
 		case States::{{.Name}}: return {{if .Parent}}States::{{.Parent.Name}}{{else}}States::None{{end}};
 		{{- end }}
 		case States::None: DEBUG_BREAK; return States::None;
 	}
-    // clang-format on
+  // clang-format on
 }
 
 // Statechart::RingBuffer --------------------------------------------------------------------------
