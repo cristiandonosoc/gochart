@@ -13,17 +13,18 @@ import (
 type inputHandler struct {
 	scdata *frontend.StatechartData
 
+	triggers   []*Trigger
 	rootStates []*State
-	triggers   map[string]*Trigger
 
-	allStates map[string]*State
+	triggerMap map[string]*Trigger
+	stateMap   map[string]*State
 }
 
 func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error) {
 	ih := inputHandler{
-		scdata:    scdata,
-		triggers:  make(map[string]*Trigger),
-		allStates: make(map[string]*State),
+		scdata:     scdata,
+		triggerMap: make(map[string]*Trigger),
+		stateMap:   make(map[string]*State),
 	}
 
 	if err := ih.collectTriggers(); err != nil {
@@ -39,8 +40,8 @@ func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error)
 	}
 
 	// Collect the states as defined in the order of the frontend.
-	states := make([]*State, 0, len(ih.allStates))
-	for _, state := range ih.allStates {
+	states := make([]*State, 0, len(ih.stateMap))
+	for _, state := range ih.stateMap {
 		states = append(states, state)
 	}
 
@@ -51,28 +52,34 @@ func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error)
 	return &Statechart{
 		Name:         scdata.Name,
 		Roots:        ih.rootStates,
+		Triggers:     ih.triggers,
 		States:       states,
-		StateMap:     ih.allStates,
+		TriggerMap:   ih.triggerMap,
+		StateMap:     ih.stateMap,
 		frontendData: scdata,
 	}, nil
 }
 
 func (ih *inputHandler) collectTriggers() error {
+	triggers := make([]*Trigger, 0, len(ih.scdata.Triggers))
+
 	for _, tdata := range ih.scdata.Triggers {
 		trigger, err := ih.createTrigger(tdata)
 		if err != nil {
 			return fmt.Errorf("creating trigger %q: %w", tdata.Name, err)
 		}
 
-		ih.triggers[trigger.Name] = trigger
+		triggers = append(triggers, trigger)
+		ih.triggerMap[trigger.Name] = trigger
 	}
 
+	ih.triggers = triggers
 	return nil
 }
 
 func (ih *inputHandler) createTrigger(tdata *frontend.TriggerData) (*Trigger, error) {
 	// We make sure that the trigger doesn't exist already.
-	if _, ok := ih.triggers[tdata.Name]; ok {
+	if _, ok := ih.triggerMap[tdata.Name]; ok {
 		return nil, fmt.Errorf("trigger %q defined twice", tdata.Name)
 	}
 
@@ -151,7 +158,7 @@ func (ih *inputHandler) collectStates() error {
 	}
 
 	ih.rootStates = roots
-	ih.allStates = stateMap
+	ih.stateMap = stateMap
 
 	return nil
 }
@@ -159,7 +166,7 @@ func (ih *inputHandler) collectStates() error {
 func (ih *inputHandler) collectReactions(triggerNames []string) ([]*TransitionReaction, error) {
 	var triggers []*Trigger
 	for _, triggerName := range triggerNames {
-		trigger, ok := ih.triggers[triggerName]
+		trigger, ok := ih.triggerMap[triggerName]
 		if !ok {
 			return nil, fmt.Errorf("cannot find trigger %q", triggerName)
 		}
@@ -189,12 +196,12 @@ func (ih *inputHandler) collectTransitions() error {
 
 // createTransition returns a new transition, as well as the state it stems from.
 func (ih *inputHandler) createTransition(tdata *frontend.TransitionData) (*Transition, *State, error) {
-	from, ok := ih.allStates[tdata.From]
+	from, ok := ih.stateMap[tdata.From]
 	if !ok {
 		return nil, nil, fmt.Errorf("cannot find from state %q", tdata.From)
 	}
 
-	to, ok := ih.allStates[tdata.To]
+	to, ok := ih.stateMap[tdata.To]
 	if !ok {
 		return nil, nil, fmt.Errorf("cannot find to state %q", tdata.To)
 	}
@@ -202,7 +209,7 @@ func (ih *inputHandler) createTransition(tdata *frontend.TransitionData) (*Trans
 	// See if there is a trigger available (if not, it's a null transition).
 	var trigger *Trigger
 	if tdata.Trigger != "" {
-		t, ok := ih.triggers[tdata.Trigger]
+		t, ok := ih.triggerMap[tdata.Trigger]
 		if !ok {
 			return nil, nil, fmt.Errorf("cannot find trigger %q", tdata.Trigger)
 		}

@@ -15,11 +15,19 @@ public:
 
 public:
   enum class States {
-		{{- range.Statechart.States}}
+		{{- range .Statechart.States}}
 		{{.Name}},
 		{{- end}}
 		None,
 	};
+
+	{{- range .Statechart.Triggers }}
+	struct Trigger{{.Name}} {
+		{{- range .Args }}
+		{{.Type}} {{.Name}};
+		{{- end }}
+	};
+	{{- end }}
 
 	static const char* ToString(States state);
 	static States ParentState(States state);

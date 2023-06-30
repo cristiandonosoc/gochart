@@ -9,7 +9,8 @@ import (
 // Statechart represents a single statechart state machine.
 type Statechart struct {
 	Name     string
-	Triggers map[string]*Trigger
+
+	Triggers []*Trigger
 
 	// Roots are the list of states that are "roots" (have no parents) within the state tree.
 	Roots []*State
@@ -17,6 +18,7 @@ type Statechart struct {
 	// States are all the states, as defined in the order from the frontend.
 	States []*State
 
+	TriggerMap map[string]*Trigger
 	StateMap     map[string]*State
 	frontendData *frontend.StatechartData
 }
