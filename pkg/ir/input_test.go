@@ -21,6 +21,9 @@ func TestReadSimpleYaml(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "Trigger2",
+		},
 	}
 
 	wantStates := []*State{

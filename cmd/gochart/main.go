@@ -99,11 +99,6 @@ func internalMain() error {
 		return fmt.Errorf("processing statechart data: %w", err)
 	}
 
-	fmt.Println("Trigger Count:", len(sc.Triggers))
-	for name := range sc.Triggers {
-		fmt.Println("Trigger:", name)
-	}
-
 	backend := cpp.NewCppGochartBackend(func(o *cpp.BackendOptions) {
 		// For now we just assume the include is in the same directory.
 		if headerPath != "" {

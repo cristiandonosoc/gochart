@@ -2,6 +2,7 @@ name: Simple
 triggers:
   - name: Trigger1
     arguments_string: "const std::string& foo"
+  - name: Trigger2
 states:
   - name: StateA
   - name: StateB

@@ -84,10 +84,14 @@ func (ih *inputHandler) createTrigger(tdata *frontend.TriggerData) (*Trigger, er
 	}
 
 	// Parse the arguments.
-	// For now we only support C++, but we could support other languages as well if needed.
-	args, err := ParseCppArguments(tdata.ArgumentsString)
-	if err != nil {
-		return nil, fmt.Errorf("parsing arguments for trigger %q: %w", tdata.Name, err)
+	var args []*TriggerArgument
+	if tdata.ArgumentsString != "" {
+		// For now we only support C++, but we could support other languages as well if needed.
+		parsedArgs, err := ParseCppArguments(tdata.ArgumentsString)
+		if err != nil {
+			return nil, fmt.Errorf("parsing arguments for trigger %q: %w", tdata.Name, err)
+		}
+		args = parsedArgs
 	}
 
 	return &Trigger{
