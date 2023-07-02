@@ -8,7 +8,7 @@ import (
 
 // Statechart represents a single statechart state machine.
 type Statechart struct {
-	Name     string
+	Name string
 
 	Triggers []*Trigger
 
@@ -18,7 +18,7 @@ type Statechart struct {
 	// States are all the states, as defined in the order from the frontend.
 	States []*State
 
-	TriggerMap map[string]*Trigger
+	TriggerMap   map[string]*Trigger
 	StateMap     map[string]*State
 	frontendData *frontend.StatechartData
 }
@@ -69,6 +69,13 @@ func (s *State) IsParentOf(other *State) bool {
 	}
 
 	return false
+}
+
+func (s *State) ParentName() string {
+	if s.Parent != nil {
+		return s.Parent.Name
+	}
+	return "None"
 }
 
 type TransitionReaction struct {

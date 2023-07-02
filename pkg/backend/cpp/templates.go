@@ -84,7 +84,8 @@ type templateContext struct {
 	Statechart *ir.Statechart
 
 	// Common Use strings.
-	ImplName string
+	ImplName      string
+	InterfaceName string
 }
 
 func newTemplateContext(sc *ir.Statechart, options *BackendOptions) *templateContext {
@@ -92,7 +93,8 @@ func newTemplateContext(sc *ir.Statechart, options *BackendOptions) *templateCon
 		BackendOptions: *options,
 		Statechart:     sc,
 
-		ImplName: fmt.Sprintf("Statechart%sImpl", sc.Name),
+		ImplName:      fmt.Sprintf("Statechart%sImpl", sc.Name),
+		InterfaceName: fmt.Sprintf("Statechart%s", sc.Name),
 	}
 
 	return tc

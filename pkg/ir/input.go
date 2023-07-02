@@ -2,7 +2,6 @@ package ir
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 
@@ -15,6 +14,7 @@ type inputHandler struct {
 
 	triggers   []*Trigger
 	rootStates []*State
+	states     []*State
 
 	triggerMap map[string]*Trigger
 	stateMap   map[string]*State
@@ -39,21 +39,11 @@ func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error)
 		return nil, fmt.Errorf("collecting transitions: %w", err)
 	}
 
-	// Collect the states as defined in the order of the frontend.
-	states := make([]*State, 0, len(ih.stateMap))
-	for _, state := range ih.stateMap {
-		states = append(states, state)
-	}
-
-	sort.Slice(states, func(i, j int) bool {
-		return states[i].frontendData.Index < states[j].frontendData.Index
-	})
-
 	return &Statechart{
 		Name:         scdata.Name,
 		Roots:        ih.rootStates,
 		Triggers:     ih.triggers,
-		States:       states,
+		States:       ih.states,
 		TriggerMap:   ih.triggerMap,
 		StateMap:     ih.stateMap,
 		frontendData: scdata,
@@ -103,6 +93,7 @@ func (ih *inputHandler) createTrigger(tdata *frontend.TriggerData) (*Trigger, er
 
 func (ih *inputHandler) collectStates() error {
 	// We first create all the states and track its associated data.
+	var states []*State
 	stateMap := make(map[string]*State)
 	for _, statedata := range ih.scdata.States {
 		// The state should not exist.
@@ -115,6 +106,7 @@ func (ih *inputHandler) collectStates() error {
 			Name:         statedata.Name,
 			frontendData: statedata,
 		}
+		states = append(states, state)
 		stateMap[statedata.Name] = state
 	}
 
@@ -162,6 +154,7 @@ func (ih *inputHandler) collectStates() error {
 	}
 
 	ih.rootStates = roots
+	ih.states = states
 	ih.stateMap = stateMap
 
 	return nil
