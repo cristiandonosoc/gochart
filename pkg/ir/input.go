@@ -160,7 +160,7 @@ func (ih *inputHandler) collectStates() error {
 	return nil
 }
 
-func (ih *inputHandler) collectReactions(triggerNames []string) ([]*TransitionReaction, error) {
+func (ih *inputHandler) collectReactions(triggerNames []string) ([]*StateReaction, error) {
 	var triggers []*Trigger
 	for _, triggerName := range triggerNames {
 		trigger, ok := ih.triggerMap[triggerName]
@@ -170,8 +170,8 @@ func (ih *inputHandler) collectReactions(triggerNames []string) ([]*TransitionRe
 		triggers = append(triggers, trigger)
 	}
 
-	return xslices.Map(triggers, func(t *Trigger) *TransitionReaction {
-		return &TransitionReaction{
+	return xslices.Map(triggers, func(t *Trigger) *StateReaction {
+		return &StateReaction{
 			Trigger: t,
 		}
 	}), nil

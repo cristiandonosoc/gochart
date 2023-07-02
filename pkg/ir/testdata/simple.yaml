@@ -1,10 +1,12 @@
 name: Simple
 triggers:
   - name: Trigger1
-    arguments_string: "const std::string& foo"
+    arguments_string: "int foo, float bar"
   - name: Trigger2
 states:
   - name: StateA
+    default_enter: true
+    default_exit: true
   - name: StateB
     parent: StateA
   - name: StateC

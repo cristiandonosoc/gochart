@@ -16,7 +16,7 @@ if exist statechart.generated.cpp (
 )
 
 :: First generate the statechart files.
-go run %root%\cmd\gochart %root%\examples\frontends\yaml\simple.yaml statechart.generated.h statechart.generated.cpp || goto ERROR
+go run %root%\cmd\gochart %root%\pkg\ir\testdata\simple.yaml statechart.generated.h statechart.generated.cpp || goto ERROR
 
 :: Then compile and run the generated cpp case.
 bazelisk run ":full_flow" || goto ERROR

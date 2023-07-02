@@ -3,6 +3,8 @@
 package ir
 
 import (
+	"fmt"
+
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
@@ -32,9 +34,32 @@ type Trigger struct {
 	frontendData *frontend.TriggerData
 }
 
+func (t *Trigger) ArgsStringList() []string {
+	strings := make([]string, 0, len(t.Args))
+	for _, arg := range t.Args {
+		strings = append(strings, arg.String())
+	}
+
+	return strings
+}
+
+// ArgsNameList returns a list with only the name of the arguments.
+func (t *Trigger) ArgsNameList() []string {
+	strings := make([]string, 0, len(t.Args))
+	for _, arg := range t.Args {
+		strings = append(strings, arg.Name)
+	}
+
+	return strings
+}
+
 type TriggerArgument struct {
 	Type string
 	Name string
+}
+
+func (ta *TriggerArgument) String() string {
+	return fmt.Sprintf("%s %s", ta.Type, ta.Name)
 }
 
 // STATE -------------------------------------------------------------------------------------------
@@ -48,10 +73,10 @@ type State struct {
 	Transitions []*Transition
 
 	DefaultEnter   bool
-	EnterReactions []*TransitionReaction
+	EnterReactions []*StateReaction
 
 	DefaultExit   bool
-	ExitReactions []*TransitionReaction
+	ExitReactions []*StateReaction
 
 	Parent       *State
 	frontendData *frontend.StateData
@@ -78,7 +103,9 @@ func (s *State) ParentName() string {
 	return "None"
 }
 
-type TransitionReaction struct {
+// STATE REACTION ----------------------------------------------------------------------------------
+
+type StateReaction struct {
 	Trigger *Trigger
 }
 

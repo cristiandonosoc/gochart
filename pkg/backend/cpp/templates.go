@@ -7,6 +7,8 @@ import (
 	"io"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
+
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -47,9 +49,9 @@ func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
 }
 
 func readTemplate(ep embedPath) (*template.Template, error) {
+	// Load sprig functions.
 	epstr := string(ep)
-
-	tmpl, err := template.ParseFS(embeddedFS, epstr)
+	tmpl, err := template.New(epstr).Funcs(sprig.FuncMap()).ParseFS(embeddedFS, epstr)
 	if err != nil {
 		return nil, fmt.Errorf("reading embedded template %q: %w", epstr, err)
 	}

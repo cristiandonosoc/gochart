@@ -16,7 +16,7 @@ func TestReadSimpleYaml(t *testing.T) {
 			Name: "Trigger1",
 			Args: []*TriggerArgument{
 				{
-					Type: "const std::string&",
+					Type: "int",
 					Name: "foo",
 				},
 			},
@@ -28,7 +28,9 @@ func TestReadSimpleYaml(t *testing.T) {
 
 	wantStates := []*State{
 		{
-			Name: "StateA",
+			Name:         "StateA",
+			DefaultEnter: true,
+			DefaultExit:  true,
 		},
 		{
 			Name: "StateB",
@@ -124,6 +126,14 @@ func compareTrigger(t *testing.T, want, got *Trigger) {
 func compareState(t *testing.T, want, got *State) {
 	assert.Equal(t, want.Name, got.Name)
 
+	// Compare the enter reactions.
+	assert.Equal(t, want.DefaultEnter, got.DefaultEnter)
+	compareReactions(t, want.EnterReactions, got.EnterReactions)
+
+	// Compare the exit reactions.
+	assert.Equal(t, want.DefaultExit, got.DefaultExit)
+	compareReactions(t, want.ExitReactions, got.ExitReactions)
+
 	// Compare that we have the same parent.
 	// We only compare name, as otherwise we have a recursive call.
 	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
@@ -147,6 +157,19 @@ func compareState(t *testing.T, want, got *State) {
 			got := got.Transitions[i]
 
 			compareTransition(t, want, got)
+		}
+	}
+}
+
+func compareReactions(t *testing.T, want, got []*StateReaction) {
+	if assert.Equal(t, len(want), len(got)) {
+		for i := 0; i < len(want); i++ {
+			want := want[i]
+			got := got[i]
+
+			if assert.NotNil(t, want.Trigger) && assert.NotNil(t, got.Trigger) {
+				assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+			}
 		}
 	}
 }

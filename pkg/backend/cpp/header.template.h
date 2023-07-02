@@ -87,10 +87,20 @@ public:
 	}
 
 public:
-	{{- range .Statechart.States }}
-	{{- if .DefaultEnter }}State{{.Name}}_OnEnter();{{- end }}
+	// Trigger Interface.
+	{{- range .Statechart.Triggers }}
+	void Trigger{{.Name}}({{ .ArgsStringList | join ", " }});
+	{{- end }}
 
-	{{- if .DefaultExit }}State{{.Name}}_OnExit();{{- end }}
+	// State Interface.
+	{{- range .Statechart.States }}
+	{{- if .DefaultEnter }}
+	void State{{.Name}}_OnEnter();
+	{{- end }}
+
+	{{- if .DefaultExit }}
+	void State{{.Name}}_OnExit();
+	{{- end }}
 	{{- end }}
 
 private:
