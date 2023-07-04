@@ -25,6 +25,16 @@ type Statechart struct {
 	frontendData *frontend.StatechartData
 }
 
+func (sc *Statechart) InitialState() *State {
+	for _, state := range sc.States {
+		if state.Initial {
+			return state
+		}
+	}
+
+	panic("No initial state found. This should've been caught in validation")
+}
+
 // TRIGGER -----------------------------------------------------------------------------------------
 
 type Trigger struct {
@@ -85,6 +95,20 @@ type State struct {
 
 func (s *State) Equals(other *State) bool {
 	return s.Name == other.Name
+}
+
+func (s *State) InitialChild() *State {
+	if len(s.Children) == 0 {
+		return nil
+	}
+
+	for _, child := range s.Children {
+		if child.Initial {
+			return child
+		}
+	}
+
+	panic("No initial child found. This should've been caught in validation")
 }
 
 func (s *State) IsParentOf(other *State) bool {

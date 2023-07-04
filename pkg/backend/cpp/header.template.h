@@ -40,6 +40,7 @@ public:
 
 	{{- end }}
 
+public:
 	// States.
 	enum class StateKind
 	{
@@ -51,31 +52,34 @@ public:
 	static const char* ToString(StateKind state);
 	static StateKind ParentState(StateKind state);
 
-	{{- range .Statechart.States }}
 
-	struct State{{.Name}}
-	{
-		static StateKind GetParent() { return StateKind::{{.ParentName}}; }
-	};
-	{{- end }}
-
-
-private:
-    class RingBuffer
-    {
+    class State {
     public:
-        bool IsEmpty() const { return ReadIndex == WriteIndex; }
-        bool IsFull() const { return ((WriteIndex + 1) % TriggerQueue.size()) == ReadIndex; }
+        bool IsValid() const { return Kind != StateKind::None; }
+        State GetChildState() const;
+        State GetParentState() const;
 
-        void Enqueue(const ElementType &element);
-        void Dequeue(ElementType *out);
+        void PerformEnterReactions();
+
+        bool operator=(const State& other) const { return Kind == other.Kind; }
 
     private:
-        // TODO(cdc): Make queue size configurable.
-        std::array<ElementType, 32> TriggerQueue;
-        std::size_t ReadIndex;
-        std::size_t WriteIndex;
+        StateKind Kind = StateKind::None;
     };
+
+	{{- end }}
+
+public:
+    void Activate();
+    void Deactivate();
+
+private:
+    // |final_state| is used to determine whether we need to go to a more specific state or we're
+    // going to need to use the initial state to determine transition.
+    void EnterState(StateKind state, StateKind final_state);
+
+private:
+    State CurrentState = {};
 };
 
 template <typename TOwner>
@@ -85,6 +89,10 @@ public:
 	{
 		return std::unique_ptr<{{.InterfaceName}}>(new {{.InterfaceName}}(owner));
 	}
+
+public:
+    void Activate() { Impl.Activate(); }
+    void Deactivate() { Impl.Deactivate(); }
 
 public:
 	// Trigger Interface.
@@ -118,6 +126,7 @@ private:
 
 private:
 	TOwner* Owner = nullptr;
+	{{.ImplName}} Impl;
 };
 
 } // namespace gochart

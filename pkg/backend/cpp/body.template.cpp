@@ -15,6 +15,23 @@
 namespace gochart
 {
 
+
+void {{.ImplName}}:::Activate()
+{
+    assert(!CurrentState.IsValid());
+}
+
+void {{.ImplName}}::Deactivate()
+{
+    assert(CurrentState.IsValid());
+}
+
+void {{.ImplName}}::EnterState(State state, State* route, std::size_t route_size)
+{
+    state.PerformEnterReactions();
+    CurrentState = state;
+}
+
 const char* {{.ImplName}}::ToString(States state)
 {
 	switch (state) {
@@ -40,22 +57,7 @@ const char* {{.ImplName}}::ToString(States state)
   // clang-format on
 }
 
-// {{.ImplName}}::RingBuffer --------------------------------------------------------------------------
-
-void {{.ImplName}}::RingBuffer::Enqueue(const ElementType &element)
-{
-    assert(!IsFull());
-    TriggerQueue[WriteIndex] = element;
-    WriteIndex = (WriteIndex + 1) % TriggerQueue.size();
-}
-
-void {{.ImplName}}::RingBuffer::Dequeue(ElementType *out)
-{
-    assert(!IsEmpty());
-
-    *out = TriggerQueue[ReadIndex];
-    ReadIndex = (ReadIndex + 1) % TriggerQueue.size();
-}
+// {{.ImplName}}::State ----------------------------------------------------------------------------
 
 } // namespace gochart
 
