@@ -135,7 +135,7 @@ func (ih *inputHandler) collectStates() error {
 		if parent.IsParentOf(state) {
 			return fmt.Errorf("state %q already has state %q as child", parent.Name, state.Name)
 		}
-		parent.States = append(parent.States, state)
+		parent.Children = append(parent.Children, state)
 		state.Parent = parent
 	}
 

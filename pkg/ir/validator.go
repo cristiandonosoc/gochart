@@ -34,8 +34,8 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 
 func validateState(state *State) error {
 	// If it has children, at least one of them has to be marked initial.
-	if len(state.States) > 0 {
-		if err := validateInitialExists(state.States); err != nil {
+	if len(state.Children) > 0 {
+		if err := validateInitialExists(state.Children); err != nil {
 			return fmt.Errorf("validating that initial child exists: %w", err)
 		}
 	}

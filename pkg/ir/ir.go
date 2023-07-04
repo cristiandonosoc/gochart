@@ -70,7 +70,7 @@ type State struct {
 	Initial bool
 
 	// States represents the substates that this state has.
-	States      []*State
+	Children    []*State
 	Transitions []*Transition
 
 	DefaultEnter   bool
@@ -88,7 +88,7 @@ func (s *State) Equals(other *State) bool {
 }
 
 func (s *State) IsParentOf(other *State) bool {
-	for _, child := range s.States {
+	for _, child := range s.Children {
 		if child.Equals(other) {
 			return true
 		}

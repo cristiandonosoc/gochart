@@ -99,7 +99,7 @@ func setParenthood(t *testing.T, states []*State, parentName, childName string) 
 	parent := findState(t, states, parentName)
 
 	state.Parent = parent
-	parent.States = append(parent.States, state)
+	parent.Children = append(parent.Children, state)
 }
 
 func setTransition(t *testing.T, triggers []*Trigger, states []*State, fromName, toName, triggerName string) {
@@ -146,10 +146,10 @@ func compareState(t *testing.T, want, got *State) {
 	}
 
 	// Compare that we have the same children.
-	if assert.Equal(t, len(want.States), len(got.States)) {
-		for i := 0; i < len(want.States); i++ {
-			want := want.States[i]
-			got := got.States[i]
+	if assert.Equal(t, len(want.Children), len(got.Children)) {
+		for i := 0; i < len(want.Children); i++ {
+			want := want.Children[i]
+			got := got.Children[i]
 
 			compareState(t, want, got)
 		}
