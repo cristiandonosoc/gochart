@@ -19,6 +19,10 @@ func TestReadSimpleYaml(t *testing.T) {
 					Type: "int",
 					Name: "foo",
 				},
+				{
+					Type: "float",
+					Name: "bar",
+				},
 			},
 		},
 		{
@@ -33,7 +37,8 @@ func TestReadSimpleYaml(t *testing.T) {
 			DefaultExit:  true,
 		},
 		{
-			Name: "StateB",
+			Name:    "StateB",
+			Initial: true,
 		},
 		{
 			Name: "StateC",

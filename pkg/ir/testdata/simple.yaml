@@ -5,9 +5,11 @@ triggers:
   - name: Trigger2
 states:
   - name: StateA
+    initial: true
     default_enter: true
     default_exit: true
   - name: StateB
+    initial: true
     parent: StateA
   - name: StateC
     parent: StateA

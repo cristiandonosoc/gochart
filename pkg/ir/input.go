@@ -39,6 +39,10 @@ func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error)
 		return nil, fmt.Errorf("collecting transitions: %w", err)
 	}
 
+	if err := validate(&ih); err != nil {
+		return nil, fmt.Errorf("validating input: %w", err)
+	}
+
 	return &Statechart{
 		Name:         scdata.Name,
 		Roots:        ih.rootStates,
@@ -104,6 +108,7 @@ func (ih *inputHandler) collectStates() error {
 		// For now, we simply create the state. Parenthood will be set on a second pass.
 		state := &State{
 			Name:         statedata.Name,
+			Initial:      statedata.Initial,
 			frontendData: statedata,
 		}
 		states = append(states, state)

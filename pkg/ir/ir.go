@@ -66,7 +66,8 @@ func (ta *TriggerArgument) String() string {
 
 // State represents a single state withing a statechart.
 type State struct {
-	Name string
+	Name    string
+	Initial bool
 
 	// States represents the substates that this state has.
 	States      []*State
