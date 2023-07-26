@@ -17,11 +17,12 @@ public:
 
 public:
 	// Triggers.
-	enum class TriggerKind
+	enum class ETrigger
 	{
 		{{- range .Statechart.Triggers }}
 		{{.Name}},
 		{{- end }}
+        Initial,
 		None,
 	};
 
@@ -29,7 +30,7 @@ public:
 
 	struct Trigger{{.Name}}
 	{
-		static TriggerKind GetKind() { return TriggerKind::{{.Name}}; }
+		static ETrigger GetKind() { return ETrigger::{{.Name}}; }
 		static const char* GetName();
 
 		// Args.
@@ -42,32 +43,18 @@ public:
 
 public:
 	// States.
-	enum class StateKind
+	enum class EState
 	{
 		{{- range .Statechart.States}}
 		{{.Name}},
 		{{- end}}
-		None,
+		Invalid,
 	};
-	static const char* ToString(StateKind state);
-	static StateKind ParentState(StateKind state);
+	static const char* ToString(EState state);
+	static EState GetParentState(EState state);
+    static bool IsValid(EState kind) { return kind != EState::Invalid; }
 
-
-    class State {
-    public:
-        bool IsValid() const { return Kind != StateKind::None; }
-        State GetChildState() const;
-        State GetParentState() const;
-
-        void PerformEnterReactions();
-
-        bool operator=(const State& other) const { return Kind == other.Kind; }
-
-    private:
-        StateKind Kind = StateKind::None;
-    };
-
-	{{- end }}
+    static void PerformEnterReactions(EState state, ETrigger trigger);
 
 public:
     void Activate();
@@ -76,10 +63,15 @@ public:
 private:
     // |final_state| is used to determine whether we need to go to a more specific state or we're
     // going to need to use the initial state to determine transition.
-    void EnterState(StateKind state, StateKind final_state);
+    void EnterState(EState state, EState target_state, ETrigger trigger_kind);
+
+    static constexpr size_t kMaxRouteLength = 32;
+    static bool GetRouteAction(EState from, EState to,
+                               std::array<EState, kMaxRouteLength>* out_exit_states,
+                               std::array<EState, kMaxRouteLength>* out_enter_states);
 
 private:
-    State CurrentState = {};
+    EState CurrentState = EState::Invalid;
 };
 
 template <typename TOwner>

@@ -121,7 +121,7 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
-func (s *State) ParentName() string {
+func (s *State) SafeParentName() string {
 	if s.Parent != nil {
 		return s.Parent.Name
 	}

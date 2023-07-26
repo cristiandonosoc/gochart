@@ -8,7 +8,7 @@ AlignOperands: false
 AlignTrailingComments: false
 AllowShortBlocksOnASingleLine: true
 AlwaysBreakTemplateDeclarations: Yes
-BraceWrapping: 
+BraceWrapping:
   AfterCaseLabel: true
   AfterClass: true
   AfterControlStatement: true
@@ -28,7 +28,7 @@ BraceWrapping:
 BreakBeforeBraces: Custom
 BreakConstructorInitializers: AfterColon
 ColumnLimit: 100
-IncludeCategories: 
+IncludeCategories:
   - Regex: '^<.*'
     Priority: 1
   - Regex: '^".*'
@@ -40,6 +40,7 @@ IndentCaseBlocks: true
 IndentWidth: 4
 MacroBlockBegin: ''
 MacroBlockEnd: ''
+PointerAlignment: Left
 SpacesInAngles: false
 TabWidth: 4
 ...
