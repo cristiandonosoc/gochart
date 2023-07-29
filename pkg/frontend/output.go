@@ -23,7 +23,7 @@ type TriggerData struct {
 
 type StateData struct {
 	Name    string `yaml:"name"`
-	Initial bool   `yaml:"initial"`
+	Default bool   `yaml:"default"`
 	Parent  string `yaml:"parent"`
 
 	DefaultEnter          bool     `yaml:"default_enter"`

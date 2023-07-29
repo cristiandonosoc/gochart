@@ -46,19 +46,26 @@ const char* {{.ImplName}}::ToString(EState state)
     switch (state) {
         {{- range .Statechart.States }}
         case EState::{{.Name}}:
-            return EState::{{.SafeParentName}};
+            return EState::{{.Parent.SafeName}};
         {{- end }}
-        case {{.ImplName}}::EState::Invalid:
-            return EState::Invalid;
+        case {{.ImplName}}::EState::Invalid: break;
     }
 
     GOCHART_DEBUG_BREAK;
     return EState::Invalid;
 }
 
-{{.ImplName}}::EState {{.ImplName}}::GetDefaultChild(EState)
+{{.ImplName}}::EState {{.ImplName}}::GetDefaultChild(EState state)
 {
-    assert(false); // IMPLEMENT ME!
+    switch (state) {
+        {{- range .Statechart.States }}
+        case EState::{{.Name}}:
+            return EState::{{.DefaultChild.SafeName}};
+        {{- end }}
+        case {{.ImplName}}::EState::Invalid: break;
+    }
+
+    GOCHART_DEBUG_BREAK;
     return EState::Invalid;
 }
 

@@ -108,7 +108,7 @@ func (ih *inputHandler) collectStates() error {
 		// For now, we simply create the state. Parenthood will be set on a second pass.
 		state := &State{
 			Name:         statedata.Name,
-			Initial:      statedata.Initial,
+			Default:      statedata.Default,
 			frontendData: statedata,
 		}
 		states = append(states, state)

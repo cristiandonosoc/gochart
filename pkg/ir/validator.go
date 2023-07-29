@@ -25,38 +25,38 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 		return fmt.Errorf("no root states found")
 	}
 
-	if err := validateInitialExists(ih.rootStates); err != nil {
-		return fmt.Errorf("validating that initial child exists: %w", err)
+	if err := validateDefaultChildExists(ih.rootStates); err != nil {
+		return fmt.Errorf("validating that default child exists: %w", err)
 	}
 
 	return nil
 }
 
 func validateState(state *State) error {
-	// If it has children, at least one of them has to be marked initial.
+	// If it has children, at least one of them has to be marked default child.
 	if len(state.Children) > 0 {
-		if err := validateInitialExists(state.Children); err != nil {
-			return fmt.Errorf("validating that initial child exists: %w", err)
+		if err := validateDefaultChildExists(state.Children); err != nil {
+			return fmt.Errorf("validating that default child exists: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func validateInitialExists(states []*State) error {
-	initial := false
+func validateDefaultChildExists(states []*State) error {
+	foundDefault := false
 	for _, state := range states {
-		if state.Initial {
-			// There can only be one initial state.
-			if initial {
-				return fmt.Errorf("state %q marked as initial when an initial state already exists", state.Name)
+		if state.Default {
+			// There can only be one default child state.
+			if foundDefault {
+				return fmt.Errorf("state %q marked as default when a default state already exists", state.Name)
 			}
-			initial = true
+			foundDefault = true
 		}
 	}
 
-	if !initial {
-		return fmt.Errorf("no initial state found")
+	if !foundDefault {
+		return fmt.Errorf("no default child state found")
 	}
 
 	return nil

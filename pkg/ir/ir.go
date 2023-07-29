@@ -8,6 +8,10 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
+const (
+	InvalidStateName = "Invalid"
+)
+
 // Statechart represents a single statechart state machine.
 type Statechart struct {
 	Name string
@@ -25,14 +29,14 @@ type Statechart struct {
 	frontendData *frontend.StatechartData
 }
 
-func (sc *Statechart) InitialState() *State {
+func (sc *Statechart) DefaultRootState() *State {
 	for _, state := range sc.States {
-		if state.Initial {
+		if state.Default {
 			return state
 		}
 	}
 
-	panic("No initial state found. This should've been caught in validation")
+	panic("No default root state found. This should've been caught in validation")
 }
 
 // TRIGGER -----------------------------------------------------------------------------------------
@@ -77,7 +81,7 @@ func (ta *TriggerArgument) String() string {
 // State represents a single state withing a statechart.
 type State struct {
 	Name    string
-	Initial bool
+	Default bool
 
 	// States represents the substates that this state has.
 	Children    []*State
@@ -93,22 +97,30 @@ type State struct {
 	frontendData *frontend.StateData
 }
 
+func (s *State) SafeName() string {
+	if s == nil {
+		return InvalidStateName
+	}
+
+	return s.Name
+}
+
 func (s *State) Equals(other *State) bool {
 	return s.Name == other.Name
 }
 
-func (s *State) InitialChild() *State {
+func (s *State) DefaultChild() *State {
 	if len(s.Children) == 0 {
 		return nil
 	}
 
 	for _, child := range s.Children {
-		if child.Initial {
+		if child.Default {
 			return child
 		}
 	}
 
-	panic("No initial child found. This should've been caught in validation")
+	panic("No default child found. This should've been caught in validation")
 }
 
 func (s *State) IsParentOf(other *State) bool {
@@ -125,7 +137,7 @@ func (s *State) SafeParentName() string {
 	if s.Parent != nil {
 		return s.Parent.Name
 	}
-	return "Invalid"
+	return InvalidStateName
 }
 
 // STATE REACTION ----------------------------------------------------------------------------------

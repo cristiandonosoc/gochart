@@ -38,7 +38,7 @@ func TestReadSimpleYaml(t *testing.T) {
 		},
 		{
 			Name:    "StateB",
-			Initial: true,
+			Default: true,
 		},
 		{
 			Name: "StateC",
