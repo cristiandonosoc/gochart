@@ -54,16 +54,13 @@ public:
     static EState GetDefaultChild(EState state);
     static bool IsValid(EState state) { return state != EState::Invalid; }
 
-    static void PerformEnterReactions(EState state, ETrigger trigger);
-
 public:
     void Activate();
     void Deactivate();
 
 private:
-    // |final_state| is used to determine whether we need to go to a more specific state or we're
-    // going to need to use the initial state to determine transition.
-    void EnterState(EState state, EState target_state, ETrigger trigger_kind);
+    void EnterState(EState state, ETrigger trigger);
+    void ExitState(EState state, ETrigger trigger);
 
     // Route is a helper class that represents the "path" between two states.
     // It will hold the states that need to be exited first and then the states that will need to be
@@ -88,19 +85,28 @@ private:
         // can easily be iterated in the order that they are going to be entered.
         void SwapEnterStates();
 
+        int GetExitStatesSize() const { return ExitEnd; }
         const std::array<EState, kMaxRouteLength> GetExitStates() const { return ExitStates; }
+
+        int GetEnterStatesSize() const { return EnterEnd; }
         const std::array<EState, kMaxRouteLength> GetEnterStates() const { return EnterStates; }
 
     private:
         std::array<EState, kMaxRouteLength> ExitStates;
         std::array<EState, kMaxRouteLength> EnterStates;
 
-        int NextExitEmptySlot = 0;
-        int NextEnterEmptySlot = 0;
+        int ExitEnd = 0;
+        int EnterEnd = 0;
     };
 
+    // GetRoute figures out a route between any two states.
+    // If |to| is invalid, it will figute out the exit route from the |from| state up out of the
+    // root. This is useful in the deactivate case.
+    // In any other case (even if |from| == |to|), if the |to| state is not a leaf state (ie. it has
+    // children), it will figure out the enter for the default childs correctly.
     static void GetRoute(EState from, EState to, Route* out);
-    static void AppendDefaultEnters(EState from, Route* out);
+    static void AppendDefaultExits(EState state, Route* out);
+    static void AppendDefaultEnters(EState state, Route* out);
 
 private:
     EState CurrentState = EState::Invalid;

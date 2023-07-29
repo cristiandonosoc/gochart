@@ -20,11 +20,54 @@ namespace gochart
 void {{.ImplName}}::Activate()
 {
     assert(!IsValid(CurrentState));
+
+    EState default_root = EState::StateA;
+
+    // Get the default enter route from this state.
+    Route route;
+    GetRoute(default_root, default_root, &route);
+    assert(route.GetExitStatesSize() == 0);
+
+    // We go over all the enter states and enter them with no trigger associated.
+    for (int i = 0; i < route.GetEnterStatesSize(); i++)
+    {
+        EState state = route.GetEnterStates()[i];
+        EnterState(state, ETrigger::Invalid);
+    }
 }
 
 void {{.ImplName}}::Deactivate()
 {
     assert(IsValid(CurrentState));
+
+    // Get all the exit states.
+    Route route;
+    GetRoute(CurrentState, EState::Invalid, &route);
+    assert(route.GetEnterStatesSize() == 0);
+
+    for (int i = 0; i < route.GetExitStatesSize(); i++)
+    {
+        EState state = route.GetExitStates()[i];
+        ExitState(state, ETrigger::Invalid);
+    }
+
+    assert(!IsValid(CurrentState));
+}
+
+void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
+{
+    assert(trigger == ETrigger::Invalid);
+    CurrentState = state;
+
+    // TODO(cdc): Perform enter reactions.
+}
+
+void {{.ImplName}}::ExitState(EState state, ETrigger trigger)
+{
+    assert(trigger == ETrigger::Invalid);
+    CurrentState = GetParentState(state);
+
+    // TODO(cdc): Perform exit reactions.
 }
 
 // State -------------------------------------------------------------------------------------------
@@ -83,79 +126,91 @@ const char* {{.ImplName}}::ToString(EState state)
 
 void {{.ImplName}}::Route::AppendExitState(EState exit)
 {
-    assert(NextExitEmptySlot < kMaxRouteLength);
-    ExitStates[NextExitEmptySlot++] = exit;
+    assert(ExitEnd < kMaxRouteLength);
+    ExitStates[ExitEnd++] = exit;
 }
 
 void {{.ImplName}}::Route::AppendEnterState(EState enter)
 {
-    assert(NextEnterEmptySlot < kMaxRouteLength);
-    EnterStates[NextEnterEmptySlot++] = enter;
+    assert(EnterEnd < kMaxRouteLength);
+    EnterStates[EnterEnd++] = enter;
 }
 
 void {{.ImplName}}::Route::SwapEnterStates()
 {
     // We swap the enter states in so they in the furthers from the |from| state first.
-    for (int i = 0; i <= NextEnterEmptySlot; i++)
+    for (int i = 0; i <= EnterEnd; i++)
     {
-        std::swap(EnterStates[i], EnterStates[NextEnterEmptySlot - i]);
+        std::swap(EnterStates[i], EnterStates[EnterEnd - i]);
     }
 }
 
 void {{.ImplName}}::GetRoute(EState from, EState to, Route* out)
 {
     assert(from != EState::Invalid);
-    assert(from != to);
 
     // Special case of when we are just entering a state without a target.
     // The main case is when activating the statechart, in which we enter the root state.
     if (to == EState::Invalid)
     {
-        AppendDefaultEnters(from, out);
-        out->SwapEnterStates();
+        AppendDefaultExits(from, out);
+        return;
     }
 
-    // We immediatelly add an enter route to the desired state.
-    out->AppendEnterState(to);
-
-    // We need to find the common state between them.
-    // Since they are not the same, first we go from the |from|, compare, and then we compare from
-    // the |to|. If not equal then, repeat the process.
-    EState from_tracker = from;
-    EState to_tracker = to;
-    while (from_tracker != to_tracker)
+    // We search for exit and enter routes only when the two states given are not the same.
+    if (from != to)
     {
-        // Try to go up from the |from| side.
-        if (EState from_parent = GetParentState(from_tracker); from_parent != EState::Invalid)
-        {
-            out->AppendExitState(from_tracker);
-            from_tracker = from_parent;
-        }
+        // We immediatelly add an enter route to the desired state.
+        out->AppendEnterState(to);
 
-        // Now that we went up on |from|, we check if now we are in the same state.
-        if (from_tracker == to_tracker)
+        // We need to find the common state between them.
+        // Since they are not the same, first we go from the |from|, compare, and then we compare
+        // from the |to|. If not equal then, repeat the process.
+        while (from != to)
         {
-            break;
-        }
+            // Try to go up from the |from| side.
+            if (EState from_parent = GetParentState(from); from_parent != EState::Invalid)
+            {
+                out->AppendExitState(from);
+                from = from_parent;
+            }
 
-        // Now we pop the |to| side.
-        if (EState to_parent = GetParentState(to_tracker); to_parent != EState::Invalid)
-        {
-            out->AppendEnterState(to_tracker);
-            to_tracker = to_parent;
-        }
+            // Now that we went up on |from|, we check if now we are in the same state.
+            if (from == to)
+            {
+                break;
+            }
 
-        // At this point we're ready to try again.
+            // Now we pop the |to| side.
+            if (EState to_parent = GetParentState(to); to_parent != EState::Invalid)
+            {
+                out->AppendEnterState(to);
+                to = to_parent;
+            }
+
+            // At this point we're ready to try again.
+        }
     }
+
+    // Now it could be that the destination state is not a leaf state, so we get the default enters.
+    AppendDefaultEnters(to, out);
 
     // We need to reverse the valid enter states, as they are in the wrong order.
     out->SwapEnterStates();
 }
 
-void {{.ImplName}}::AppendDefaultEnters(EState from, Route* out)
+void {{.ImplName}}::AppendDefaultExits(EState state, Route* out)
 {
-    EState default_child = GetDefaultChild(from);
+    while (state != EState::Invalid)
+    {
+        out->AppendExitState(state);
+        state = GetParentState(state);
+    }
+}
 
+void {{.ImplName}}::AppendDefaultEnters(EState state, Route* out)
+{
+    EState default_child = GetDefaultChild(state);
     while (default_child != EState::Invalid)
     {
         out->AppendEnterState(default_child);
