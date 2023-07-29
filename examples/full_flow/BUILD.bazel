@@ -10,6 +10,11 @@ cc_binary(
 	srcs = [
 		"main.cpp",
 		"statechart.generated.cpp",
-	]
+	],
+
+	# TODO(cdc): Make this not MSVC specific.
+	copts = [
+		"/std:c++20",
+	],
 )
 

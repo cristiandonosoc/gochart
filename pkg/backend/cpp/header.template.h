@@ -19,11 +19,10 @@ public:
 	// Triggers.
 	enum class ETrigger
 	{
+        Invalid,
 		{{- range .Statechart.Triggers }}
 		{{.Name}},
 		{{- end }}
-        Initial,
-		None,
 	};
 
 	{{- range .Statechart.Triggers }}
@@ -45,14 +44,15 @@ public:
 	// States.
 	enum class EState
 	{
+		Invalid,
 		{{- range .Statechart.States}}
 		{{.Name}},
 		{{- end}}
-		Invalid,
 	};
 	static const char* ToString(EState state);
 	static EState GetParentState(EState state);
-    static bool IsValid(EState kind) { return kind != EState::Invalid; }
+    static EState GetDefaultChild(EState state);
+    static bool IsValid(EState state) { return state != EState::Invalid; }
 
     static void PerformEnterReactions(EState state, ETrigger trigger);
 
@@ -65,10 +65,42 @@ private:
     // going to need to use the initial state to determine transition.
     void EnterState(EState state, EState target_state, ETrigger trigger_kind);
 
-    static constexpr size_t kMaxRouteLength = 32;
-    static bool GetRouteAction(EState from, EState to,
-                               std::array<EState, kMaxRouteLength>* out_exit_states,
-                               std::array<EState, kMaxRouteLength>* out_enter_states);
+    // Route is a helper class that represents the "path" between two states.
+    // It will hold the states that need to be exited first and then the states that will need to be
+    // entered after that.
+    //
+    // TODO(cdc): This class is the same for each statechart class, so there is no need to generate
+    //            it over and over. Once we have a place to have common "gochart" things, we can
+    //            move this there.
+    class Route
+    {
+    public:
+        static constexpr size_t kMaxRouteLength = 32;
+
+    public:
+        Route();
+
+    public:
+        void AppendExitState(EState exit);
+        void AppendEnterState(EState enter);
+
+        // For enter states, they are normally appended FILO, so they should be swapped so that they
+        // can easily be iterated in the order that they are going to be entered.
+        void SwapEnterStates();
+
+        const std::array<EState, kMaxRouteLength> GetExitStates() const { return ExitStates; }
+        const std::array<EState, kMaxRouteLength> GetEnterStates() const { return EnterStates; }
+
+    private:
+        std::array<EState, kMaxRouteLength> ExitStates;
+        std::array<EState, kMaxRouteLength> EnterStates;
+
+        int NextExitEmptySlot = 0;
+        int NextEnterEmptySlot = 0;
+    };
+
+    static void GetRoute(EState from, EState to, Route* out);
+    static void AppendDefaultEnters(EState from, Route* out);
 
 private:
     EState CurrentState = EState::Invalid;
@@ -77,7 +109,7 @@ private:
 template <typename TOwner>
 class {{.InterfaceName}} {
 public:
-	std::unique_ptr<{{.InterfaceName}}> Create(TOwner* owner)
+	static std::unique_ptr<{{.InterfaceName}}> Create(TOwner* owner)
 	{
 		return std::unique_ptr<{{.InterfaceName}}>(new {{.InterfaceName}}(owner));
 	}

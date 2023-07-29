@@ -125,7 +125,7 @@ func (s *State) SafeParentName() string {
 	if s.Parent != nil {
 		return s.Parent.Name
 	}
-	return "None"
+	return "Invalid"
 }
 
 // STATE REACTION ----------------------------------------------------------------------------------

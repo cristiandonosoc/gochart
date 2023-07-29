@@ -42,8 +42,8 @@ const char* {{.ImplName}}::ToString(EState state)
 	return "<invalid>";
 }
 
-{{.ImplName}}::EState {{.ImplName}}::GetParentState(EState kind) const {
-    switch (kind) {
+{{.ImplName}}::EState {{.ImplName}}::GetParentState(EState state) {
+    switch (state) {
         {{- range .Statechart.States }}
         case EState::{{.Name}}:
             return EState::{{.SafeParentName}};
@@ -56,28 +56,60 @@ const char* {{.ImplName}}::ToString(EState state)
     return EState::Invalid;
 }
 
-
-// Route Actions -----------------------------------------------------------------------------------
-
-bool {{.ImplName}}::GetRouteAction(EState from, EState to,
-                                          std::array<EState, kMaxRouteLength>* out_exit_states,
-                                          std::array<EState, kMaxRouteLength>* out_enter_states)
+{{.ImplName}}::EState {{.ImplName}}::GetDefaultChild(EState)
 {
-    if (from == EState::Invalid || to == EState::Invalid)
-    {
-        return false;
-    }
+    assert(false); // IMPLEMENT ME!
+    return EState::Invalid;
+}
 
-    if (from == to)
-    {
-        return false;
-    }
+// Route -------------------------------------------------------------------------------------------
 
-    int exit_index = 0;
-    int enter_index = 0;
+{{.ImplName}}::Route::Route()
+{
+    // We ensure that the route are filled with invalid.
+    for (size_t i = 0; i < kMaxRouteLength; i++)
+    {
+        EnterStates[i] = EState::Invalid;
+        ExitStates[i] = EState::Invalid;
+    }
+}
+
+void {{.ImplName}}::Route::AppendExitState(EState exit)
+{
+    assert(NextExitEmptySlot < kMaxRouteLength);
+    ExitStates[NextExitEmptySlot++] = exit;
+}
+
+void {{.ImplName}}::Route::AppendEnterState(EState enter)
+{
+    assert(NextEnterEmptySlot < kMaxRouteLength);
+    EnterStates[NextEnterEmptySlot++] = enter;
+}
+
+void {{.ImplName}}::Route::SwapEnterStates()
+{
+    // We swap the enter states in so they in the furthers from the |from| state first.
+    for (int i = 0; i <= NextEnterEmptySlot; i++)
+    {
+        std::swap(EnterStates[i], EnterStates[NextEnterEmptySlot - i]);
+    }
+}
+
+void {{.ImplName}}::GetRoute(EState from, EState to, Route* out)
+{
+    assert(from != EState::Invalid);
+    assert(from != to);
+
+    // Special case of when we are just entering a state without a target.
+    // The main case is when activating the statechart, in which we enter the root state.
+    if (to == EState::Invalid)
+    {
+        AppendDefaultEnters(from, out);
+        out->SwapEnterStates();
+    }
 
     // We immediatelly add an enter route to the desired state.
-    (*out_enter_states)[enter_index++] = to;
+    out->AppendEnterState(to);
 
     // We need to find the common state between them.
     // Since they are not the same, first we go from the |from|, compare, and then we compare from
@@ -89,13 +121,7 @@ bool {{.ImplName}}::GetRouteAction(EState from, EState to,
         // Try to go up from the |from| side.
         if (EState from_parent = GetParentState(from_tracker); from_parent != EState::Invalid)
         {
-            if (exit_index == kMaxRouteLength)
-            {
-                return false;
-            }
-
-            // Add a exit action.
-            (*out_exit_states)[exit_index++] = from_tracker;
+            out->AppendExitState(from_tracker);
             from_tracker = from_parent;
         }
 
@@ -108,12 +134,7 @@ bool {{.ImplName}}::GetRouteAction(EState from, EState to,
         // Now we pop the |to| side.
         if (EState to_parent = GetParentState(to_tracker); to_parent != EState::Invalid)
         {
-            if (enter_index == kMaxRouteLength)
-            {
-                return false;
-            }
-
-            (*out_enter_states)[enter_index++] = to_tracker;
+            out->AppendEnterState(to_tracker);
             to_tracker = to_parent;
         }
 
@@ -121,24 +142,19 @@ bool {{.ImplName}}::GetRouteAction(EState from, EState to,
     }
 
     // We need to reverse the valid enter states, as they are in the wrong order.
-
-    // First we find the index of the first invalid state.
-    auto it = std::find(out_enter_states->begin(), out_enter_states->end(), EState::Invalid);
-
-    // In any case (found or not), we want the iterator to point to the last valid state.
-    it--;
-
-    // Now we simply swap the enter states in so they in the furthers from the |from| state first.
-    int last_valid_index = std::distance(out_enter_states->begin(), it);
-    for (int i = 0; i <= last_valid_index; i++)
-    {
-        std::swap((*out_enter_states)[i], (*out_enter_states)[last_valid_index - i]);
-    }
-
-    return true;
+    out->SwapEnterStates();
 }
 
+void {{.ImplName}}::AppendDefaultEnters(EState from, Route* out)
+{
+    EState default_child = GetDefaultChild(from);
 
+    while (default_child != EState::Invalid)
+    {
+        out->AppendEnterState(default_child);
+        default_child = GetDefaultChild(default_child);
+    }
+}
 
 } // namespace gochart
 
