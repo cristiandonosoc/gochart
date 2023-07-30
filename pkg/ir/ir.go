@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	InvalidStateName = "Invalid"
+	InvalidTriggerName = "Invalid"
+	InvalidStateName   = "Invalid"
 )
 
 // Statechart represents a single statechart state machine.
@@ -46,6 +47,14 @@ type Trigger struct {
 	Args []*TriggerArgument
 
 	frontendData *frontend.TriggerData
+}
+
+func (t *Trigger) SafeName() string {
+	if t == nil {
+		return InvalidTriggerName
+	}
+
+	return t.Name
 }
 
 func (t *Trigger) ArgsStringList() []string {
@@ -87,11 +96,8 @@ type State struct {
 	Children    []*State
 	Transitions []*Transition
 
-	DefaultEnter   bool
 	EnterReactions []*StateReaction
-
-	DefaultExit   bool
-	ExitReactions []*StateReaction
+	ExitReactions  []*StateReaction
 
 	Parent       *State
 	frontendData *frontend.StateData
@@ -133,11 +139,24 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
-func (s *State) SafeParentName() string {
-	if s.Parent != nil {
-		return s.Parent.Name
+func (s *State) SupportsEnterReaction(trigger *Trigger) bool {
+	for _, reaction := range s.EnterReactions {
+		if reaction.Trigger == trigger {
+			return true
+		}
 	}
-	return InvalidStateName
+
+	return false
+}
+
+func (s *State) SupportsExitReaction(trigger *Trigger) bool {
+	for _, reaction := range s.ExitReactions {
+		if reaction.Trigger == trigger {
+			return true
+		}
+	}
+
+	return false
 }
 
 // STATE REACTION ----------------------------------------------------------------------------------

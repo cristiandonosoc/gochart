@@ -32,9 +32,7 @@ func TestReadSimpleYaml(t *testing.T) {
 
 	wantStates := []*State{
 		{
-			Name:         "StateA",
-			DefaultEnter: true,
-			DefaultExit:  true,
+			Name: "StateA",
 		},
 		{
 			Name:    "StateB",
@@ -44,8 +42,12 @@ func TestReadSimpleYaml(t *testing.T) {
 			Name: "StateC",
 		},
 	}
+	// StateA
+	setEnterReaction(t, wantTriggers, wantStates, "StateA", "")
+	setExitReaction(t, wantTriggers, wantStates, "StateA", "")
 	setParenthood(t, wantStates, "StateA", "StateB")
 	setParenthood(t, wantStates, "StateA", "StateC")
+	// StateB
 	setTransition(t, wantTriggers, wantStates, "StateB", "StateC", "Trigger1")
 
 	yf := yaml.NewYamlFrontend()
@@ -77,6 +79,82 @@ func TestReadSimpleYaml(t *testing.T) {
 		}
 	}
 }
+
+// COMPARE FUNCTIONS -------------------------------------------------------------------------------
+
+func compareTrigger(t *testing.T, want, got *Trigger) {
+	assert.Equal(t, want.Name, got.Name)
+	if assert.Equal(t, len(want.Args), len(got.Args)) {
+		for i := 0; i < len(want.Args); i++ {
+			want := want.Args[i]
+			got := got.Args[i]
+
+			assert.Equal(t, want.Type, got.Type)
+			assert.Equal(t, want.Name, got.Name)
+		}
+	}
+}
+
+func compareState(t *testing.T, want, got *State) {
+	assert.Equal(t, want.Name, got.Name)
+
+	// Compare the enter reactions.
+	compareReactions(t, want.EnterReactions, got.EnterReactions)
+
+	// Compare the exit reactions.
+	compareReactions(t, want.ExitReactions, got.ExitReactions)
+
+	// Compare that we have the same parent.
+	// We only compare name, as otherwise we have a recursive call.
+	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
+		assert.Equal(t, want.Parent.Name, got.Parent.Name)
+	}
+
+	// Compare that we have the same children.
+	if assert.Equal(t, len(want.Children), len(got.Children)) {
+		for i := 0; i < len(want.Children); i++ {
+			want := want.Children[i]
+			got := got.Children[i]
+
+			compareState(t, want, got)
+		}
+	}
+
+	// Compare the transitions.
+	if assert.Equal(t, len(want.Transitions), len(got.Transitions)) {
+		for i := 0; i < len(want.Transitions); i++ {
+			want := want.Transitions[i]
+			got := got.Transitions[i]
+
+			compareTransition(t, want, got)
+		}
+	}
+}
+
+func compareReactions(t *testing.T, want, got []*StateReaction) {
+	if assert.Equal(t, len(want), len(got)) {
+		for i := 0; i < len(want); i++ {
+			want := want[i]
+			got := got[i]
+
+			// Either the triggers are both nil or none.
+			if assert.Equal(t, want.Trigger != nil, got.Trigger != nil) {
+				if want.Trigger != nil {
+					assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+				}
+			}
+		}
+	}
+}
+
+func compareTransition(t *testing.T, want, got *Transition) {
+	// We only compare names to avoid over checking.
+	assert.Equal(t, want.From.Name, got.From.Name)
+	assert.Equal(t, want.To.Name, got.To.Name)
+	assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+}
+
+// HELPER FUNCTIONS --------------------------------------------------------------------------------
 
 func findState(t *testing.T, states []*State, name string) *State {
 	res := xslices.Filter(states, func(s *State) bool {
@@ -115,73 +193,43 @@ func setTransition(t *testing.T, triggers []*Trigger, states []*State, fromName,
 	from.Transitions = append(from.Transitions, transition)
 }
 
-func compareTrigger(t *testing.T, want, got *Trigger) {
-	assert.Equal(t, want.Name, got.Name)
-	if assert.Equal(t, len(want.Args), len(got.Args)) {
-		for i := 0; i < len(want.Args); i++ {
-			want := want.Args[i]
-			got := got.Args[i]
+func appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger) []*StateReaction {
+	reactions = append(reactions, &StateReaction{
+		Trigger: trigger,
+	})
 
-			assert.Equal(t, want.Type, got.Type)
-			assert.Equal(t, want.Name, got.Name)
+	// Validate that the reactions are unique.
+	set := map[*Trigger]struct{}{}
+	for _, reaction := range reactions {
+		if _, ok := set[reaction.Trigger]; ok {
+			t.Fatalf("state %s already has a transition for trigger %s", state.SafeName(), trigger.SafeName())
 		}
+		set[reaction.Trigger] = struct{}{}
 	}
+
+	return reactions
 }
 
-func compareState(t *testing.T, want, got *State) {
-	assert.Equal(t, want.Name, got.Name)
+func setEnterReaction(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
+	state := findState(t, states, stateName)
 
-	// Compare the enter reactions.
-	assert.Equal(t, want.DefaultEnter, got.DefaultEnter)
-	compareReactions(t, want.EnterReactions, got.EnterReactions)
-
-	// Compare the exit reactions.
-	assert.Equal(t, want.DefaultExit, got.DefaultExit)
-	compareReactions(t, want.ExitReactions, got.ExitReactions)
-
-	// Compare that we have the same parent.
-	// We only compare name, as otherwise we have a recursive call.
-	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
-		assert.Equal(t, want.Parent.Name, got.Parent.Name)
+	// In this case, we can have an empty reaction, so we can have a nil trigger.
+	var trigger *Trigger
+	if triggerName != "" {
+		trigger = findTrigger(t, triggers, triggerName)
 	}
 
-	// Compare that we have the same children.
-	if assert.Equal(t, len(want.Children), len(got.Children)) {
-		for i := 0; i < len(want.Children); i++ {
-			want := want.Children[i]
-			got := got.Children[i]
-
-			compareState(t, want, got)
-		}
-	}
-
-	// Compare the transitions.
-	if assert.Equal(t, len(want.Transitions), len(got.Transitions)) {
-		for i := 0; i < len(want.Transitions); i++ {
-			want := want.Transitions[i]
-			got := got.Transitions[i]
-
-			compareTransition(t, want, got)
-		}
-	}
+	state.EnterReactions = appendReaction(t, state.EnterReactions, state, trigger)
 }
 
-func compareReactions(t *testing.T, want, got []*StateReaction) {
-	if assert.Equal(t, len(want), len(got)) {
-		for i := 0; i < len(want); i++ {
-			want := want[i]
-			got := got[i]
+func setExitReaction(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
+	state := findState(t, states, stateName)
 
-			if assert.NotNil(t, want.Trigger) && assert.NotNil(t, got.Trigger) {
-				assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
-			}
-		}
+	// In this case, we can have an empty reaction, so we can have a nil trigger.
+	var trigger *Trigger
+	if triggerName != "" {
+		trigger = findTrigger(t, triggers, triggerName)
 	}
-}
 
-func compareTransition(t *testing.T, want, got *Transition) {
-	// We only compare names to avoid over checking.
-	assert.Equal(t, want.From.Name, got.From.Name)
-	assert.Equal(t, want.To.Name, got.To.Name)
-	assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+	state.ExitReactions = appendReaction(t, state.ExitReactions, state, trigger)
 }
