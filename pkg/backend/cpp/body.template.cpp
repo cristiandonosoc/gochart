@@ -17,6 +17,65 @@
 namespace gochart
 {
 
+// Trigger -----------------------------------------------------------------------------------------
+
+const char* {{.ImplName}}::ToString(ETrigger trigger)
+{
+	switch (trigger) {
+		{{- range .Statechart.Triggers }}
+		case ETrigger::{{.Name}}: return "{{.Name}}";
+		{{- end }}
+		case ETrigger::Invalid: break;
+	}
+
+	GOCHART_DEBUG_BREAK;
+	return "<invalid>";
+}
+
+// State -------------------------------------------------------------------------------------------
+
+const char* {{.ImplName}}::ToString(EState state)
+{
+	switch (state) {
+		{{- range .Statechart.States }}
+		case EState::{{.Name}}: return "{{.Name}}";
+		{{- end }}
+		case EState::Invalid: break;
+	}
+
+	GOCHART_DEBUG_BREAK;
+	return "<invalid>";
+}
+
+{{.ImplName}}::EState {{.ImplName}}::GetParentState(EState state) {
+    switch (state) {
+        {{- range .Statechart.States }}
+        case EState::{{.Name}}:
+            return EState::{{.Parent.SafeName}};
+        {{- end }}
+        case {{.ImplName}}::EState::Invalid: break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return EState::Invalid;
+}
+
+{{.ImplName}}::EState {{.ImplName}}::GetDefaultChild(EState state)
+{
+    switch (state) {
+        {{- range .Statechart.States }}
+        case EState::{{.Name}}:
+            return EState::{{.DefaultChild.SafeName}};
+        {{- end }}
+        case {{.ImplName}}::EState::Invalid: break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return EState::Invalid;
+}
+
+// Activate/Deactivate -----------------------------------------------------------------------------
+
 void {{.ImplName}}::Activate()
 {
     assert(!IsValid(CurrentState));
@@ -54,6 +113,8 @@ void {{.ImplName}}::Deactivate()
     assert(!IsValid(CurrentState));
 }
 
+// State Transitions -------------------------------------------------------------------------------
+
 void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
 {
     assert(trigger == ETrigger::Invalid);
@@ -68,48 +129,6 @@ void {{.ImplName}}::ExitState(EState state, ETrigger trigger)
     CurrentState = GetParentState(state);
 
     // TODO(cdc): Perform exit reactions.
-}
-
-// State -------------------------------------------------------------------------------------------
-
-const char* {{.ImplName}}::ToString(EState state)
-{
-	switch (state) {
-		{{- range .Statechart.States }}
-		case EState::{{.Name}}: return "{{.Name}}";
-		{{- end }}
-		case EState::Invalid: return "<invalid>";
-	}
-
-	GOCHART_DEBUG_BREAK;
-	return "<invalid>";
-}
-
-{{.ImplName}}::EState {{.ImplName}}::GetParentState(EState state) {
-    switch (state) {
-        {{- range .Statechart.States }}
-        case EState::{{.Name}}:
-            return EState::{{.Parent.SafeName}};
-        {{- end }}
-        case {{.ImplName}}::EState::Invalid: break;
-    }
-
-    GOCHART_DEBUG_BREAK;
-    return EState::Invalid;
-}
-
-{{.ImplName}}::EState {{.ImplName}}::GetDefaultChild(EState state)
-{
-    switch (state) {
-        {{- range .Statechart.States }}
-        case EState::{{.Name}}:
-            return EState::{{.DefaultChild.SafeName}};
-        {{- end }}
-        case {{.ImplName}}::EState::Invalid: break;
-    }
-
-    GOCHART_DEBUG_BREAK;
-    return EState::Invalid;
 }
 
 // Route -------------------------------------------------------------------------------------------

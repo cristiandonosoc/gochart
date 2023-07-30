@@ -24,15 +24,12 @@ public:
 		{{.Name}},
 		{{- end }}
 	};
+    static const char* ToString(ETrigger trigger);
 
 	{{- range .Statechart.Triggers }}
 
-	struct Trigger{{.Name}}
+	struct {{.Name}}Data
 	{
-		static ETrigger GetKind() { return ETrigger::{{.Name}}; }
-		static const char* GetName();
-
-		// Args.
 		{{- range .Args }}
 		{{.Type}} {{.Name}};
 		{{- end }}
