@@ -139,7 +139,11 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
-func (s *State) SupportsEnterReaction(trigger *Trigger) bool {
+func (s *State) HasDefaultEnterReaction() bool {
+	return s.HasEnterReaction(nil)
+}
+
+func (s *State) HasEnterReaction(trigger *Trigger) bool {
 	for _, reaction := range s.EnterReactions {
 		if reaction.Trigger == trigger {
 			return true
@@ -149,7 +153,11 @@ func (s *State) SupportsEnterReaction(trigger *Trigger) bool {
 	return false
 }
 
-func (s *State) SupportsExitReaction(trigger *Trigger) bool {
+func (s *State) HasDefaultExitReaction() bool {
+	return s.HasExitReaction(nil)
+}
+
+func (s *State) HasExitReaction(trigger *Trigger) bool {
 	for _, reaction := range s.ExitReactions {
 		if reaction.Trigger == trigger {
 			return true

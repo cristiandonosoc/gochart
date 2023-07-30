@@ -23,9 +23,11 @@ const char* {{.ImplName}}::ToString(ETrigger trigger)
 {
 	switch (trigger) {
 		{{- range .Statechart.Triggers }}
-		case ETrigger::{{.Name}}: return "{{.Name}}";
+		case ETrigger::{{.Name}}:
+            return "{{.Name}}";
 		{{- end }}
-		case ETrigger::Invalid: break;
+		case ETrigger::Invalid:
+            break;
 	}
 
 	GOCHART_DEBUG_BREAK;
@@ -38,9 +40,11 @@ const char* {{.ImplName}}::ToString(EState state)
 {
 	switch (state) {
 		{{- range .Statechart.States }}
-		case EState::{{.Name}}: return "{{.Name}}";
+		case EState::{{.Name}}:
+            return "{{.Name}}";
 		{{- end }}
-		case EState::Invalid: break;
+		case EState::Invalid:
+            break;
 	}
 
 	GOCHART_DEBUG_BREAK;
@@ -53,7 +57,8 @@ const char* {{.ImplName}}::ToString(EState state)
         case EState::{{.Name}}:
             return EState::{{.Parent.SafeName}};
         {{- end }}
-        case {{.ImplName}}::EState::Invalid: break;
+        case EState::Invalid:
+            break;
     }
 
     GOCHART_DEBUG_BREAK;
@@ -67,18 +72,64 @@ const char* {{.ImplName}}::ToString(EState state)
         case EState::{{.Name}}:
             return EState::{{.DefaultChild.SafeName}};
         {{- end }}
-        case {{.ImplName}}::EState::Invalid: break;
+        case EState::Invalid:
+            break;
     }
 
     GOCHART_DEBUG_BREAK;
     return EState::Invalid;
 }
 
+namespace {{.ImplName}}_private
+{
+
+{{- range .Statechart.States }}
+
+bool State{{.Name}}_HasEnterReactionForTrigger({{$root.ImplName}}::ETrigger trigger)
+{
+    {{- $state := . }}
+    switch (trigger)
+    {
+        {{- range $root.Statechart.Triggers }}
+        {{- $trigger := . }}
+        case {{$root.ImplName}}::ETrigger::{{.Name}}:
+            return {{ $state.HasEnterReaction $trigger }};
+        {{- end }}
+        case {{$root.ImplName}}::ETrigger::Invalid:
+            // Default enter.
+            return {{ $state.HasEnterReaction nil }};
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
+
+{{- end}}
+
+} // namespace {{.ImplName}}_private
+
+bool {{.ImplName}}::HasEnterReactionForTrigger(EState state, ETrigger trigger)
+{
+    using namespace {{.ImplName}}_private;
+
+    switch (state)
+    {
+        {{- range .Statechart.States }}
+        case EState::{{.Name}}:
+            return State{{.Name}}_HasEnterReactionForTrigger(trigger);
+        {{- end }}
+        case EState::Invalid: break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
+
 // Activate/Deactivate -----------------------------------------------------------------------------
 
 void {{.ImplName}}::Activate()
 {
-    assert(!IsValid(CurrentState));
+    assert(CurrentState == EState::Invalid);
 
     EState default_root = EState::StateA;
 
@@ -97,7 +148,7 @@ void {{.ImplName}}::Activate()
 
 void {{.ImplName}}::Deactivate()
 {
-    assert(IsValid(CurrentState));
+    assert(CurrentState != EState::Invalid);
 
     // Get all the exit states.
     Route route;
@@ -110,7 +161,7 @@ void {{.ImplName}}::Deactivate()
         ExitState(state, ETrigger::Invalid);
     }
 
-    assert(!IsValid(CurrentState));
+    assert(CurrentState == EState::Invalid);
 }
 
 // State Transitions -------------------------------------------------------------------------------
@@ -120,7 +171,22 @@ void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
     assert(trigger == ETrigger::Invalid);
     CurrentState = state;
 
-    // TODO(cdc): Perform enter reactions.
+    // First we check for trigger specific reactions, as the default one will be called always.
+    if (trigger != ETrigger::Invalid && HasEnterReactionForTrigger(CurrentState, trigger))
+    {
+        CallEnterReaction(CurrentState, trigger);
+    }
+
+    // Now we check if we need to also call the default enter reaction.
+    if (HasEnterReactionForTrigger(CurrentState, ETrigger::Invalid))
+    {
+        CallEnterReaction(CurrentState, ETrigger::Invalid);
+    }
+}
+
+void {{.ImplName}}::CallEnterReaction(EState state, ETrigger trigger)
+{
+    // TODO(cdc): IMPLEMENT!
 }
 
 void {{.ImplName}}::ExitState(EState state, ETrigger trigger)

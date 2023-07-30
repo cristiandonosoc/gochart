@@ -26,6 +26,7 @@ public:
 	};
     static const char* ToString(ETrigger trigger);
 
+private:
 	{{- range .Statechart.Triggers }}
 
 	struct {{.Name}}Data
@@ -47,9 +48,12 @@ public:
 		{{- end}}
 	};
 	static const char* ToString(EState state);
+
+private:
 	static EState GetParentState(EState state);
     static EState GetDefaultChild(EState state);
-    static bool IsValid(EState state) { return state != EState::Invalid; }
+    static bool HasEnterReactionForTrigger(EState state, ETrigger trigger);
+    void CallEnterReaction(EState state, ETrigger trigger);
 
 public:
     void Activate();
@@ -129,11 +133,12 @@ public:
 
 	// State Interface.
 	{{- range .Statechart.States }}
-	{{- if .DefaultEnter }}
+
+	{{- if .HasDefaultEnterReaction }}
 	void State{{.Name}}_OnEnter();
 	{{- end }}
 
-	{{- if .DefaultExit }}
+	{{- if .HasDefaultExitReaction }}
 	void State{{.Name}}_OnExit();
 	{{- end }}
 	{{- end }}
