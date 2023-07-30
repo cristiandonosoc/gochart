@@ -118,12 +118,17 @@ bool {{.ImplName}}::HasEnterReactionForTrigger(EState state, ETrigger trigger)
         case EState::{{.Name}}:
             return State{{.Name}}_HasEnterReactionForTrigger(trigger);
         {{- end }}
-        case EState::Invalid: break;
+        case EState::Invalid:
+            break;
     }
 
     GOCHART_DEBUG_BREAK;
     return false;
 }
+
+// Constructor -------------------------------------------------------------------------------------
+
+{{.ImplName}}::{{.ImplName}}(DelegateCallbacks&& callbacks) : Callbacks(std::move(callbacks)) {}
 
 // Activate/Deactivate -----------------------------------------------------------------------------
 
@@ -131,12 +136,15 @@ void {{.ImplName}}::Activate()
 {
     assert(CurrentState == EState::Invalid);
 
+    // As an initialization, we enter the default root state.
     EState default_root = EState::StateA;
+    EnterState(default_root, ETrigger::Invalid);
 
     // Get the default enter route from this state.
     Route route;
     GetRoute(default_root, default_root, &route);
     assert(route.GetExitStatesSize() == 0);
+
 
     // We go over all the enter states and enter them with no trigger associated.
     for (int i = 0; i < route.GetEnterStatesSize(); i++)
@@ -184,9 +192,55 @@ void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
     }
 }
 
+namespace {{.ImplName}}_private
+{
+
+{{- range .Statechart.States }}
+
+void State{{.Name}}_CallEnterReaction(const {{$root.ImplName}}::DelegateCallbacks& callbacks,
+                                      {{$root.ImplName}}::ETrigger trigger)
+{
+    {{- $state := . }}
+    switch (trigger)
+    {
+        {{- range $root.Statechart.Triggers }}
+        case {{$root.ImplName}}::ETrigger::{{.Name}}:
+            // TODO(cdc): Do specific trigger case.
+            return;
+        {{- end }}
+        case {{$root.ImplName}}::ETrigger::Invalid:
+            {{- if $state.HasDefaultEnterReaction }}
+            // Default enter.
+            callbacks.State{{.Name}}_OnEnter();
+            {{- else }}
+            // No default enter reaction for state {{$state.SafeName}}.
+            {{- end }}
+            return;
+    }
+
+    GOCHART_DEBUG_BREAK;
+}
+
+{{- end }}
+
+} // namespace {{.ImplName}}_private
+
 void {{.ImplName}}::CallEnterReaction(EState state, ETrigger trigger)
 {
-    // TODO(cdc): IMPLEMENT!
+    using namespace {{.ImplName}}_private;
+
+    switch (state)
+    {
+        {{- range .Statechart.States }}
+        case EState::{{.Name}}:
+            State{{.Name}}_CallEnterReaction(Callbacks, trigger);
+            return;
+        {{- end }}
+        case EState::Invalid:
+            break;
+    }
+
+    GOCHART_DEBUG_BREAK;
 }
 
 void {{.ImplName}}::ExitState(EState state, ETrigger trigger)

@@ -6,6 +6,8 @@
 
 #include <array>
 #include <cassert>
+// TODO(cdc): We should remove this header down the line.
+#include <functional>
 #include <memory>
 
 namespace gochart {
@@ -56,6 +58,21 @@ private:
     void CallEnterReaction(EState state, ETrigger trigger);
 
 public:
+    // Delegate callbacks are a set of all the functions the impl might want to call the owner of
+    // this statechart. Think of it as a hand-crafted vtable, but without any allocation.
+    // TODO(cdc): Ensure either that std::function will never allocate or providate an alternative
+    //            that has such guarantee.
+    struct DelegateCallbacks
+    {
+        {{- range .Statechart.States }}
+        {{- if .HasDefaultEnterReaction }}
+        std::function<void()> State{{.Name}}_OnEnter;
+        {{- end }}
+        {{- end }}
+    };
+
+public:
+    {{.ImplName}}(DelegateCallbacks&& callbacks);
     void Activate();
     void Deactivate();
 
@@ -111,14 +128,24 @@ private:
 
 private:
     EState CurrentState = EState::Invalid;
+    DelegateCallbacks Callbacks = {};
 };
 
 template <typename TOwner>
-class {{.InterfaceName}} {
+class {{.InterfaceName}}
+{
 public:
 	static std::unique_ptr<{{.InterfaceName}}> Create(TOwner* owner)
 	{
-		return std::unique_ptr<{{.InterfaceName}}>(new {{.InterfaceName}}(owner));
+        // Create the callback structure that is going to be used by the impl.
+        {{.ImplName}}::DelegateCallbacks callbacks{
+            {{- range .Statechart.States }}
+            {{- if .HasDefaultEnterReaction }}
+            .State{{.Name}}_OnEnter = [owner](){ owner->State{{.Name}}_OnEnter(); },
+            {{- end }}
+            {{- end }}
+        };
+		return std::unique_ptr<{{.InterfaceName}}>(new {{.InterfaceName}}(std::move(callbacks)));
 	}
 
 public:
@@ -145,7 +172,10 @@ public:
 
 private:
 	{{.InterfaceName}}() = delete;
-	{{.InterfaceName}}(TOwner* owner) : Owner(owner) {}
+	{{.InterfaceName}}({{.ImplName}}::DelegateCallbacks&& callbacks)
+        : Impl(std::move(callbacks))
+        {
+        }
 
 	// No copy construction.
 	{{.InterfaceName}}(const {{.InterfaceName}}&) = delete;
@@ -157,7 +187,6 @@ private:
 
 
 private:
-	TOwner* Owner = nullptr;
 	{{.ImplName}} Impl;
 };
 
