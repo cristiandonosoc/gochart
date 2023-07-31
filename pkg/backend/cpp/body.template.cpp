@@ -80,52 +80,6 @@ const char* {{.ImplName}}::ToString(EState state)
     return EState::Invalid;
 }
 
-namespace {{.ImplName}}_private
-{
-
-{{- range .Statechart.States }}
-
-bool State{{.Name}}_HasEnterReactionForTrigger({{$root.ImplName}}::ETrigger trigger)
-{
-    {{- $state := . }}
-    switch (trigger)
-    {
-        {{- range $root.Statechart.Triggers }}
-        {{- $trigger := . }}
-        case {{$root.ImplName}}::ETrigger::{{.Name}}:
-            return {{ $state.HasEnterReaction $trigger }};
-        {{- end }}
-        case {{$root.ImplName}}::ETrigger::Invalid:
-            // Default enter.
-            return {{ $state.HasEnterReaction nil }};
-    }
-
-    GOCHART_DEBUG_BREAK;
-    return false;
-}
-
-{{- end}}
-
-} // namespace {{.ImplName}}_private
-
-bool {{.ImplName}}::HasEnterReactionForTrigger(EState state, ETrigger trigger)
-{
-    using namespace {{.ImplName}}_private;
-
-    switch (state)
-    {
-        {{- range .Statechart.States }}
-        case EState::{{.Name}}:
-            return State{{.Name}}_HasEnterReactionForTrigger(trigger);
-        {{- end }}
-        case EState::Invalid:
-            break;
-    }
-
-    GOCHART_DEBUG_BREAK;
-    return false;
-}
-
 // Constructor -------------------------------------------------------------------------------------
 
 {{.ImplName}}::{{.ImplName}}(DelegateCallbacks&& callbacks) : Callbacks(std::move(callbacks)) {}
@@ -172,28 +126,53 @@ void {{.ImplName}}::Deactivate()
     assert(CurrentState == EState::Invalid);
 }
 
-// State Transitions -------------------------------------------------------------------------------
+// TODO(cdc): Likely we can have the same code generated for enter/exit reactions, rather than have
+//            them duplicated like this.
+//            Evaluate whether that would be useful.
 
-void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
-{
-    assert(trigger == ETrigger::Invalid);
-    CurrentState = state;
-
-    // First we check for trigger specific reactions, as the default one will be called always.
-    if (trigger != ETrigger::Invalid && HasEnterReactionForTrigger(CurrentState, trigger))
-    {
-        CallEnterReaction(CurrentState, trigger);
-    }
-
-    // Now we check if we need to also call the default enter reaction.
-    if (HasEnterReactionForTrigger(CurrentState, ETrigger::Invalid))
-    {
-        CallEnterReaction(CurrentState, ETrigger::Invalid);
-    }
-}
+// Enter -------------------------------------------------------------------------------------------
 
 namespace {{.ImplName}}_private
 {
+
+{{- range .Statechart.States }}
+
+bool State{{.Name}}_HasEnterReaction({{$root.ImplName}}::ETrigger trigger)
+{
+    {{- $state := . }}
+    switch (trigger)
+    {
+        {{- range $root.Statechart.Triggers }}
+        {{- $trigger := . }}
+        case {{$root.ImplName}}::ETrigger::{{.Name}}:
+            return {{ $state.HasEnterReaction $trigger }};
+        {{- end }}
+        case {{$root.ImplName}}::ETrigger::Invalid:
+            // Default enter.
+            return {{ $state.HasEnterReaction nil }};
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
+
+{{- end}}
+
+bool HasEnterReaction({{$root.ImplName}}::EState state, {{$root.ImplName}}::ETrigger trigger)
+{
+    switch (state)
+    {
+        {{- range .Statechart.States }}
+        case {{$root.ImplName}}::EState::{{.Name}}:
+            return State{{.Name}}_HasEnterReaction(trigger);
+        {{- end }}
+        case {{$root.ImplName}}::EState::Invalid:
+            break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
 
 {{- range .Statechart.States }}
 
@@ -223,25 +202,47 @@ void State{{.Name}}_CallEnterReaction(const {{$root.ImplName}}::DelegateCallback
 
 {{- end }}
 
-} // namespace {{.ImplName}}_private
-
-void {{.ImplName}}::CallEnterReaction(EState state, ETrigger trigger)
+void CallEnterReaction(const {{$root.ImplName}}::DelegateCallbacks& callbacks,
+                       {{$root.ImplName}}::EState state,
+                       {{$root.ImplName}}::ETrigger trigger)
 {
-    using namespace {{.ImplName}}_private;
-
     switch (state)
     {
         {{- range .Statechart.States }}
-        case EState::{{.Name}}:
-            State{{.Name}}_CallEnterReaction(Callbacks, trigger);
+        case {{$root.ImplName}}::EState::{{.Name}}:
+            State{{.Name}}_CallEnterReaction(callbacks, trigger);
             return;
         {{- end }}
-        case EState::Invalid:
+        case {{$root.ImplName}}::EState::Invalid:
             break;
     }
 
     GOCHART_DEBUG_BREAK;
 }
+
+} // namespace {{.ImplName}}_private
+
+void {{.ImplName}}::EnterState(EState state, ETrigger trigger)
+{
+    using namespace {{.ImplName}}_private;
+
+    assert(trigger == ETrigger::Invalid);
+    CurrentState = state;
+
+    // First we check for trigger specific reactions, as the default one will be called always.
+    if (trigger != ETrigger::Invalid && HasEnterReaction(CurrentState, trigger))
+    {
+        CallEnterReaction(Callbacks, CurrentState, trigger);
+    }
+
+    // Now we check if we need to also call the default enter reaction.
+    if (HasEnterReaction(CurrentState, ETrigger::Invalid))
+    {
+        CallEnterReaction(Callbacks, CurrentState, ETrigger::Invalid);
+    }
+}
+
+// ExitState ---------------------------------------------------------------------------------------
 
 void {{.ImplName}}::ExitState(EState state, ETrigger trigger)
 {

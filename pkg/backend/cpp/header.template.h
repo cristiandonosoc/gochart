@@ -54,8 +54,6 @@ public:
 private:
 	static EState GetParentState(EState state);
     static EState GetDefaultChild(EState state);
-    static bool HasEnterReactionForTrigger(EState state, ETrigger trigger);
-    void CallEnterReaction(EState state, ETrigger trigger);
 
 public:
     // Delegate callbacks are a set of all the functions the impl might want to call the owner of
@@ -158,18 +156,6 @@ public:
 	void Trigger{{.Name}}({{ .ArgsStringList | join ", " }});
 	{{- end }}
 
-	// State Interface.
-	{{- range .Statechart.States }}
-
-	{{- if .HasDefaultEnterReaction }}
-	void State{{.Name}}_OnEnter();
-	{{- end }}
-
-	{{- if .HasDefaultExitReaction }}
-	void State{{.Name}}_OnExit();
-	{{- end }}
-	{{- end }}
-
 private:
 	{{.InterfaceName}}() = delete;
 	{{.InterfaceName}}({{.ImplName}}::DelegateCallbacks&& callbacks)
@@ -184,7 +170,6 @@ private:
 	// No move construction.
 	{{.InterfaceName}}({{.InterfaceName}}&&) = delete;
 	{{.InterfaceName}}& operator=({{.InterfaceName}}&&) = delete;
-
 
 private:
 	{{.ImplName}} Impl;
