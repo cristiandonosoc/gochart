@@ -51,13 +51,10 @@ public:
 	};
 	static const char* ToString(EState state);
 
-private:
-	static EState GetParentState(EState state);
-    static EState GetDefaultChild(EState state);
-
 public:
     // Delegate callbacks are a set of all the functions the impl might want to call the owner of
     // this statechart. Think of it as a hand-crafted vtable, but without any allocation.
+    //
     // TODO(cdc): Ensure either that std::function will never allocate or providate an alternative
     //            that has such guarantee.
     struct DelegateCallbacks
