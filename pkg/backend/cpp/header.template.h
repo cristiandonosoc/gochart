@@ -34,18 +34,6 @@ public:
 	};
     static const char* ToString(ETrigger trigger);
 
-private:
-	{{- range $sc.Triggers }}
-
-	struct {{.Name}}Data
-	{
-		{{- range .Args }}
-		{{.Type}} {{.Name}};
-		{{- end }}
-	};
-
-	{{- end }}
-
 public:
 	// States.
 	enum class EState
@@ -92,8 +80,6 @@ private:
     EState CurrentState = EState::Invalid;
     DelegateCallbacks Callbacks = {};
 };
-
-
 
 template <typename TOwner>
 class {{$interface}}

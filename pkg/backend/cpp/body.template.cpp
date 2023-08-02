@@ -9,6 +9,7 @@
 
 #include "{{$root.HeaderInclude}}"
 
+#include <array>
 #include <cassert>
 
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
@@ -38,6 +39,23 @@ const char* {{$impl}}::ToString(ETrigger trigger)
 	GOCHART_DEBUG_BREAK;
 	return "<invalid>";
 }
+
+namespace {{$impl}}_private
+{
+
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+
+struct {{$trigger.Name}}Data
+{
+    {{- range .Args }}
+    {{.Type}} {{.Name}};
+    {{- end }}
+};
+
+{{- end }}
+
+} // namespace {{$impl}}_private
 
 // State -------------------------------------------------------------------------------------------
 
@@ -143,6 +161,39 @@ namespace {{$impl}}_private
     // In any other case (even if |from| == |to|), if the |to| state is not a leaf state (ie. it has
     // children), it will figure out the enter for the default childs correctly.
     void ComputeRoute({{$stateEnum}} from, {{$stateEnum}} to, Route* out);
+
+} // namespace {{$impl}}_private
+
+// TriggerQueue ------------------------------------------------------------------------------------
+
+namespace {{$impl}}_private
+{
+
+class TriggerQueue
+{
+public:
+    // TODO(cdc): Make queue size configurable.
+    static constexpr size_t kTriggerQueueSize = 16;
+
+public:
+    struct Entry
+    {
+        {{$triggerEnum}} Trigger = {{$triggerEnum}}::Invalid;
+        void* TriggerData = nullptr;
+    };
+
+public:
+    void Enqueue(Entry&& entry);
+    [[nodiscard]] Entry Dequeue();
+
+    bool IsEmpty() const { return ReadIndex == WriteIndex; }
+    bool IsFull() const { return ((WriteIndex + 1) % kTriggerQueueSize) == ReadIndex; }
+
+private:
+    std::array<Entry, kTriggerQueueSize> Queue;
+    std::size_t ReadIndex;
+    std::size_t WriteIndex;
+};
 
 } // namespace {{$impl}}_private
 
@@ -459,6 +510,31 @@ void ComputeRoute({{$stateEnum}} from, {{$stateEnum}} to, Route* out)
 
     // We need to reverse the valid enter states, as they are in the wrong order.
     out->SwapEnterStates();
+}
+
+} // namespace {{$impl}}_private
+
+
+// TriggerQueue Implementation ---------------------------------------------------------------------
+
+namespace {{$impl}}_private
+{
+
+void TriggerQueue::Enqueue(Entry&& entry)
+{
+    assert(!IsFull());
+    Queue[WriteIndex] = std::move(entry);
+    WriteIndex = (WriteIndex + 1) % kTriggerQueueSize;
+}
+
+TriggerQueue::Entry TriggerQueue::Dequeue()
+{
+    assert(!IsEmpty());
+
+    Entry out = Queue[ReadIndex];
+    ReadIndex = (ReadIndex + 1) % kTriggerQueueSize;
+
+    return out;
 }
 
 } // namespace {{$impl}}_private
