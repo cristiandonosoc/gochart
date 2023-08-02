@@ -4,6 +4,7 @@ package ir
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
@@ -139,8 +140,38 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
+func (s *State) HasDefaultReaction(reactionType string) bool {
+	if reactionType == "Enter" {
+		return s.HasDefaultEnterReaction()
+	}
+
+	if reactionType == "Exit" {
+		return s.HasDefaultExitReaction()
+	}
+
+	log.Fatalf("Unknown reaction %q", reactionType)
+	panic(false)
+}
+
 func (s *State) HasDefaultEnterReaction() bool {
 	return s.HasEnterReaction(nil)
+}
+
+func (s *State) HasDefaultExitReaction() bool {
+	return s.HasExitReaction(nil)
+}
+
+func (s *State) HasReaction(reactionType string, trigger *Trigger) bool {
+	if reactionType == "Enter" {
+		return s.HasEnterReaction(trigger)
+	}
+
+	if reactionType == "Exit" {
+		return s.HasExitReaction(trigger)
+	}
+
+	log.Fatalf("Unknown reaction %q", reactionType)
+	panic(false)
 }
 
 func (s *State) HasEnterReaction(trigger *Trigger) bool {
@@ -151,10 +182,6 @@ func (s *State) HasEnterReaction(trigger *Trigger) bool {
 	}
 
 	return false
-}
-
-func (s *State) HasDefaultExitReaction() bool {
-	return s.HasExitReaction(nil)
 }
 
 func (s *State) HasExitReaction(trigger *Trigger) bool {
