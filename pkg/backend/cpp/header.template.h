@@ -11,12 +11,19 @@
 #pragma once
 
 #include <array>
+#include <bitset>
 #include <cassert>
 // TODO(cdc): We should remove this header down the line.
 #include <functional>
 #include <memory>
 
 namespace gochart {
+
+// Forward declare the processing state.
+namespace {{$impl}}_private
+{
+struct TriggerProcessingState;
+} // namespace {{$impl}}_private
 
 class {{$impl}}
 {
@@ -79,6 +86,14 @@ private:
 private:
     EState CurrentState = EState::Invalid;
     DelegateCallbacks Callbacks = {};
+    {{$impl}}_private::TriggerProcessingState* ProcessingState = nullptr;
+
+    enum StateBits
+    {
+        IsActive,
+        Deactivating,
+    };
+    std::bitset<8> Flags;
 };
 
 template <typename TOwner>

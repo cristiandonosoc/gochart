@@ -169,11 +169,11 @@ namespace {{$impl}}_private
 namespace {{$impl}}_private
 {
 
-class TriggerQueue
+class TriggerRingBufferQueue
 {
 public:
     // TODO(cdc): Make queue size configurable.
-    static constexpr size_t kTriggerQueueSize = 16;
+    static constexpr size_t kRingBufferSize = 16;
 
 public:
     struct Entry
@@ -187,12 +187,25 @@ public:
     [[nodiscard]] Entry Dequeue();
 
     bool IsEmpty() const { return ReadIndex == WriteIndex; }
-    bool IsFull() const { return ((WriteIndex + 1) % kTriggerQueueSize) == ReadIndex; }
+    bool IsFull() const { return ((WriteIndex + 1) % kRingBufferSize ) == ReadIndex; }
 
 private:
-    std::array<Entry, kTriggerQueueSize> Queue;
+    std::array<Entry, kRingBufferSize > RingBuffer;
     std::size_t ReadIndex;
     std::size_t WriteIndex;
+};
+
+} // namespace {{$impl}}_private
+
+// Trigger Processing Data -------------------------------------------------------------------------
+
+namespace {{$impl}}_private
+{
+
+struct TriggerProcessingState
+{
+    TriggerRingBufferQueue TriggerQueue;
+    {{$triggerEnum}} CurrentTrigger = {{$triggerEnum}}::Invalid;
 };
 
 } // namespace {{$impl}}_private
@@ -207,7 +220,12 @@ void {{$impl}}::Activate()
 {
     using namespace {{$impl}}_private;
 
+    assert(!Flags.test(StateBits::IsActive));
     assert(CurrentState == EState::Invalid);
+
+    // Set the processing state for this operation.
+    TriggerProcessingState processing_state;
+    ProcessingState = &processing_state;
 
     // As an initialization, we enter the default root state.
     EState default_root = EState::StateA;
@@ -218,20 +236,28 @@ void {{$impl}}::Activate()
     ComputeRoute(default_root, default_root, &route);
     assert(route.GetExitStatesSize() == 0);
 
-
     // We go over all the enter states and enter them with no trigger associated.
     for (int i = 0; i < route.GetEnterStatesSize(); i++)
     {
         EState state = route.GetEnterStates()[i];
         EnterState(state, ETrigger::Invalid);
     }
+
+    Flags.set(StateBits::IsActive);
+
+    // Clear the processing state.
+    ProcessingState = nullptr;
 }
 
 void {{$impl}}::Deactivate()
 {
     using namespace {{$impl}}_private;
 
+    assert(Flags.test(StateBits::IsActive));
     assert(CurrentState != EState::Invalid);
+
+    assert(!Flags.test(StateBits::Deactivating));
+    Flags.set(StateBits::Deactivating);
 
     // Get all the exit states.
     Route route;
@@ -244,6 +270,9 @@ void {{$impl}}::Deactivate()
         ExitState(state, ETrigger::Invalid);
     }
 
+    Flags.reset(StateBits::Deactivating);
+    Flags.reset(StateBits::IsActive);
+
     assert(CurrentState == EState::Invalid);
 }
 
@@ -251,7 +280,7 @@ void {{$impl}}::Deactivate()
 //            them duplicated like this.
 //            Evaluate whether that would be useful.
 
-// Reaction Metadata -------------------------------------------------------------------------------
+// Reaction ----------------------------------------------------------------------------------------
 
 namespace {{$impl}}_private
 {
@@ -353,8 +382,6 @@ void Call{{$reactionType}}Reaction(const {{$impl}}::DelegateCallbacks& callbacks
 
 } // namespace {{$impl}}_private
 
-// Enter -------------------------------------------------------------------------------------------
-
 void {{$impl}}::EnterState(EState state, ETrigger trigger)
 {
     using namespace {{$impl}}_private;
@@ -374,8 +401,6 @@ void {{$impl}}::EnterState(EState state, ETrigger trigger)
         CallEnterReaction(Callbacks, CurrentState, ETrigger::Invalid);
     }
 }
-
-// ExitState ---------------------------------------------------------------------------------------
 
 void {{$impl}}::ExitState(EState state, ETrigger trigger)
 {
@@ -398,8 +423,6 @@ void {{$impl}}::ExitState(EState state, ETrigger trigger)
 
     CurrentState = GetParentState(state);
 }
-
-// Route -------------------------------------------------------------------------------------------
 
 // Route Implementation ----------------------------------------------------------------------------
 
@@ -515,24 +538,24 @@ void ComputeRoute({{$stateEnum}} from, {{$stateEnum}} to, Route* out)
 } // namespace {{$impl}}_private
 
 
-// TriggerQueue Implementation ---------------------------------------------------------------------
+// TriggerRingBufferQueue Implementation -----------------------------------------------------------
 
 namespace {{$impl}}_private
 {
 
-void TriggerQueue::Enqueue(Entry&& entry)
+void TriggerRingBufferQueue::Enqueue(Entry&& entry)
 {
     assert(!IsFull());
-    Queue[WriteIndex] = std::move(entry);
-    WriteIndex = (WriteIndex + 1) % kTriggerQueueSize;
+    RingBuffer[WriteIndex] = std::move(entry);
+    WriteIndex = (WriteIndex + 1) % kRingBufferSize;
 }
 
-TriggerQueue::Entry TriggerQueue::Dequeue()
+TriggerRingBufferQueue::Entry TriggerRingBufferQueue::Dequeue()
 {
     assert(!IsEmpty());
 
-    Entry out = Queue[ReadIndex];
-    ReadIndex = (ReadIndex + 1) % kTriggerQueueSize;
+    Entry out = RingBuffer[ReadIndex];
+    ReadIndex = (ReadIndex + 1) % kRingBufferSize ;
 
     return out;
 }
