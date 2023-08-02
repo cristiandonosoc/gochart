@@ -88,12 +88,25 @@ private:
     DelegateCallbacks Callbacks = {};
     {{$impl}}_private::TriggerProcessingState* ProcessingState = nullptr;
 
-    enum StateBits
-    {
-        IsActive,
-        Deactivating,
-    };
-    std::bitset<8> Flags;
+private:
+    // State tracking flags.
+    std::bitset<8> StateFlags;
+
+
+#define GOCHART_DEFINE_STATE_FLAG(name, index) \
+public: \
+    bool Get##name() const { return StateFlags.test(index); } \
+private: \
+    void Set##name(bool active) { StateFlags[index] = active; }
+
+    // clang-format off
+    GOCHART_DEFINE_STATE_FLAG(IsActive,            0);
+    GOCHART_DEFINE_STATE_FLAG(IsActivating,        1);
+    GOCHART_DEFINE_STATE_FLAG(IsDeactivating,      2);
+    GOCHART_DEFINE_STATE_FLAG(IsProcessingTrigger, 3);
+    // clang-format on
+
+#undef GOCHART_DEFINE_STATE_FLAG
 };
 
 template <typename TOwner>

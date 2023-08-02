@@ -220,8 +220,12 @@ void {{$impl}}::Activate()
 {
     using namespace {{$impl}}_private;
 
-    assert(!Flags.test(StateBits::IsActive));
+    assert(!GetIsActive());
     assert(CurrentState == EState::Invalid);
+
+    assert(!GetIsActivating());
+    SetIsActive(true);
+    SetIsActivating(true);
 
     // Set the processing state for this operation.
     TriggerProcessingState processing_state;
@@ -243,21 +247,20 @@ void {{$impl}}::Activate()
         EnterState(state, ETrigger::Invalid);
     }
 
-    Flags.set(StateBits::IsActive);
-
     // Clear the processing state.
     ProcessingState = nullptr;
+    SetIsActivating(false);
 }
 
 void {{$impl}}::Deactivate()
 {
     using namespace {{$impl}}_private;
 
-    assert(Flags.test(StateBits::IsActive));
+    assert(GetIsActive());
     assert(CurrentState != EState::Invalid);
 
-    assert(!Flags.test(StateBits::Deactivating));
-    Flags.set(StateBits::Deactivating);
+    assert(!GetIsDeactivating());
+    SetIsDeactivating(true);
 
     // Get all the exit states.
     Route route;
@@ -270,8 +273,8 @@ void {{$impl}}::Deactivate()
         ExitState(state, ETrigger::Invalid);
     }
 
-    Flags.reset(StateBits::Deactivating);
-    Flags.reset(StateBits::IsActive);
+    SetIsDeactivating(false);
+    SetIsActive(false);
 
     assert(CurrentState == EState::Invalid);
 }
