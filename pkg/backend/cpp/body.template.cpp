@@ -11,6 +11,7 @@
 
 #include <array>
 #include <cassert>
+#include <variant>
 
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
 #ifdef _MSC_VER
@@ -54,6 +55,10 @@ struct {{$trigger.Name}}Data
 };
 
 {{- end }}
+
+struct NullTriggerData
+{
+};
 
 } // namespace {{$impl}}_private
 
@@ -169,6 +174,18 @@ namespace {{$impl}}_private
 namespace {{$impl}}_private
 {
 
+struct TriggerEntry
+{
+    {{$triggerEnum}} Trigger = {{$triggerEnum}}::Invalid;
+    std::variant<
+    {{- range $sc.Triggers }}
+    {{- $trigger := . }}
+        {{$trigger.Name}}Data,
+    {{- end }}
+        NullTriggerData
+    > Data;
+};
+
 class TriggerRingBufferQueue
 {
 public:
@@ -176,23 +193,19 @@ public:
     static constexpr size_t kRingBufferSize = 16;
 
 public:
-    struct Entry
-    {
-        {{$triggerEnum}} Trigger = {{$triggerEnum}}::Invalid;
-        void* TriggerData = nullptr;
-    };
-
-public:
-    void Enqueue(Entry&& entry);
-    [[nodiscard]] Entry Dequeue();
+    void Enqueue(TriggerEntry&& entry);
+    void Dequeue();
 
     bool IsEmpty() const { return ReadIndex == WriteIndex; }
     bool IsFull() const { return ((WriteIndex + 1) % kRingBufferSize ) == ReadIndex; }
 
+public:
+    const TriggerEntry& GetCurrent() const { return RingBuffer[ReadIndex]; }
+
 private:
-    std::array<Entry, kRingBufferSize > RingBuffer;
-    std::size_t ReadIndex;
-    std::size_t WriteIndex;
+    std::array<TriggerEntry, kRingBufferSize> RingBuffer;
+    std::size_t ReadIndex = 0;
+    std::size_t WriteIndex = 0;
 };
 
 } // namespace {{$impl}}_private
@@ -246,6 +259,8 @@ void {{$impl}}::Activate()
         EState state = route.GetEnterStates()[i];
         EnterState(state, ETrigger::Invalid);
     }
+
+    ProcessTriggerQueue();
 
     // Clear the processing state.
     ProcessingState = nullptr;
@@ -427,6 +442,92 @@ void {{$impl}}::ExitState(EState state, ETrigger trigger)
     CurrentState = GetParentState(state);
 }
 
+// ProcessTriggerQueue -----------------------------------------------------------------------------
+
+namespace {{$impl}}_private
+{
+
+{{- range $sc.States }}
+{{ $state := . }}
+
+bool State{{$state.Name}}_HandleTrigger(const TriggerEntry& trigger_entry)
+{
+    switch (trigger_entry.Trigger)
+    {
+        {{- range $sc.Triggers }}
+        {{- $trigger := . }}
+        case {{$triggerEnum}}::{{$trigger.Name}}:
+            // TODO: Handle trigger.
+        {{- end }}
+        case {{$triggerEnum}}::Invalid:
+            break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
+
+{{- end }}
+
+bool HandleTrigger({{$stateEnum}} state, const TriggerEntry& trigger_entry)
+{
+    switch (state)
+    {
+        {{- range $sc.States }}
+        {{- $state := . }}
+        case {{$stateEnum}}::{{$state.Name}}:
+            return State{{$state.Name}}_HandleTrigger(trigger_entry);
+        {{- end }}
+        case {{$stateEnum}}::Invalid:
+            break;
+    }
+
+    GOCHART_DEBUG_BREAK;
+    return false;
+}
+
+void ProcessTrigger({{$stateEnum}} state, const TriggerEntry& trigger_entry)
+{
+    // We go over each state starting from the current to see if they would handle the state.
+    while (state != {{$stateEnum}}::Invalid)
+    {
+        // If this particular state handles the trigger, we stop bubbling up.
+        if (HandleTrigger(state, trigger_entry))
+        {
+            break;
+        }
+        state = GetParentState(state);
+    }
+}
+
+} // namespace {{$impl}}_private
+
+void {{$impl}}::ProcessTriggerQueue()
+{
+    assert(GetIsActive());
+    assert(ProcessingState != nullptr);
+
+    assert(!GetIsProcessingTriggerQueue());
+    SetIsProcessingTriggerQueue(true);
+
+    while (true)
+    {
+        const auto& entry = ProcessingState->TriggerQueue.GetCurrent();
+        if (entry.Trigger == {{$triggerEnum}}::Invalid)
+        {
+            break;
+        }
+
+        ProcessingState->CurrentTrigger = entry.Trigger;
+        ProcessTrigger(CurrentState, entry);
+
+        ProcessingState->TriggerQueue.Dequeue();
+    }
+
+    ProcessingState->CurrentTrigger = {{$triggerEnum}}::Invalid;
+    SetIsProcessingTriggerQueue(false);
+}
+
 // Route Implementation ----------------------------------------------------------------------------
 
 namespace {{$impl}}_private
@@ -546,21 +647,19 @@ void ComputeRoute({{$stateEnum}} from, {{$stateEnum}} to, Route* out)
 namespace {{$impl}}_private
 {
 
-void TriggerRingBufferQueue::Enqueue(Entry&& entry)
+void TriggerRingBufferQueue::Enqueue(TriggerEntry&& entry)
 {
     assert(!IsFull());
     RingBuffer[WriteIndex] = std::move(entry);
     WriteIndex = (WriteIndex + 1) % kRingBufferSize;
 }
 
-TriggerRingBufferQueue::Entry TriggerRingBufferQueue::Dequeue()
+void TriggerRingBufferQueue::Dequeue()
 {
     assert(!IsEmpty());
 
-    Entry out = RingBuffer[ReadIndex];
+    RingBuffer[ReadIndex] = {};  // Clear the entry.
     ReadIndex = (ReadIndex + 1) % kRingBufferSize ;
-
-    return out;
 }
 
 } // namespace {{$impl}}_private

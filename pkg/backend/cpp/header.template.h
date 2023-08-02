@@ -83,6 +83,8 @@ private:
     void EnterState(EState state, ETrigger trigger);
     void ExitState(EState state, ETrigger trigger);
 
+    void ProcessTriggerQueue();
+
 private:
     EState CurrentState = EState::Invalid;
     DelegateCallbacks Callbacks = {};
@@ -99,12 +101,10 @@ public: \
 private: \
     void Set##name(bool active) { StateFlags[index] = active; }
 
-    // clang-format off
-    GOCHART_DEFINE_STATE_FLAG(IsActive,            0);
-    GOCHART_DEFINE_STATE_FLAG(IsActivating,        1);
-    GOCHART_DEFINE_STATE_FLAG(IsDeactivating,      2);
-    GOCHART_DEFINE_STATE_FLAG(IsProcessingTrigger, 3);
-    // clang-format on
+    GOCHART_DEFINE_STATE_FLAG(IsActive, 0);
+    GOCHART_DEFINE_STATE_FLAG(IsActivating, 1);
+    GOCHART_DEFINE_STATE_FLAG(IsDeactivating, 2);
+    GOCHART_DEFINE_STATE_FLAG(IsProcessingTriggerQueue, 3);
 
 #undef GOCHART_DEFINE_STATE_FLAG
 };
