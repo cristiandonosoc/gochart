@@ -140,6 +140,20 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
+func (s *State) HasTransitionFor(trigger *Trigger) bool {
+	return s.GetTransitionFor(trigger) != nil
+}
+
+func (s *State) GetTransitionFor(trigger *Trigger) *Transition {
+	for _, transition := range s.Transitions {
+		if transition.Trigger == trigger {
+			return transition
+		}
+	}
+
+	return nil
+}
+
 func (s *State) HasDefaultReaction(reactionType string) bool {
 	if reactionType == "Enter" {
 		return s.HasDefaultEnterReaction()

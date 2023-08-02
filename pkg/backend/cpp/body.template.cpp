@@ -49,8 +49,9 @@ namespace {{$impl}}_private
 
 struct {{$trigger.Name}}Data
 {
-    {{- range .Args }}
-    {{.Type}} {{.Name}};
+    {{- range $trigger.Args }}
+    {{- $arg := . }}
+    {{$arg.Type}} {{$arg.Name}};
     {{- end }}
 };
 
@@ -60,7 +61,100 @@ struct NullTriggerData
 {
 };
 
+struct TriggerEntry
+{
+    {{$triggerEnum}} Trigger = {{$triggerEnum}}::Invalid;
+    std::variant<
+    {{- range $sc.Triggers }}
+    {{- $trigger := . }}
+        {{$trigger.Name}}Data,
+    {{- end }}
+        NullTriggerData
+    > Data;
+};
+
+class TriggerRingBufferQueue
+{
+public:
+    // TODO(cdc): Make queue size configurable.
+    static constexpr size_t kRingBufferSize = 16;
+
+public:
+    void Enqueue(TriggerEntry&& entry);
+    void Dequeue();
+
+    bool IsEmpty() const { return ReadIndex == WriteIndex; }
+    bool IsFull() const { return ((WriteIndex + 1) % kRingBufferSize ) == ReadIndex; }
+
+public:
+    const TriggerEntry& GetCurrent() const { return RingBuffer[ReadIndex]; }
+
+private:
+    std::array<TriggerEntry, kRingBufferSize> RingBuffer;
+    std::size_t ReadIndex = 0;
+    std::size_t WriteIndex = 0;
+};
+
+struct TriggerProcessingState
+{
+    TriggerRingBufferQueue TriggerQueue;
+    {{$triggerEnum}} CurrentTrigger = {{$triggerEnum}}::Invalid;
+};
+
 } // namespace {{$impl}}_private
+
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+{{- $args := $trigger.ArgsStringList | join ", " }}
+
+void {{$impl}}::Trigger{{$trigger.Name}}({{$args}})
+{
+    using namespace {{$impl}}_private;
+
+    if (!GetIsActive() || GetIsDeactivating())
+    {
+        return;
+    }
+
+    // Create the data.
+    {{$trigger.Name}}Data data {
+    {{- range $trigger.Args }}
+    {{- $arg := . }}
+        .{{$arg.Name}} = std::move({{$arg.Name}}),
+    {{- end }}
+    };
+
+    // Create the entry.
+    TriggerEntry entry {
+        .Trigger = {{$triggerEnum}}::{{$trigger.Name}},
+        .Data = std::move(data),
+    };
+
+    // Check if we're currently processing a trigger.
+    // If so, we simply queue the event.
+    if (ProcessingState)
+    {
+        ProcessingState->TriggerQueue.Enqueue(std::move(entry));
+    }
+    else
+    {
+        // Here it means that we received a trigger from the outside, not as the part of processing
+        // another trigger, so we need to create the tracking state.
+        TriggerProcessingState processing_state;
+        ProcessingState = &processing_state;
+
+        // We enqueue the event.
+        ProcessingState->TriggerQueue.Enqueue(std::move(entry));
+
+        // We start processing the events.
+        ProcessTriggerQueue();
+
+        // We clear it after the event.
+        ProcessingState = nullptr;
+    }
+}
+
+{{- end }}
 
 // State -------------------------------------------------------------------------------------------
 
@@ -169,60 +263,6 @@ namespace {{$impl}}_private
 
 } // namespace {{$impl}}_private
 
-// TriggerQueue ------------------------------------------------------------------------------------
-
-namespace {{$impl}}_private
-{
-
-struct TriggerEntry
-{
-    {{$triggerEnum}} Trigger = {{$triggerEnum}}::Invalid;
-    std::variant<
-    {{- range $sc.Triggers }}
-    {{- $trigger := . }}
-        {{$trigger.Name}}Data,
-    {{- end }}
-        NullTriggerData
-    > Data;
-};
-
-class TriggerRingBufferQueue
-{
-public:
-    // TODO(cdc): Make queue size configurable.
-    static constexpr size_t kRingBufferSize = 16;
-
-public:
-    void Enqueue(TriggerEntry&& entry);
-    void Dequeue();
-
-    bool IsEmpty() const { return ReadIndex == WriteIndex; }
-    bool IsFull() const { return ((WriteIndex + 1) % kRingBufferSize ) == ReadIndex; }
-
-public:
-    const TriggerEntry& GetCurrent() const { return RingBuffer[ReadIndex]; }
-
-private:
-    std::array<TriggerEntry, kRingBufferSize> RingBuffer;
-    std::size_t ReadIndex = 0;
-    std::size_t WriteIndex = 0;
-};
-
-} // namespace {{$impl}}_private
-
-// Trigger Processing Data -------------------------------------------------------------------------
-
-namespace {{$impl}}_private
-{
-
-struct TriggerProcessingState
-{
-    TriggerRingBufferQueue TriggerQueue;
-    {{$triggerEnum}} CurrentTrigger = {{$triggerEnum}}::Invalid;
-};
-
-} // namespace {{$impl}}_private
-
 // Constructor -------------------------------------------------------------------------------------
 
 {{$impl}}::{{$impl}}(DelegateCallbacks&& callbacks) : Callbacks(std::move(callbacks)) {}
@@ -248,17 +288,8 @@ void {{$impl}}::Activate()
     EState default_root = EState::StateA;
     EnterState(default_root, ETrigger::Invalid);
 
-    // Get the default enter route from this state.
-    Route route;
-    ComputeRoute(default_root, default_root, &route);
-    assert(route.GetExitStatesSize() == 0);
-
-    // We go over all the enter states and enter them with no trigger associated.
-    for (int i = 0; i < route.GetEnterStatesSize(); i++)
-    {
-        EState state = route.GetEnterStates()[i];
-        EnterState(state, ETrigger::Invalid);
-    }
+    // Now we do the default enter for this step.
+    ProcessTransition(default_root, default_root, ETrigger::Invalid);
 
     ProcessTriggerQueue();
 
@@ -277,26 +308,14 @@ void {{$impl}}::Deactivate()
     assert(!GetIsDeactivating());
     SetIsDeactivating(true);
 
-    // Get all the exit states.
-    Route route;
-    ComputeRoute(CurrentState, EState::Invalid, &route);
-    assert(route.GetEnterStatesSize() == 0);
-
-    for (int i = 0; i < route.GetExitStatesSize(); i++)
-    {
-        EState state = route.GetExitStates()[i];
-        ExitState(state, ETrigger::Invalid);
-    }
+    // We process a transition to invalid, which means an exit.
+    ProcessTransition(CurrentState, EState::Invalid, ETrigger::Invalid);
 
     SetIsDeactivating(false);
     SetIsActive(false);
 
     assert(CurrentState == EState::Invalid);
 }
-
-// TODO(cdc): Likely we can have the same code generated for enter/exit reactions, rather than have
-//            them duplicated like this.
-//            Evaluate whether that would be useful.
 
 // Reaction ----------------------------------------------------------------------------------------
 
@@ -404,7 +423,7 @@ void {{$impl}}::EnterState(EState state, ETrigger trigger)
 {
     using namespace {{$impl}}_private;
 
-    assert(trigger == ETrigger::Invalid);
+    assert(state != EState::Invalid);
     CurrentState = state;
 
     // First we check for trigger specific reactions, as the default one will be called always.
@@ -425,7 +444,6 @@ void {{$impl}}::ExitState(EState state, ETrigger trigger)
     using namespace {{$impl}}_private;
 
     assert(state != EState::Invalid);
-    assert(trigger == ETrigger::Invalid);
 
     // First we check for a trigger specific exit. Then we call the default exit.
     if (trigger != ETrigger::Invalid && HasExitReaction(CurrentState, trigger))
@@ -450,14 +468,23 @@ namespace {{$impl}}_private
 {{- range $sc.States }}
 {{ $state := . }}
 
-bool State{{$state.Name}}_HandleTrigger(const TriggerEntry& trigger_entry)
+bool State{{$state.Name}}_HandleTrigger({{$impl}}* impl, const TriggerEntry& trigger_entry)
 {
     switch (trigger_entry.Trigger)
     {
         {{- range $sc.Triggers }}
         {{- $trigger := . }}
         case {{$triggerEnum}}::{{$trigger.Name}}:
-            // TODO: Handle trigger.
+            {{- if $state.HasTransitionFor $trigger }}
+            {{- $transition := $state.GetTransitionFor $trigger }}
+            impl->ProcessTransition({{$stateEnum}}::{{$transition.From.Name}},
+                                    {{$stateEnum}}::{{$transition.To.Name}},
+                                    {{$triggerEnum}}::{{$transition.Trigger.Name}});
+            return true;
+            {{- else }}
+            // State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.
+            return false;
+            {{- end }}
         {{- end }}
         case {{$triggerEnum}}::Invalid:
             break;
@@ -469,14 +496,14 @@ bool State{{$state.Name}}_HandleTrigger(const TriggerEntry& trigger_entry)
 
 {{- end }}
 
-bool HandleTrigger({{$stateEnum}} state, const TriggerEntry& trigger_entry)
+bool HandleTrigger({{$impl}}* impl, {{$stateEnum}} state, const TriggerEntry& trigger_entry)
 {
     switch (state)
     {
         {{- range $sc.States }}
         {{- $state := . }}
         case {{$stateEnum}}::{{$state.Name}}:
-            return State{{$state.Name}}_HandleTrigger(trigger_entry);
+            return State{{$state.Name}}_HandleTrigger(impl, trigger_entry);
         {{- end }}
         case {{$stateEnum}}::Invalid:
             break;
@@ -486,13 +513,13 @@ bool HandleTrigger({{$stateEnum}} state, const TriggerEntry& trigger_entry)
     return false;
 }
 
-void ProcessTrigger({{$stateEnum}} state, const TriggerEntry& trigger_entry)
+void ProcessTrigger({{$impl}}* impl, {{$stateEnum}} state, const TriggerEntry& trigger_entry)
 {
     // We go over each state starting from the current to see if they would handle the state.
     while (state != {{$stateEnum}}::Invalid)
     {
         // If this particular state handles the trigger, we stop bubbling up.
-        if (HandleTrigger(state, trigger_entry))
+        if (HandleTrigger(impl, state, trigger_entry))
         {
             break;
         }
@@ -519,13 +546,38 @@ void {{$impl}}::ProcessTriggerQueue()
         }
 
         ProcessingState->CurrentTrigger = entry.Trigger;
-        ProcessTrigger(CurrentState, entry);
+        ProcessTrigger(this, CurrentState, entry);
 
         ProcessingState->TriggerQueue.Dequeue();
     }
 
     ProcessingState->CurrentTrigger = {{$triggerEnum}}::Invalid;
     SetIsProcessingTriggerQueue(false);
+}
+
+// Process Transition ------------------------------------------------------------------------------
+
+void {{$impl}}::ProcessTransition({{$stateEnum}} from, {{$stateEnum}} to, {{$triggerEnum}} trigger)
+{
+    using namespace {{$impl}}_private;
+
+    // Get the default enter route from this state.
+    Route route;
+    ComputeRoute(from, to, &route);
+
+    // We go over all the exit states for this route.
+    for (int i = 0; i < route.GetExitStatesSize(); i++)
+    {
+        {{$stateEnum}} state = route.GetExitStates()[i];
+        ExitState(state, trigger);
+    }
+
+    // We now enter all the states needed for this route.
+    for (int i = 0; i < route.GetEnterStatesSize(); i++)
+    {
+        {{$stateEnum}} state = route.GetEnterStates()[i];
+        EnterState(state, trigger);
+    }
 }
 
 // Route Implementation ----------------------------------------------------------------------------
@@ -597,43 +649,40 @@ void ComputeRoute({{$stateEnum}} from, {{$stateEnum}} to, Route* out)
         return;
     }
 
-    // We search for exit and enter routes only when the two states given are not the same.
-    if (from != to)
+    {{$stateEnum}} original_to = to;
+
+    // We need to find the common state between them.
+    // Since they are not the same, first we go from the |from|, compare, and then we compare
+    // from the |to|. If not equal then, repeat the process.
+    while (from != to)
     {
-        // We immediatelly add an enter route to the desired state.
-        out->AppendEnterState(to);
-
-        // We need to find the common state between them.
-        // Since they are not the same, first we go from the |from|, compare, and then we compare
-        // from the |to|. If not equal then, repeat the process.
-        while (from != to)
+        // Try to go up from the |from| side.
+        if ({{$stateEnum}} from_parent = GetParentState(from); from_parent != {{$stateEnum}}::Invalid)
         {
-            // Try to go up from the |from| side.
-            if ({{$stateEnum}} from_parent = GetParentState(from); from_parent != {{$stateEnum}}::Invalid)
-            {
-                out->AppendExitState(from);
-                from = from_parent;
-            }
-
-            // Now that we went up on |from|, we check if now we are in the same state.
-            if (from == to)
-            {
-                break;
-            }
-
-            // Now we pop the |to| side.
-            if ({{$stateEnum}} to_parent = GetParentState(to); to_parent != {{$stateEnum}}::Invalid)
-            {
-                out->AppendEnterState(to);
-                to = to_parent;
-            }
-
-            // At this point we're ready to try again.
+            out->AppendExitState(from);
+            from = from_parent;
         }
+
+        // Now that we went up on |from|, we check if now we are in the same state.
+        if (from == to)
+        {
+            // If this case happened, we need to also enter the state we just popped from.
+            out->AppendEnterState(to);
+            break;
+        }
+
+        // Now we pop the |to| side.
+        if ({{$stateEnum}} to_parent = GetParentState(to); to_parent != {{$stateEnum}}::Invalid)
+        {
+            out->AppendEnterState(to);
+            to = to_parent;
+        }
+
+        // At this point we're ready to try again.
     }
 
     // Now it could be that the destination state is not a leaf state, so we get the default enters.
-    out->AppendDefaultEnters(to, out);
+    out->AppendDefaultEnters(original_to, out);
 
     // We need to reverse the valid enter states, as they are in the wrong order.
     out->SwapEnterStates();

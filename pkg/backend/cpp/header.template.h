@@ -41,6 +41,13 @@ public:
 	};
     static const char* ToString(ETrigger trigger);
 
+    {{- range $sc.Triggers }}
+    {{- $trigger := . }}
+    {{- $args := $trigger.ArgsStringList | join ", " }}
+    {{- $argsNames := $trigger.ArgsNameList | join ", " }}
+    void Trigger{{$trigger.Name}}({{$args}});
+    {{- end }}
+
 public:
 	// States.
 	enum class EState
@@ -79,11 +86,13 @@ public:
     void Activate();
     void Deactivate();
 
-private:
     void EnterState(EState state, ETrigger trigger);
     void ExitState(EState state, ETrigger trigger);
-
     void ProcessTriggerQueue();
+    void ProcessTransition(EState from, EState to, ETrigger trigger);
+
+public:
+    EState GetCurrentState() const { return CurrentState; }
 
 private:
     EState CurrentState = EState::Invalid;
@@ -93,7 +102,6 @@ private:
 private:
     // State tracking flags.
     std::bitset<8> StateFlags;
-
 
 #define GOCHART_DEFINE_STATE_FLAG(name, index) \
 public: \
@@ -134,8 +142,19 @@ public:
 	}
 
 public:
+    {{$impl}}::EState GetCurrentState() const { return Impl.GetCurrentState(); }
+
+public:
     void Activate() { Impl.Activate(); }
     void Deactivate() { Impl.Deactivate(); }
+
+public:
+    {{- range $sc.Triggers }}
+    {{- $trigger := . }}
+    {{- $args := $trigger.ArgsStringList | join ", " }}
+    {{- $argsNames := $trigger.ArgsNameList | join ", " }}
+    void Trigger{{$trigger.Name}}({{$args}}) { Impl.Trigger{{$trigger.Name}}({{$argsNames}}); }
+    {{- end }}
 
 private:
 	{{$interface}}() = delete;
