@@ -89,6 +89,59 @@ namespace {{$root.ImplName}}_private
 
 } // namespace {{$root.ImplName}}_private
 
+// Route -------------------------------------------------------------------------------------------
+
+namespace {{$root.ImplName}}_private
+{
+    // Route is a helper class that represents the "path" between two states.
+    // It will hold the states that need to be exited first and then the states that will need to be
+    // entered after that.
+    //
+    // TODO(cdc): This class is the same for each statechart class, so there is no need to generate
+    //            it over and over. Once we have a place to have common "gochart" things, we can
+    //            move this there.
+    class Route
+    {
+    public:
+        static constexpr size_t kMaxRouteLength = 32;
+
+    public:
+        Route();
+
+    public:
+        void AppendEnterState({{$root.ImplName}}::EState enter);
+        void AppendExitState({{$root.ImplName}}::EState exit);
+
+        // For enter states, they are normally appended FILO, so they should be swapped so that they
+        // can easily be iterated in the order that they are going to be entered.
+        void SwapEnterStates();
+        void AppendDefaultEnters({{$root.ImplName}}::EState state, Route* out);
+        void AppendDefaultExits({{$root.ImplName}}::EState state, Route* out);
+
+    public:
+        int GetEnterStatesSize() const { return EnterEnd; }
+        const std::array<{{$root.ImplName}}::EState, kMaxRouteLength> GetEnterStates() const { return EnterStates; }
+
+        int GetExitStatesSize() const { return ExitEnd; }
+        const std::array<{{$root.ImplName}}::EState, kMaxRouteLength> GetExitStates() const { return ExitStates; }
+
+    private:
+        std::array<{{$root.ImplName}}::EState, kMaxRouteLength> EnterStates;
+        std::array<{{$root.ImplName}}::EState, kMaxRouteLength> ExitStates;
+
+        int ExitEnd = 0;
+        int EnterEnd = 0;
+    };
+
+    // ComputeRoute figures out a route between any two states.
+    // If |to| is invalid, it will figute out the exit route from the |from| state up out of the
+    // root. This is useful in the deactivate case.
+    // In any other case (even if |from| == |to|), if the |to| state is not a leaf state (ie. it has
+    // children), it will figure out the enter for the default childs correctly.
+    void ComputeRoute({{$root.ImplName}}::EState from, {{$root.ImplName}}::EState to, Route* out);
+
+} // namespace {{$root.ImplName}}_private
+
 // Constructor -------------------------------------------------------------------------------------
 
 {{$root.ImplName}}::{{$root.ImplName}}(DelegateCallbacks&& callbacks) : Callbacks(std::move(callbacks)) {}
@@ -97,6 +150,8 @@ namespace {{$root.ImplName}}_private
 
 void {{$root.ImplName}}::Activate()
 {
+    using namespace {{$root.ImplName}}_private;
+
     assert(CurrentState == EState::Invalid);
 
     // As an initialization, we enter the default root state.
@@ -105,7 +160,7 @@ void {{$root.ImplName}}::Activate()
 
     // Get the default enter route from this state.
     Route route;
-    GetRoute(default_root, default_root, &route);
+    ComputeRoute(default_root, default_root, &route);
     assert(route.GetExitStatesSize() == 0);
 
 
@@ -119,11 +174,13 @@ void {{$root.ImplName}}::Activate()
 
 void {{$root.ImplName}}::Deactivate()
 {
+    using namespace {{$root.ImplName}}_private;
+
     assert(CurrentState != EState::Invalid);
 
     // Get all the exit states.
     Route route;
-    GetRoute(CurrentState, EState::Invalid, &route);
+    ComputeRoute(CurrentState, EState::Invalid, &route);
     assert(route.GetEnterStatesSize() == 0);
 
     for (int i = 0; i < route.GetExitStatesSize(); i++)
@@ -269,29 +326,34 @@ void {{$root.ImplName}}::ExitState(EState state, ETrigger trigger)
 
 // Route -------------------------------------------------------------------------------------------
 
-{{$root.ImplName}}::Route::Route()
+// Route Implementation ----------------------------------------------------------------------------
+
+namespace {{$root.ImplName}}_private
+{
+
+Route::Route()
 {
     // We ensure that the route are filled with invalid.
     for (size_t i = 0; i < kMaxRouteLength; i++)
     {
-        EnterStates[i] = EState::Invalid;
-        ExitStates[i] = EState::Invalid;
+        EnterStates[i] = {{$root.ImplName}}::EState::Invalid;
+        ExitStates[i] = {{$root.ImplName}}::EState::Invalid;
     }
 }
 
-void {{$root.ImplName}}::Route::AppendExitState(EState exit)
-{
-    assert(ExitEnd < kMaxRouteLength);
-    ExitStates[ExitEnd++] = exit;
-}
-
-void {{$root.ImplName}}::Route::AppendEnterState(EState enter)
+void Route::AppendEnterState({{$root.ImplName}}::EState enter)
 {
     assert(EnterEnd < kMaxRouteLength);
     EnterStates[EnterEnd++] = enter;
 }
 
-void {{$root.ImplName}}::Route::SwapEnterStates()
+void Route::AppendExitState({{$root.ImplName}}::EState exit)
+{
+    assert(ExitEnd < kMaxRouteLength);
+    ExitStates[ExitEnd++] = exit;
+}
+
+void Route::SwapEnterStates()
 {
     // We swap the enter states in so they in the furthers from the |from| state first.
     for (int i = 0; i <= EnterEnd; i++)
@@ -300,17 +362,36 @@ void {{$root.ImplName}}::Route::SwapEnterStates()
     }
 }
 
-void {{$root.ImplName}}::GetRoute(EState from, EState to, Route* out)
+void Route::AppendDefaultEnters({{$root.ImplName}}::EState state, Route* out)
+{
+    {{$root.ImplName}}::EState default_child = GetDefaultChild(state);
+    while (default_child != {{$root.ImplName}}::EState::Invalid)
+    {
+        out->AppendEnterState(default_child);
+        default_child = GetDefaultChild(default_child);
+    }
+}
+
+void Route::AppendDefaultExits({{$root.ImplName}}::EState state, Route* out)
+{
+    while (state != {{$root.ImplName}}::EState::Invalid)
+    {
+        out->AppendExitState(state);
+        state = GetParentState(state);
+    }
+}
+
+void ComputeRoute({{$root.ImplName}}::EState from, {{$root.ImplName}}::EState to, Route* out)
 {
     using namespace {{$root.ImplName}}_private;
 
-    assert(from != EState::Invalid);
+    assert(from != {{$root.ImplName}}::EState::Invalid);
 
     // Special case of when we are just entering a state without a target.
     // The main case is when activating the statechart, in which we enter the root state.
-    if (to == EState::Invalid)
+    if (to == {{$root.ImplName}}::EState::Invalid)
     {
-        AppendDefaultExits(from, out);
+        out->AppendDefaultExits(from, out);
         return;
     }
 
@@ -326,7 +407,7 @@ void {{$root.ImplName}}::GetRoute(EState from, EState to, Route* out)
         while (from != to)
         {
             // Try to go up from the |from| side.
-            if (EState from_parent = GetParentState(from); from_parent != EState::Invalid)
+            if ({{$root.ImplName}}::EState from_parent = GetParentState(from); from_parent != {{$root.ImplName}}::EState::Invalid)
             {
                 out->AppendExitState(from);
                 from = from_parent;
@@ -339,7 +420,7 @@ void {{$root.ImplName}}::GetRoute(EState from, EState to, Route* out)
             }
 
             // Now we pop the |to| side.
-            if (EState to_parent = GetParentState(to); to_parent != EState::Invalid)
+            if ({{$root.ImplName}}::EState to_parent = GetParentState(to); to_parent != {{$root.ImplName}}::EState::Invalid)
             {
                 out->AppendEnterState(to);
                 to = to_parent;
@@ -350,34 +431,13 @@ void {{$root.ImplName}}::GetRoute(EState from, EState to, Route* out)
     }
 
     // Now it could be that the destination state is not a leaf state, so we get the default enters.
-    AppendDefaultEnters(to, out);
+    out->AppendDefaultEnters(to, out);
 
     // We need to reverse the valid enter states, as they are in the wrong order.
     out->SwapEnterStates();
 }
 
-void {{$root.ImplName}}::AppendDefaultExits(EState state, Route* out)
-{
-    using namespace {{$root.ImplName}}_private;
-
-    while (state != EState::Invalid)
-    {
-        out->AppendExitState(state);
-        state = GetParentState(state);
-    }
-}
-
-void {{$root.ImplName}}::AppendDefaultEnters(EState state, Route* out)
-{
-    using namespace {{$root.ImplName}}_private;
-
-    EState default_child = GetDefaultChild(state);
-    while (default_child != EState::Invalid)
-    {
-        out->AppendEnterState(default_child);
-        default_child = GetDefaultChild(default_child);
-    }
-}
+} // namespace {{$root.ImplName}}_private
 
 } // namespace gochart
 

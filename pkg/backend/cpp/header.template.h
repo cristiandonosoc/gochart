@@ -75,52 +75,6 @@ private:
     void EnterState(EState state, ETrigger trigger);
     void ExitState(EState state, ETrigger trigger);
 
-    // Route is a helper class that represents the "path" between two states.
-    // It will hold the states that need to be exited first and then the states that will need to be
-    // entered after that.
-    //
-    // TODO(cdc): This class is the same for each statechart class, so there is no need to generate
-    //            it over and over. Once we have a place to have common "gochart" things, we can
-    //            move this there.
-    class Route
-    {
-    public:
-        static constexpr size_t kMaxRouteLength = 32;
-
-    public:
-        Route();
-
-    public:
-        void AppendExitState(EState exit);
-        void AppendEnterState(EState enter);
-
-        // For enter states, they are normally appended FILO, so they should be swapped so that they
-        // can easily be iterated in the order that they are going to be entered.
-        void SwapEnterStates();
-
-        int GetExitStatesSize() const { return ExitEnd; }
-        const std::array<EState, kMaxRouteLength> GetExitStates() const { return ExitStates; }
-
-        int GetEnterStatesSize() const { return EnterEnd; }
-        const std::array<EState, kMaxRouteLength> GetEnterStates() const { return EnterStates; }
-
-    private:
-        std::array<EState, kMaxRouteLength> ExitStates;
-        std::array<EState, kMaxRouteLength> EnterStates;
-
-        int ExitEnd = 0;
-        int EnterEnd = 0;
-    };
-
-    // GetRoute figures out a route between any two states.
-    // If |to| is invalid, it will figute out the exit route from the |from| state up out of the
-    // root. This is useful in the deactivate case.
-    // In any other case (even if |from| == |to|), if the |to| state is not a leaf state (ie. it has
-    // children), it will figure out the enter for the default childs correctly.
-    static void GetRoute(EState from, EState to, Route* out);
-    static void AppendDefaultExits(EState state, Route* out);
-    static void AppendDefaultEnters(EState state, Route* out);
-
 private:
     EState CurrentState = EState::Invalid;
     DelegateCallbacks Callbacks = {};
