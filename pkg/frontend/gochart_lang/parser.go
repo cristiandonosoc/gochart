@@ -11,60 +11,128 @@ type Parser struct {
 	current int
 }
 
+func NewParser() *Parser {
+	return &Parser{
+	}
+}
+
 // Parse receives a slice of tokens as given by the |Scanner| and tries to match it against the
 // gochart_lang grammar.
-func (p *Parser) Parse(tokens []*Token) error {
+func (p *Parser) Parse(tokens []*Token) (*ASTNodeRoot, []error) {
 	p.tokens = tokens
 	p.current = 0
 
-	return fmt.Errorf("NOT IMPLEMENTED")
+	return p.parseRoot()
 }
 
-// RULES -------------------------------------------------------------------------------------------
-
+// ASTNode is the common interface for all the nodes within our Abstract Syntax Tree.
 type ASTNode interface {
-	Print()
 }
 
-var _ ASTNode = (*ASTNodeRoot)(nil)
+// RULES *******************************************************************************************
+
+// Root --------------------------------------------------------------------------------------------
+//
+// Root -> Statechart+
 
 type ASTNodeRoot struct {
 	statecharts []*ASTNodeStatechart
 }
 
+var _ ASTNode = (*ASTNodeRoot)(nil)
+
 // root -> statechart+
-func (p *Parser) parseRoot() (*ASTNodeRoot, error) {
+func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	root := &ASTNodeRoot{}
 
+	var statecharts []*ASTNodeStatechart
+	var errors []error
+
+	sc, err := p.parseStatechart()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("parsing statechart node: %w", err))
+		return nil, errors
+	}
+	statecharts = append(statecharts, sc)
+
+	// See if there are more statechart nodes.
 	for {
-		sc, ok, err := p.parseStatechart()
-		if err != nil {
-			return nil, fmt.Errorf("parsing statechart node: %w", err)
+		if p.peek().id == Token_KeywordStatechart {
+			sc, err := p.parseStatechart()
+			if err != nil {
+				errors = append(errors, fmt.Errorf("parsing statechart node: %w", err))
+				return nil, errors
+			}
+			statecharts = append(statecharts, sc)
 		}
 
-		// If there are no more statecharts to parse, we're done.
-		if !ok {
-			break
-		}
-
-		// Otherwise we add it to the list and try to parse the next one.
-		root.statecharts = append(root.statecharts, sc)
+		break
 	}
 
-	return root, nil
+	if !p.atEnd() {
+		errors = append(errors, fmt.Errorf("expected \"statechart\" expression"))
+	}
+
+	root.statecharts = statecharts
+	return root, errors
 }
 
-var _ ASTNode = (*ASTNodeStatechart)(nil)
+// Statechart --------------------------------------------------------------------------------------
+//
+// Statechart -> "statechart" ( "(" ")" )? "{" "}"
 
 type ASTNodeStatechart struct {
 }
 
-// statechart -> STATECHART LEFT_BRACE RIGHT_BRACE
-func (p *Parser) parseStatechart() (*ASTNodeStatechart, bool, error) {
-	return nil, false, fmt.Errorf("NOT IMPLEMENTED")
+var _ ASTNode = (*ASTNodeStatechart)(nil)
+
+func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
+	// statechart keyword.
+	if _, err := p.consume(Token_KeywordStatechart); err != nil {
+		return nil, err
+	}
+
+	// Optional ( ).
+	if p.peekToken(Token_LeftParen) {
+		if _, err := p.consume(Token_LeftParen); err != nil {
+			return nil, err
+		}
+
+		if _, err := p.consume(Token_RightParen); err != nil {
+			return nil, err
+		}
+	}
+
+	// { }
+	{
+		if _, err := p.consume(Token_LeftBrace); err != nil {
+			return nil, err
+		}
+
+		if _, err := p.consume(Token_RightBrace); err != nil {
+			return nil, err
+		}
+	}
+
+	return &ASTNodeStatechart{}, nil
 }
 
 // HELPERS -----------------------------------------------------------------------------------------
+
+// consume is a mix of match and advance, that tries to consume the given list of tokens and gives
+// and error if it cannot. Returns the list of consumed tokens.
+func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
+	var tokens []*Token
+
+	for _, id := range ids {
+		if p.peek().id != id {
+			return nil, fmt.Errorf("expected %q, but got %q", p.peek().id, id)
+		}
+		tokens = append(tokens, p.advance())
+	}
+
+	return tokens, nil
+}
 
 // match returns whether the current token matches any of the particular tokens being asked for.
 // If the match is successful, it also consumes the token and advances the stream.
@@ -88,10 +156,16 @@ func (p *Parser) match(ids ...TokenIdentifier) bool {
 // peek looks at the current token pointed by the stream.
 func (p *Parser) peek() *Token {
 	if p.atEnd() {
-		panic("already at input's end")
+		return &Token{
+			id: Token_EOF,
+		}
 	}
 
 	return p.tokens[p.current]
+}
+
+func (p *Parser) peekToken(id TokenIdentifier) bool {
+	return p.peek().id == id
 }
 
 // prev returns the token behind the current (behind peek).
@@ -115,17 +189,5 @@ func (p *Parser) advance() *Token {
 // atEnd returns whether the parser has already consumed all the tokens in the stream and is
 // currently at the last token: EOF.
 func (p *Parser) atEnd() bool {
-	return p.peek().id == Token_EOF
-}
-
-// Printing ----------------------------------------------------------------------------------------
-
-func (n *ASTNodeRoot) Print() {
-	for _, sc := range n.statecharts {
-		sc.Print()
-	}
-}
-
-func (n *ASTNodeStatechart) Print() {
-	fmt.Print("statechart { }")
+	return p.current >= len(p.tokens)
 }
