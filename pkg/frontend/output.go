@@ -14,8 +14,8 @@ type StatechartData struct {
 }
 
 type TriggerData struct {
-	Name            string `yaml:"name"`
-	ArgumentsString string `yaml:"arguments_string"`
+	Name       string `yaml:"name"`
+	ArgsString string `yaml:"arguments_string"`
 
 	// Index represents in what order it was found.
 	Index int

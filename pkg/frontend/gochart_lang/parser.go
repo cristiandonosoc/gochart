@@ -2,6 +2,7 @@ package gochart_lang
 
 import (
 	"fmt"
+	"strings"
 )
 
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
@@ -12,8 +13,7 @@ type Parser struct {
 }
 
 func NewParser() *Parser {
-	return &Parser{
-	}
+	return &Parser{}
 }
 
 // Parse receives a slice of tokens as given by the |Scanner| and tries to match it against the
@@ -79,7 +79,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 
 // Statechart --------------------------------------------------------------------------------------
 //
-// Statechart -> "statechart" NAME ( "(" ")" )? "{" "}"
+// Statechart -> 'statechart' NAME ( '(' ')' )? '{' '}'
 
 type ASTNodeStatechart struct {
 	Name string
@@ -123,6 +123,57 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 
 	return &ASTNodeStatechart{
 		Name: nameToken[0].literal,
+	}, nil
+}
+
+// Trigger -----------------------------------------------------------------------------------------
+//
+// Trigger -> 'trigger' NAME '(' ARG_TYPE+ ARG_NAME (',' ARG_TYPE+ ARG_NAME)* ')'
+
+type ASTNodeTrigger struct {
+	Name       string
+	ArgsString string
+}
+
+var _ ASTNode = (*ASTNodeTrigger)(nil)
+
+func (p *Parser) parseTrigger() (*ASTNodeTrigger, error) {
+	// trigger keyword.
+	if _, err := p.consume(Token_KeywordTrigger); err != nil {
+		return nil, err
+	}
+
+	// The name.
+	nameToken, err := p.consume(Token_Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("expect name after \"trigger\" token")
+	}
+	name := nameToken[0].literal
+
+	// First paren.
+	if _, err := p.consume(Token_LeftParen); err != nil {
+		return nil, err
+	}
+
+	// Look for arguments.
+	var args []string
+	for !p.atEnd() && !p.peekToken(Token_RightParen) {
+		// We just gobble anything here.
+		token := p.advance()
+		if token.literal == "" {
+			return nil, fmt.Errorf("on trigger %q, consuming empty argument token %q", name, token.id)
+		}
+		args = append(args, token.literal)
+	}
+
+	// Last paren.
+	if _, err := p.consume(Token_RightParen); err != nil {
+		return nil, err
+	}
+
+	return &ASTNodeTrigger{
+		Name:       name,
+		ArgsString: strings.Join(args, " "),
 	}, nil
 }
 

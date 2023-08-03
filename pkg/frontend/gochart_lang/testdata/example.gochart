@@ -1,4 +1,8 @@
 statechart ServerFlow {
+	trigger Execute()
+	trigger Update(float dt)
+	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
+
 	state Foo {
 
 	}

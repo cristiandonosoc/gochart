@@ -79,9 +79,9 @@ func (ih *inputHandler) createTrigger(tdata *frontend.TriggerData) (*Trigger, er
 
 	// Parse the arguments.
 	var args []*TriggerArgument
-	if tdata.ArgumentsString != "" {
+	if tdata.ArgsString != "" {
 		// For now we only support C++, but we could support other languages as well if needed.
-		parsedArgs, err := ParseCppArguments(tdata.ArgumentsString)
+		parsedArgs, err := ParseCppArguments(tdata.ArgsString)
 		if err != nil {
 			return nil, fmt.Errorf("parsing arguments for trigger %q: %w", tdata.Name, err)
 		}
