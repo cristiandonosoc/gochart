@@ -28,14 +28,14 @@ func TestGatherTokens(t *testing.T) {
 
 		{id: Token_LeftBracket, line: 4, char: 1},
 		{id: Token_LeftBracket, line: 4, char: 2},
-		{id: Token_StringLiteral, literal: "this is a string literal", line: 4, char: 3},
+		{id: Token_String, literal: "this is a string literal", line: 4, char: 3},
 		{id: Token_RightBracket, line: 4, char: 29},
 		{id: Token_RightBracket, line: 4, char: 30},
 
-		{id: Token_StringLiteral, literal: "literal", line: 5, char: 1},
-		{id: Token_StringLiteral, literal: `multiline
+		{id: Token_String, literal: "literal", line: 5, char: 1},
+		{id: Token_String, literal: `multiline
   string`, line: 6, char: 4},
-		{id: Token_StringLiteral, literal: "after_line", line: 7, char: 10},
+		{id: Token_String, literal: "after_line", line: 7, char: 10},
 
 		{id: Token_KeywordStatechart, literal: "statechart", line: 8, char: 3},
 		{id: Token_KeywordState, literal: "state", line: 8, char: 14},

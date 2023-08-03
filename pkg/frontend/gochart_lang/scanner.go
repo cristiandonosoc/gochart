@@ -352,7 +352,7 @@ func (s *Scanner) handleString() (*Token, error) {
 	}
 
 	return &Token{
-		id:      Token_StringLiteral,
+		id:      Token_String,
 		literal: string(literal),
 		line:    startLine,
 		char:    startChar,

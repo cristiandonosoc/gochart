@@ -9,12 +9,14 @@ import (
 )
 
 func TestParserSimple(t *testing.T) {
-	input := "statechart {}"
+	input := "statechart Simple {}"
 	r := strings.NewReader(input)
 
 	want := &ASTNodeRoot{
 		statecharts: []*ASTNodeStatechart{
-			{},
+			{
+				Name: "Simple",
+			},
 		},
 	}
 
@@ -41,5 +43,5 @@ func compareASTNodeRoot(t *testing.T, want, got *ASTNodeRoot) {
 }
 
 func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
-
+	assert.Equal(t, want.Name, got.Name)
 }

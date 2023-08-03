@@ -79,9 +79,10 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 
 // Statechart --------------------------------------------------------------------------------------
 //
-// Statechart -> "statechart" ( "(" ")" )? "{" "}"
+// Statechart -> "statechart" NAME ( "(" ")" )? "{" "}"
 
 type ASTNodeStatechart struct {
+	Name string
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
@@ -90,6 +91,12 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	// statechart keyword.
 	if _, err := p.consume(Token_KeywordStatechart); err != nil {
 		return nil, err
+	}
+
+	// The name.
+	nameToken, err := p.consume(Token_Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("expect name after \"statechart\" token")
 	}
 
 	// Optional ( ).
@@ -114,7 +121,9 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}
 	}
 
-	return &ASTNodeStatechart{}, nil
+	return &ASTNodeStatechart{
+		Name: nameToken[0].literal,
+	}, nil
 }
 
 // HELPERS -----------------------------------------------------------------------------------------

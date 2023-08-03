@@ -18,8 +18,8 @@ const (
 	Token_Slash        // /
 
 	// literals.
-	Token_StringLiteral // "content"
-	Token_Number        // 123456
+	Token_String // "content"
+	Token_Number // 123456
 
 	// Keywords
 	Token_KeywordStatechart // statechart
@@ -27,7 +27,7 @@ const (
 	Token_KeywordTransition // transition
 	Token_KeywordTrigger    // trigger
 
-	Token_Identifier
+	Token_Identifier // Any string that is not quoted.
 
 	Token_EOF
 )

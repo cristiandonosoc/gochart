@@ -1,0 +1,9 @@
+statechart ServerFlow {
+	state Foo {
+
+	}
+
+	state Bar {
+
+	}
+}
