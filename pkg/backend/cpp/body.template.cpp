@@ -286,10 +286,10 @@ void {{$impl}}::Activate()
 
     // As an initialization, we enter the default root state.
     EState default_root = EState::StateA;
-    EnterState(default_root, ETrigger::Invalid);
+    EnterState(default_root, ETrigger::Invalid, nullptr);
 
     // Now we do the default enter for this step.
-    ProcessTransition(default_root, default_root, ETrigger::Invalid);
+    ProcessTransition(default_root, default_root, ETrigger::Invalid, nullptr);
 
     ProcessTriggerQueue();
 
@@ -309,7 +309,7 @@ void {{$impl}}::Deactivate()
     SetIsDeactivating(true);
 
     // We process a transition to invalid, which means an exit.
-    ProcessTransition(CurrentState, EState::Invalid, ETrigger::Invalid);
+    ProcessTransition(CurrentState, EState::Invalid, ETrigger::Invalid, nullptr);
 
     SetIsDeactivating(false);
     SetIsActive(false);
@@ -371,15 +371,33 @@ bool Has{{$reactionType}}Reaction({{$stateEnum}} state, {{$triggerEnum}} trigger
 {{- $state := . }}
 
 void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}::DelegateCallbacks& callbacks,
-                                            {{$triggerEnum}} trigger)
+                                            {{$triggerEnum}} trigger,
+                                            const void* trigger_data)
 {
     switch (trigger)
     {
         {{- range $sc.Triggers }}
         {{- $trigger := . }}
         case {{$triggerEnum}}::{{$trigger.Name}}:
-            // TODO(cdc): Do specific trigger case.
+        {{- if $state.HasReaction $reactionType $trigger }}
+            {
+                // We cast the trigger data to the correct type.
+                assert(trigger_data != nullptr);
+                auto* data = reinterpret_cast<const {{$trigger.Name}}Data*>(trigger_data);
+
+                // Now we call the handler with the arguments.
+                callbacks.State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}}(
+                    {{- $argsLen := len $trigger.Args }}
+                    {{- range $i, $arg := $trigger.Args }}
+                    data->{{$arg.Name}}{{if ne $i (sub $argsLen 1)}},{{end}}
+                    {{- end }}
+                );
+                return;
+            }
+        {{- else }}
+            // State {{$state.Name}} does not have an {{$reactionType}} reaction for trigger {{$trigger.Name}}.
             return;
+        {{- end }}
         {{- end }}
         case {{$triggerEnum}}::Invalid:
             {{- if $state.HasDefaultReaction $reactionType }}
@@ -398,14 +416,15 @@ void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}::Delegat
 
 void Call{{$reactionType}}Reaction(const {{$impl}}::DelegateCallbacks& callbacks,
                        {{$stateEnum}} state,
-                       {{$triggerEnum}} trigger)
+                       {{$triggerEnum}} trigger,
+                       const void* trigger_data)
 {
     switch (state)
     {
         {{- range $sc.States }}
         {{- $state := . }}
         case {{$stateEnum}}::{{$state.Name}}:
-            State{{$state.Name}}_Call{{$reactionType}}Reaction(callbacks, trigger);
+            State{{$state.Name}}_Call{{$reactionType}}Reaction(callbacks, trigger, trigger_data);
             return;
         {{- end }}
         case {{$stateEnum}}::Invalid:
@@ -419,7 +438,7 @@ void Call{{$reactionType}}Reaction(const {{$impl}}::DelegateCallbacks& callbacks
 
 } // namespace {{$impl}}_private
 
-void {{$impl}}::EnterState(EState state, ETrigger trigger)
+void {{$impl}}::EnterState(EState state, ETrigger trigger, const void* trigger_data)
 {
     using namespace {{$impl}}_private;
 
@@ -429,17 +448,18 @@ void {{$impl}}::EnterState(EState state, ETrigger trigger)
     // First we check for trigger specific reactions, as the default one will be called always.
     if (trigger != ETrigger::Invalid && HasEnterReaction(CurrentState, trigger))
     {
-        CallEnterReaction(Callbacks, CurrentState, trigger);
+        assert(trigger_data != nullptr);
+        CallEnterReaction(Callbacks, CurrentState, trigger, trigger_data);
     }
 
     // Now we check if we need to also call the default enter reaction.
     if (HasEnterReaction(CurrentState, ETrigger::Invalid))
     {
-        CallEnterReaction(Callbacks, CurrentState, ETrigger::Invalid);
+        CallEnterReaction(Callbacks, CurrentState, ETrigger::Invalid, nullptr);
     }
 }
 
-void {{$impl}}::ExitState(EState state, ETrigger trigger)
+void {{$impl}}::ExitState(EState state, ETrigger trigger, const void* trigger_data)
 {
     using namespace {{$impl}}_private;
 
@@ -448,13 +468,14 @@ void {{$impl}}::ExitState(EState state, ETrigger trigger)
     // First we check for a trigger specific exit. Then we call the default exit.
     if (trigger != ETrigger::Invalid && HasExitReaction(CurrentState, trigger))
     {
-        CallExitReaction(Callbacks, CurrentState, trigger);
+        assert(trigger_data != nullptr);
+        CallExitReaction(Callbacks, CurrentState, trigger, trigger_data);
     }
 
     // Then we call the default exit.
     if (HasExitReaction(CurrentState, ETrigger::Invalid))
     {
-        CallExitReaction(Callbacks, CurrentState, ETrigger::Invalid);
+        CallExitReaction(Callbacks, CurrentState, ETrigger::Invalid, nullptr);
     }
 
     CurrentState = GetParentState(state);
@@ -477,10 +498,15 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}* impl, const TriggerEntry& tri
         case {{$triggerEnum}}::{{$trigger.Name}}:
             {{- if $state.HasTransitionFor $trigger }}
             {{- $transition := $state.GetTransitionFor $trigger }}
-            impl->ProcessTransition({{$stateEnum}}::{{$transition.From.Name}},
-                                    {{$stateEnum}}::{{$transition.To.Name}},
-                                    {{$triggerEnum}}::{{$transition.Trigger.Name}});
-            return true;
+            {
+                // Get the trigger data.
+                const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
+                impl->ProcessTransition({{$stateEnum}}::{{$transition.From.Name}},
+                                        {{$stateEnum}}::{{$transition.To.Name}},
+                                        {{$triggerEnum}}::{{$transition.Trigger.Name}},
+                                        &data);
+                return true;
+            }
             {{- else }}
             // State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.
             return false;
@@ -557,7 +583,7 @@ void {{$impl}}::ProcessTriggerQueue()
 
 // Process Transition ------------------------------------------------------------------------------
 
-void {{$impl}}::ProcessTransition({{$stateEnum}} from, {{$stateEnum}} to, {{$triggerEnum}} trigger)
+void {{$impl}}::ProcessTransition({{$stateEnum}} from, {{$stateEnum}} to, {{$triggerEnum}} trigger, const void* trigger_data)
 {
     using namespace {{$impl}}_private;
 
@@ -569,14 +595,14 @@ void {{$impl}}::ProcessTransition({{$stateEnum}} from, {{$stateEnum}} to, {{$tri
     for (int i = 0; i < route.GetExitStatesSize(); i++)
     {
         {{$stateEnum}} state = route.GetExitStates()[i];
-        ExitState(state, trigger);
+        ExitState(state, trigger, trigger_data);
     }
 
     // We now enter all the states needed for this route.
     for (int i = 0; i < route.GetEnterStatesSize(); i++)
     {
         {{$stateEnum}} state = route.GetEnterStates()[i];
-        EnterState(state, trigger);
+        EnterState(state, trigger, trigger_data);
     }
 }
 

@@ -7,12 +7,21 @@ states:
   - name: StateA
     default: true
     default_enter: true
+    enter_reaction_triggers:
+      - "Trigger1"
+    exit_reaction_triggers:
+      - "Trigger1"
     default_exit: true
   - name: StateB
     default: true
     parent: StateA
+    exit_reaction_triggers:
+      - "Trigger1"
   - name: StateC
     parent: StateA
+    default_enter: true
+    enter_reaction_triggers:
+      - "Trigger1"
 transitions:
   - from: StateB
     to: StateC
