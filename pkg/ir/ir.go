@@ -212,6 +212,20 @@ func (s *State) HasExitReaction(trigger *Trigger) bool {
 
 type StateReaction struct {
 	Trigger *Trigger
+	IsEnter bool
+}
+
+func (sr *StateReaction) String() string {
+	var kind string = "Enter"
+	if !sr.IsEnter {
+		kind = "Exit"
+	}
+
+	if sr.Trigger == nil {
+		return fmt.Sprintf("Default%s", kind)
+	}
+
+	return fmt.Sprintf("%sOn%s", kind, sr.Trigger.Name)
 }
 
 // TRANSITION --------------------------------------------------------------------------------------

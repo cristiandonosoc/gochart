@@ -43,12 +43,18 @@ func TestReadSimpleYaml(t *testing.T) {
 		},
 	}
 	// StateA
+	setEnterReaction(t, wantTriggers, wantStates, "StateA", "Trigger1")
 	setEnterReaction(t, wantTriggers, wantStates, "StateA", "")
+	setExitReaction(t, wantTriggers, wantStates, "StateA", "Trigger1")
 	setExitReaction(t, wantTriggers, wantStates, "StateA", "")
 	setParenthood(t, wantStates, "StateA", "StateB")
 	setParenthood(t, wantStates, "StateA", "StateC")
 	// StateB
 	setTransition(t, wantTriggers, wantStates, "StateB", "StateC", "Trigger1")
+	setExitReaction(t, wantTriggers, wantStates, "StateB", "Trigger1")
+	// StateC
+	setEnterReaction(t, wantTriggers, wantStates, "StateC", "Trigger1")
+	setEnterReaction(t, wantTriggers, wantStates, "StateC", "")
 
 	yf := yaml.NewYamlFrontend()
 
@@ -99,10 +105,10 @@ func compareState(t *testing.T, want, got *State) {
 	assert.Equal(t, want.Name, got.Name)
 
 	// Compare the enter reactions.
-	compareReactions(t, want.EnterReactions, got.EnterReactions)
+	compareReactions(t, want, want.EnterReactions, got.EnterReactions)
 
 	// Compare the exit reactions.
-	compareReactions(t, want.ExitReactions, got.ExitReactions)
+	compareReactions(t, want, want.ExitReactions, got.ExitReactions)
 
 	// Compare that we have the same parent.
 	// We only compare name, as otherwise we have a recursive call.
@@ -131,16 +137,28 @@ func compareState(t *testing.T, want, got *State) {
 	}
 }
 
-func compareReactions(t *testing.T, want, got []*StateReaction) {
-	if assert.Equal(t, len(want), len(got)) {
+func compareReactions(t *testing.T, state *State, want, got []*StateReaction) {
+	if assert.Equal(t, len(want), len(got), state.Name) {
+		// Collect the names of the triggers for good error messages.
+		var wantList []string
+		var gotList []string
+		for i := 0; i < len(want); i++ {
+			want := want[i]
+			got := got[i]
+
+			wantList = append(wantList, want.String())
+			gotList = append(gotList, got.String())
+		}
+
 		for i := 0; i < len(want); i++ {
 			want := want[i]
 			got := got[i]
 
 			// Either the triggers are both nil or none.
-			if assert.Equal(t, want.Trigger != nil, got.Trigger != nil) {
+
+			if assert.Equal(t, want.Trigger != nil, got.Trigger != nil, "%s:\n- %s\n- %s", state.Name, wantList, gotList) {
 				if want.Trigger != nil {
-					assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+					assert.Equal(t, want.Trigger.Name, got.Trigger.Name, state.Name)
 				}
 			}
 		}
