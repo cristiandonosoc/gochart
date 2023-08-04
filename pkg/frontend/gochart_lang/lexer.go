@@ -1,9 +1,12 @@
 package gochart_lang
 
-import ()
+import (
+	"fmt"
+)
 
 // TokenIdentifier represents a single token of our parser.
-type TokenIdentifier int64
+//go:generate stringer -type=TokenIdentifier
+type TokenIdentifier int
 
 const (
 	Token_Invalid TokenIdentifier = iota
@@ -29,9 +32,18 @@ const (
 
 	Token_Identifier // Any string that is not quoted.
 
+	// This is a grab-bag, generally for use when we need to gobble up tokens without really caring on
+	// what they mean. This is normally because the frontend doesn't really care about them and the
+	// meaning is given in the IR.
+	//
+	// The contents of triggers arguments is an example of this.
+	Token_Other
+
 	Token_EOF
 )
 
+// Token represents a single token that the scanner outputs to the parser, which holds associated
+// information such as the associated string literal and line/char information.
 type Token struct {
 	// Id is what kind of token this is.
 	id TokenIdentifier
@@ -42,12 +54,16 @@ type Token struct {
 	literal string
 }
 
+func (t *Token) String() string {
+	return fmt.Sprintf("%s %q (%d:%d)", t.id, t.literal, t.line, t.char)
+}
+
 func NewToken(id TokenIdentifier) Token {
 	return Token{
 		id: id,
 	}
 }
 
-func (t *Token) valid() bool {
+func (t *Token) IsValid() bool {
 	return t.id != Token_Invalid
 }

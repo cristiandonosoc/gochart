@@ -183,7 +183,11 @@ NEXT_TOKEN_LOOP:
 			break NEXT_TOKEN_LOOP
 		}
 
-		return nil, fmt.Errorf("unsupported rune %q", r)
+		// If we got into this case, it means that it is a non-interesting token for our language, so we
+		// trap it so the parser can make sense of it.
+		token.id = Token_Other
+		token.literal = string(r)
+		break NEXT_TOKEN_LOOP
 	}
 
 	if token == nil || token.id == Token_Invalid {
