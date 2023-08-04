@@ -15,10 +15,11 @@ func TestGatherTokens(t *testing.T) {
 (( )){} // Grouping stuff.
 [["this is a string literal"]]
 "literal"
-   "multiline
+   "multiline true
   string""after_line"
   statechart state transition aabb a0123456789b
-	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>)
+	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>),=,
+	,= true false true
 `
 	r := strings.NewReader(input)
 
@@ -37,7 +38,7 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_RightBracket, literal: "]", line: 4, char: 30},
 
 		{id: Token_String, literal: "literal", line: 5, char: 1},
-		{id: Token_String, literal: `multiline
+		{id: Token_String, literal: `multiline true
   string`, line: 6, char: 4},
 		{id: Token_String, literal: "after_line", line: 7, char: 10},
 
@@ -53,8 +54,17 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_LeftParen, literal: "(", line: 9, char: 21},
 		{id: Token_TriggerArgs, literal: "std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>", line: 9, char: 21},
 		{id: Token_RightParen, literal: ")", line: 9, char: 79},
+		{id: Token_Comma, literal: ",", line: 9, char: 80},
+		{id: Token_Equal, literal: "=", line: 9, char: 81},
+		{id: Token_Comma, literal: ",", line: 9, char: 82},
 
-		{id: Token_EOF, line: 10, char: 0},
+		{id: Token_Comma, literal: ",", line: 10, char: 2},
+		{id: Token_Equal, literal: "=", line: 10, char: 3},
+		{id: Token_Boolean, literal: "true", line: 10, char: 8},
+		{id: Token_Boolean, literal: "false", line: 10, char: 14},
+		{id: Token_Boolean, literal: "true", line: 10, char: 19},
+
+		{id: Token_EOF, line: 11, char: 0},
 	}
 
 	s := NewScanner()

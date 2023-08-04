@@ -19,7 +19,10 @@ const (
 	Token_RightBrace   // }
 	Token_LeftBracket  // [
 	Token_RightBracket // ]
-	Token_Slash        // /
+	Token_Equal        // =
+	Token_Comma        // ,
+
+	Token_Boolean // true | false
 
 	// literals.
 	Token_String // "content"

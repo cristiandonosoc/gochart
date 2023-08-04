@@ -127,6 +127,13 @@ NEXT_TOKEN_LOOP:
 			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
 
+		if token, ok, err := s.handleBoolean(); err != nil {
+			return nil, fmt.Errorf("handling boolean: %w", err)
+		} else if ok {
+			tokens = append(tokens, token)
+			break NEXT_TOKEN_LOOP
+		}
+
 		// We check for comments. Comments are one lines with //.
 		// We consume the tokens until the end of line and then return to the processing of the next
 		// token as if we had never found the comment.
@@ -190,6 +197,12 @@ NEXT_TOKEN_LOOP:
 			break NEXT_TOKEN_LOOP
 		case ']':
 			tokens = append(tokens, s.newToken(Token_RightBracket, string(r)))
+			break NEXT_TOKEN_LOOP
+		case '=':
+			tokens = append(tokens, s.newToken(Token_Equal, string(r)))
+			break NEXT_TOKEN_LOOP
+		case ',':
+			tokens = append(tokens, s.newToken(Token_Comma, string(r)))
 			break NEXT_TOKEN_LOOP
 		}
 
@@ -257,7 +270,7 @@ func (s *Scanner) peek() (rune, error) {
 		return utf8.RuneError, fmt.Errorf("already at input's end")
 	}
 
-	// We decode the rune to where we're current pointing in the sring byte array.
+	// We decode the rune to where we're current pointing in the string byte array.
 	r, _ := utf8.DecodeRuneInString(s.source[s.currentByteCount:])
 	if r == utf8.RuneError {
 		return utf8.RuneError, fmt.Errorf("invalid rune")
@@ -280,6 +293,37 @@ func (s *Scanner) match(expected rune) (bool, error) {
 
 	// We matched, so we advance the stream.
 	s.advance(r)
+	return true, nil
+}
+
+// longMatch works like match, expect it looks up more than one rune.
+// Either the next runes match the tokens exactly (and will be consumed), or they will not be
+// touched at all.
+func (s *Scanner) longMatch(want string) (bool, error) {
+	// First check that we have that amount of runes to look forward into.
+	runeCount := utf8.RuneCountInString(want)
+	if s.currentRuneCount+runeCount >= s.totalRunes {
+		return false, nil
+	}
+
+	offset := s.currentByteCount
+	for _, wantRune := range want {
+		gotRune, _ := utf8.DecodeRuneInString(s.source[offset:])
+
+		if wantRune != gotRune {
+			return false, nil
+		}
+
+		offset += utf8.RuneLen(gotRune)
+	}
+
+	// Now that we matched all the runes, we need to advance out stream.
+	for i := 0; i < runeCount; i++ {
+		if _, err := s.pop(); err != nil {
+			return false, fmt.Errorf("popping rune: %w", err)
+		}
+	}
+
 	return true, nil
 }
 
@@ -516,6 +560,23 @@ func (s *Scanner) handleString() (*Token, error) {
 		line:    startLine,
 		char:    startChar,
 	}, nil
+}
+
+func (s *Scanner) handleBoolean() (*Token, bool, error) {
+	if ok, err := s.longMatch("true"); err != nil {
+		return nil, false, fmt.Errorf("long matching \"true\": %w", err)
+	} else if ok {
+		return s.newToken(Token_Boolean, "true"), true, nil
+	}
+
+	if ok, err := s.longMatch("false"); err != nil {
+		return nil, false, fmt.Errorf("long matching \"false\": %w", err)
+	} else if ok {
+		return s.newToken(Token_Boolean, "false"), true, nil
+	}
+
+	// If we didn't match any boolean value, we simply ignore.
+	return nil, false, nil
 }
 
 func (s *Scanner) handleComment() error {
