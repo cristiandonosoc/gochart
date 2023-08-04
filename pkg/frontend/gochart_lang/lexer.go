@@ -5,6 +5,7 @@ import (
 )
 
 // TokenIdentifier represents a single token of our parser.
+//
 //go:generate stringer -type=TokenIdentifier
 type TokenIdentifier int
 
@@ -30,14 +31,10 @@ const (
 	Token_KeywordTransition // transition
 	Token_KeywordTrigger    // trigger
 
-	Token_Identifier // Any string that is not quoted.
+	// Represents the argument string of a trigger.
+	Token_TriggerArgs
 
-	// This is a grab-bag, generally for use when we need to gobble up tokens without really caring on
-	// what they mean. This is normally because the frontend doesn't really care about them and the
-	// meaning is given in the IR.
-	//
-	// The contents of triggers arguments is an example of this.
-	Token_Other
+	Token_Identifier // Any string that is not quoted.
 
 	Token_EOF
 )

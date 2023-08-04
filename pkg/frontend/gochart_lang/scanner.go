@@ -88,20 +88,23 @@ func (s *Scanner) gatherTokens(r io.Reader) ([]*Token, []error) {
 	var errors []error
 
 	for !s.atEnd() {
-		token, err := s.nextToken()
+		nextTokens, err := s.nextTokens()
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 
-		tokens = append(tokens, token)
+		tokens = append(tokens, nextTokens...)
 	}
 
 	return tokens, errors
 }
 
-func (s *Scanner) nextToken() (*Token, error) {
-	token := &Token{}
+// nextTokens attemps to parse the next set of tokens in the stream. In most cases, it will return
+// just one token, but it could be that some tokens come in groups, such as the trigger with the
+// arguments.
+func (s *Scanner) nextTokens() ([]*Token, error) {
+	var tokens []*Token
 
 	// We do this in a loop because there are certain operators that discard a lot of input before
 	// detecting where the "next" token should be (eg. comments). So we use this token to return to the
@@ -110,19 +113,24 @@ NEXT_TOKEN_LOOP:
 	for {
 		// If we're at the end, we simply return a nice EOF.
 		if s.atEnd() {
-			token.id = Token_EOF
-			break
+			tokens = append(tokens, s.newToken(Token_EOF, ""))
+			break NEXT_TOKEN_LOOP
 		}
 
-		r, err := s.pop()
+		// We ignore any whitespace that might come.
+		if err := s.eatWhitespace(); err != nil {
+			return nil, fmt.Errorf("eating whitespace: %w", err)
+		}
+
+		peek, err := s.peek()
 		if err != nil {
-			return nil, fmt.Errorf("popping rune: %w", err)
+			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
 
 		// We check for comments. Comments are one lines with //.
 		// We consume the tokens until the end of line and then return to the processing of the next
 		// token as if we had never found the comment.
-		if r == '/' {
+		if peek == '/' {
 			if err := s.handleComment(); err != nil {
 				return nil, fmt.Errorf("handling comment: %w", err)
 			}
@@ -130,80 +138,82 @@ NEXT_TOKEN_LOOP:
 			continue NEXT_TOKEN_LOOP
 		}
 
-		// Ignore any whitespace. We consume and go back to processing the node.
-		if r == ' ' || r == '\t' || r == '\r' {
-			continue NEXT_TOKEN_LOOP
-		}
-
 		// New lines add to our current line. Also restart our current character counter.
-		if r == '\n' {
-			s.newLineFound()
+		if peek == '\n' {
+			if err := s.newLineFound(); err != nil {
+				return nil, fmt.Errorf("new line handling: %w", err)
+			}
 			continue NEXT_TOKEN_LOOP
 		}
 
 		// Identifier start with a letter, and could be keywords.
-		if unicode.IsLetter(r) {
-			if tk, err := s.handleIdentifier(r); err != nil {
+		if unicode.IsLetter(peek) {
+			if tks, err := s.handleIdentifier(); err != nil {
 				return nil, fmt.Errorf("handling identifier: %w", err)
 			} else {
-				token = tk
+				tokens = tks
 			}
-			break
+			break NEXT_TOKEN_LOOP
 		}
 
 		// String literals are between '"' characters.
-		if r == '"' {
+		if peek == '"' {
 			if tk, err := s.handleString(); err != nil {
 				return nil, fmt.Errorf("handling string: %w", err)
 			} else {
-				token = tk
+				tokens = append(tokens, tk)
 			}
-			break
+			break NEXT_TOKEN_LOOP
 		}
 
-		// Single rune tokens. They get translated
+		// Single rune tokens. They get translated directly.
+		r, err := s.pop()
+		if err != nil {
+			return nil, fmt.Errorf("popping rune: %w", err)
+		}
+
 		switch r {
 		case '(':
-			token.id = Token_LeftParen
+			tokens = append(tokens, s.newToken(Token_LeftParen, string(r)))
 			break NEXT_TOKEN_LOOP
 		case ')':
-			token.id = Token_RightParen
+			tokens = append(tokens, s.newToken(Token_RightParen, string(r)))
 			break NEXT_TOKEN_LOOP
 		case '{':
-			token.id = Token_LeftBrace
+			tokens = append(tokens, s.newToken(Token_LeftBrace, string(r)))
 			break NEXT_TOKEN_LOOP
 		case '}':
-			token.id = Token_RightBrace
+			tokens = append(tokens, s.newToken(Token_RightBrace, string(r)))
 			break NEXT_TOKEN_LOOP
 		case '[':
-			token.id = Token_LeftBracket
+			tokens = append(tokens, s.newToken(Token_LeftBracket, string(r)))
 			break NEXT_TOKEN_LOOP
 		case ']':
-			token.id = Token_RightBracket
+			tokens = append(tokens, s.newToken(Token_RightBracket, string(r)))
 			break NEXT_TOKEN_LOOP
 		}
 
-		// If we got into this case, it means that it is a non-interesting token for our language, so we
-		// trap it so the parser can make sense of it.
-		token.id = Token_Other
-		token.literal = string(r)
-		break NEXT_TOKEN_LOOP
+		return nil, fmt.Errorf("unrecognized rune %q", r)
+
 	}
 
-	if token == nil || token.id == Token_Invalid {
-		return nil, fmt.Errorf("invalid token parsing. Likely a bug")
+	// Verify that the given tokens were correct.
+	for _, token := range tokens {
+		if token == nil || token.id == Token_Invalid {
+			return nil, fmt.Errorf("invalid token parsing. Likely a bug")
+		}
 	}
 
-	// Fill in the last details of the token if needed, as some tokens come already filled, like the
-	// case of string literals.
-	if token.line == 0 {
-		token.line = s.line
-	}
-	if token.char == 0 {
-		token.char = s.currentRuneCountInLine
-	}
+	return tokens, nil
+}
 
-	return token, nil
+func (s *Scanner) newToken(id TokenIdentifier, literal string) *Token {
+	return &Token{
+		id:      id,
+		literal: literal,
+		line:    s.line,
+		char:    s.currentRuneCountInLine,
+	}
 }
 
 // pop reads the current rune and advances the current index
@@ -228,9 +238,17 @@ func (s *Scanner) advance(r rune) {
 }
 
 // newLineFound updates the scanner to correctly account for new lines being found.
-func (s *Scanner) newLineFound() {
+func (s *Scanner) newLineFound() error {
+	// We assume the caller called us with a '\n' peek.
+	if r, err := s.pop(); err != nil {
+		return fmt.Errorf("popping rune: %w", err)
+	} else if r != '\n' {
+		return fmt.Errorf("new line handling expected a '\n' first rune, got %q", r)
+	}
+
 	s.line++
 	s.currentRuneCountInLine = 0
+	return nil
 }
 
 // peek looks at the current rune pointed by the scanner.
@@ -271,13 +289,25 @@ func (s *Scanner) atEnd() bool {
 
 // INDIVIDUAL TOKEN CASES --------------------------------------------------------------------------
 
-func (s *Scanner) handleIdentifier(firstRune rune) (*Token, error) {
+func (s *Scanner) handleIdentifier() ([]*Token, error) {
+	var runes []rune
+
+	// We assume the caller called us with a unicode letter.
+	if r, err := s.pop(); err != nil {
+		return nil, fmt.Errorf("popping rune: %w", err)
+	} else if !unicode.IsLetter(r) {
+		return nil, fmt.Errorf("comment handling expected a unicode first rune, got %q", r)
+	} else {
+		runes = append(runes, r)
+	}
+
+	var tokens []*Token
+
 	// We cache the start of the token to then returning when creating the token.
 	startLine := s.line
 	startChar := s.currentRuneCountInLine
 
 	// We consume the literal as much as we can. We later see if it matches any keyword.
-	runes := []rune{firstRune}
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
@@ -313,41 +343,166 @@ func (s *Scanner) handleIdentifier(firstRune rune) (*Token, error) {
 		token.id = Token_Identifier
 	}
 
-	return token, nil
+	tokens = append(tokens, token)
+
+	// We check for special cases, where we should search for more tokens.
+	if token.id == Token_KeywordTrigger {
+		triggerTokens, err := s.handleTriggerIdentifier()
+		if err != nil {
+			return nil, fmt.Errorf("handling trigger identifier: %w", err)
+		}
+		tokens = append(tokens, triggerTokens...)
+	}
+
+	return tokens, nil
+}
+
+func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
+	var tokens []*Token
+
+	if err := s.eatWhitespace(); err != nil {
+		return nil, fmt.Errorf("eating whitespace: %w", err)
+	}
+
+	// We expect an identifier after the "trigger" keyword.
+	ids, err := s.handleIdentifier()
+	if err != nil {
+		return nil, fmt.Errorf("getting trigger name identifier: %w", err)
+	} else if len(ids) != 1 {
+		return nil, fmt.Errorf("expected one identifier token after \"trigger\", got %v", ids)
+	}
+	triggerNameToken := ids[0]
+	if triggerNameToken.id != Token_Identifier {
+		return nil, fmt.Errorf("expected trigger name token to be Token_Identifier, was %q", triggerNameToken.id)
+	}
+	tokens = append(tokens, triggerNameToken)
+
+	if err := s.eatWhitespace(); err != nil {
+		return nil, fmt.Errorf("eating whitespace: %w", err)
+	}
+
+	// Now we need an left paren.
+	r, err := s.pop()
+	if err != nil {
+		return nil, fmt.Errorf("popping rune: %w", err)
+	}
+
+	if r != '(' {
+		return nil, fmt.Errorf("expected ( after \"update\" keyword, got %q", r)
+	}
+	tokens = append(tokens, s.newToken(Token_LeftParen, string(r)))
+
+	// Now we can start globbing all strings until we find the matching right paren.
+	// We have to be careful to account for any interior parenthesis though.
+	startLine := s.line
+	startChar := s.currentRuneCountInLine
+	matched := false
+	openParenCount := 0
+	var literals []rune
+	for !s.atEnd() {
+		r, err := s.pop()
+		if err != nil {
+			return nil, fmt.Errorf("popping rune: %w", err)
+		}
+
+		// If we find a '(', we have to count.
+		if r == '(' {
+			openParenCount++
+			literals = append(literals, r)
+			continue
+		}
+
+		// If we find a ')', we either decrease the count or we're done.
+		if r == ')' {
+			if openParenCount > 0 {
+				openParenCount--
+				literals = append(literals, r)
+				continue
+			}
+
+			// Here we found the end of the trigger parenthesis.
+			matched = true
+			break
+		}
+
+		// Special case for now. Because it is annoying, we don't allow weird whitespace characters in
+		// the trigger arguments. This could change in the future if there is a need for it.
+		if r == '\r' || r == '\t' {
+			return nil, fmt.Errorf("unallowed rune %q in trigger arguments. This is a concious decision of the parser. If you feel this is correct, please file a bug", r)
+		}
+
+		// We also do this for new lines.
+		if r == '\n' {
+			return nil, fmt.Errorf("unallowed newline in trigger arguments. This is a concious decision of the parser. If you feel this is correct, please file a bug")
+		}
+
+		// Normal case, we just glob the literal.
+		literals = append(literals, r)
+	}
+
+	// If we are out of the loop and didn't match the parenthesis, we have a syntax error.
+	if !matched {
+		return nil, fmt.Errorf("unmatched trigger arguments parenthesis")
+	}
+
+	// We create the tokens.
+	tokens = append(tokens, &Token{
+		id:      Token_TriggerArgs,
+		literal: string(literals),
+		line:    startLine,
+		char:    startChar,
+	})
+
+	tokens = append(tokens, s.newToken(Token_RightParen, ")"))
+
+	return tokens, nil
 }
 
 // handleString gets called when a '"' character is found. Will create the string token and add it
 // to the list.
 func (s *Scanner) handleString() (*Token, error) {
+	// We assume the caller called us with a '"' rune.
+	if r, err := s.pop(); err != nil {
+		return nil, fmt.Errorf("popping rune: %w", err)
+	} else if r != '"' {
+		return nil, fmt.Errorf("string handling expected a '\"' first rune, got %q", r)
+	}
+
 	// We cache the start of the token to then returning when creating the token.
 	startLine := s.line
 	startChar := s.currentRuneCountInLine
 
 	// We consume until we find another '"' token.
 	matched := false
-	var literal []rune
+	var literals []rune
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
-			return nil, fmt.Errorf("peeking: %w", err)
+			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
-
-		// In any case, we consume the literal.
-		s.advance(peek)
 
 		// If we found the the other '"' character, we stop searching.
 		if peek == '"' {
 			matched = true
-			// Consume the
+			// Consume the rune.
+			if _, err := s.pop(); err != nil {
+				return nil, fmt.Errorf("popping rune: %w", err)
+			}
 			break
 		}
 
 		// We consume the character and advance.
-		literal = append(literal, peek)
+		literals = append(literals, peek)
 
 		// Special case: if we find a new line, we need to update the current line tracking.
 		if peek == '\n' {
 			s.newLineFound()
+			continue
+		}
+
+		// Otherwise we just pop this rune.
+		if _, err := s.pop(); err != nil {
+			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 	}
 
@@ -357,13 +512,20 @@ func (s *Scanner) handleString() (*Token, error) {
 
 	return &Token{
 		id:      Token_String,
-		literal: string(literal),
+		literal: string(literals),
 		line:    startLine,
 		char:    startChar,
 	}, nil
 }
 
 func (s *Scanner) handleComment() error {
+	// We assume the caller called us with a '/' peek.
+	if r, err := s.pop(); err != nil {
+		return fmt.Errorf("popping rune: %w", err)
+	} else if r != '/' {
+		return fmt.Errorf("comment handling expected a '/' first rune, got %q", r)
+	}
+
 	if isSlash, err := s.match('/'); err != nil {
 		return fmt.Errorf("matching '/': %w", err)
 	} else if isSlash {
@@ -384,6 +546,29 @@ func (s *Scanner) handleComment() error {
 	} else {
 		// Single slash doesn't mean anything in our language.
 		return fmt.Errorf("single '/' token found")
+	}
+
+	return nil
+}
+
+// eatWhitespace is a helper function meant to simply ignore whitespace characters.
+func (s *Scanner) eatWhitespace() error {
+	for !s.atEnd() {
+		peek, err := s.peek()
+		if err != nil {
+			return fmt.Errorf("peeking rune: %w", err)
+		}
+
+		// Ignore any whitespace. We simply consume.
+		if peek == ' ' || peek == '\t' || peek == '\r' {
+			if _, err := s.pop(); err != nil {
+				return fmt.Errorf("popping rune: %w", err)
+			}
+
+			continue
+		}
+
+		break
 	}
 
 	return nil
