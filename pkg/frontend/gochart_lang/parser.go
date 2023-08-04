@@ -2,7 +2,6 @@ package gochart_lang
 
 import (
 	"fmt"
-	"strings"
 )
 
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
@@ -70,7 +69,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	}
 
 	if !p.atEnd() {
-		errors = append(errors, fmt.Errorf("expected \"statechart\" expression"))
+		errors = append(errors, fmt.Errorf("expected \"statechart\" expression, got %q", p.peek()))
 	}
 
 	root.statecharts = statecharts
@@ -82,7 +81,8 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 // Statechart -> 'statechart' NAME ( '(' ')' )? '{' '}'
 
 type ASTNodeStatechart struct {
-	Name string
+	Name     string
+	Triggers []*ASTNodeTrigger
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
@@ -110,10 +110,26 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}
 	}
 
-	// { }
+	// Statechart body.
+	var triggers []*ASTNodeTrigger
 	{
+		// {
 		if _, err := p.consume(Token_LeftBrace); err != nil {
 			return nil, err
+		}
+
+		// We start a loop searching for things within the body.
+		// It closes when we find a right paren.
+		for !p.peekToken(Token_RightBrace) {
+
+			// Check for triggers.
+			if p.peekToken(Token_KeywordTrigger) {
+				trigger, err := p.parseTrigger()
+				if err != nil {
+					return nil, err
+				}
+				triggers = append(triggers, trigger)
+			}
 		}
 
 		if _, err := p.consume(Token_RightBrace); err != nil {
@@ -122,7 +138,8 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	return &ASTNodeStatechart{
-		Name: nameToken[0].literal,
+		Name:     nameToken[0].literal,
+		Triggers: triggers,
 	}, nil
 }
 
@@ -155,15 +172,14 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, error) {
 		return nil, err
 	}
 
-	// Look for arguments.
-	var args []string
-	for !p.atEnd() && !p.peekToken(Token_RightParen) {
-		// We just gobble anything here.
-		token := p.advance()
-		if token.literal == "" {
-			return nil, fmt.Errorf("on trigger %q, consuming empty argument token %q", name, token.id)
+	// Optionally we could have arguments.
+	var args string
+	if p.peek().id == Token_TriggerArgs {
+		argsToken, err := p.consume(Token_TriggerArgs)
+		if err != nil {
+			return nil, fmt.Errorf("consuming args token: %w", err)
 		}
-		args = append(args, token.literal)
+		args = argsToken[0].literal
 	}
 
 	// Last paren.
@@ -173,7 +189,7 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, error) {
 
 	return &ASTNodeTrigger{
 		Name:       name,
-		ArgsString: strings.Join(args, " "),
+		ArgsString: args,
 	}, nil
 }
 
@@ -249,5 +265,8 @@ func (p *Parser) advance() *Token {
 // atEnd returns whether the parser has already consumed all the tokens in the stream and is
 // currently at the last token: EOF.
 func (p *Parser) atEnd() bool {
+	if p.current == len(p.tokens)-1 {
+		return p.tokens[p.current].id == Token_EOF
+	}
 	return p.current >= len(p.tokens)
 }
