@@ -25,8 +25,8 @@ const (
 	Token_Boolean // true | false
 
 	// literals.
-	Token_String // "content"
-	Token_Number // 123456
+	Token_String  // "content"
+	Token_Integer // 123456
 
 	// Keywords
 	Token_KeywordStatechart // statechart

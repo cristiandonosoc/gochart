@@ -20,7 +20,9 @@ func TestGatherTokens(t *testing.T) {
   statechart state transition aabb a0123456789b
 	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>),=,
 	,= true false true
+1 22 333 4444
 `
+
 	r := strings.NewReader(input)
 
 	want := []*Token{
@@ -64,7 +66,12 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_Boolean, literal: "false", line: 10, char: 14},
 		{id: Token_Boolean, literal: "true", line: 10, char: 19},
 
-		{id: Token_EOF, line: 11, char: 0},
+		{id: Token_Integer, literal: "1", line: 11, char: 1},
+		{id: Token_Integer, literal: "22", line: 11, char: 4},
+		{id: Token_Integer, literal: "333", line: 11, char: 8},
+		{id: Token_Integer, literal: "4444", line: 11, char: 13},
+
+		{id: Token_EOF, line: 12, char: 0},
 	}
 
 	s := NewScanner()

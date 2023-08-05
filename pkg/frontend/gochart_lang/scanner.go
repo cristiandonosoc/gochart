@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/bradenaw/juniper/xslices"
 )
 
 // ScanError is a custom error associated with scanning.
@@ -129,6 +130,13 @@ NEXT_TOKEN_LOOP:
 
 		if token, ok, err := s.handleBoolean(); err != nil {
 			return nil, fmt.Errorf("handling boolean: %w", err)
+		} else if ok {
+			tokens = append(tokens, token)
+			break NEXT_TOKEN_LOOP
+		}
+
+		if token, ok, err := s.handleInteger(); err != nil {
+			return nil, fmt.Errorf("handling integer: %w", err)
 		} else if ok {
 			tokens = append(tokens, token)
 			break NEXT_TOKEN_LOOP
@@ -442,7 +450,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 	startChar := s.currentRuneCountInLine
 	matched := false
 	openParenCount := 0
-	var literals []rune
+	var runes []rune
 	for !s.atEnd() {
 		r, err := s.pop()
 		if err != nil {
@@ -452,7 +460,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 		// If we find a '(', we have to count.
 		if r == '(' {
 			openParenCount++
-			literals = append(literals, r)
+			runes = append(runes, r)
 			continue
 		}
 
@@ -460,7 +468,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 		if r == ')' {
 			if openParenCount > 0 {
 				openParenCount--
-				literals = append(literals, r)
+				runes = append(runes, r)
 				continue
 			}
 
@@ -481,7 +489,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 		}
 
 		// Normal case, we just glob the literal.
-		literals = append(literals, r)
+		runes = append(runes, r)
 	}
 
 	// If we are out of the loop and didn't match the parenthesis, we have a syntax error.
@@ -492,7 +500,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 	// We create the tokens.
 	tokens = append(tokens, &Token{
 		id:      Token_TriggerArgs,
-		literal: string(literals),
+		literal: string(runes),
 		line:    startLine,
 		char:    startChar,
 	})
@@ -518,7 +526,7 @@ func (s *Scanner) handleString() (*Token, error) {
 
 	// We consume until we find another '"' token.
 	matched := false
-	var literals []rune
+	var runes []rune
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
@@ -536,7 +544,7 @@ func (s *Scanner) handleString() (*Token, error) {
 		}
 
 		// We consume the character and advance.
-		literals = append(literals, peek)
+		runes = append(runes, peek)
 
 		// Special case: if we find a new line, we need to update the current line tracking.
 		if peek == '\n' {
@@ -556,7 +564,7 @@ func (s *Scanner) handleString() (*Token, error) {
 
 	return &Token{
 		id:      Token_String,
-		literal: string(literals),
+		literal: string(runes),
 		line:    startLine,
 		char:    startChar,
 	}, nil
@@ -577,6 +585,48 @@ func (s *Scanner) handleBoolean() (*Token, bool, error) {
 
 	// If we didn't match any boolean value, we simply ignore.
 	return nil, false, nil
+}
+
+func (s *Scanner) handleInteger() (*Token, bool, error) {
+	var runes []rune
+
+	// We go along searching for numbers.
+	for !s.atEnd() {
+		peek, err := s.peek()
+		if err != nil {
+			return nil, false, fmt.Errorf("peeking rune: %w", err)
+		}
+
+		// We stop iterating if we found a number.
+		if !unicode.IsDigit(peek) {
+			break
+		}
+
+		// Otherwise we advance and continue scanning.
+		r, err := s.pop()
+		if err != nil {
+			return nil, false, fmt.Errorf("popping rune: %w", err)
+		}
+		runes = append(runes, r)
+	}
+
+	// If we didn't find any digits, we simply say we didn't found a number.
+	if len(runes) == 0 {
+		return nil, false, nil
+	}
+
+	// We must be careful, as numbers should be separated by a certain amount of characters only.
+	peek, err := s.peek()
+	if err != nil {
+		return nil, false, fmt.Errorf("peeking rune: %w", err)
+	}
+
+	acceptable := []rune{' ', '\n', ','}
+	if xslices.Count(acceptable, peek) == 0 {
+		return nil, false, fmt.Errorf("numbers must be separated by %v, got %q", acceptable, peek)
+	}
+
+	return s.newToken(Token_Integer, string(runes)), true, nil
 }
 
 func (s *Scanner) handleComment() error {
@@ -621,7 +671,7 @@ func (s *Scanner) eatWhitespace() error {
 		}
 
 		// Ignore any whitespace. We simply consume.
-		if peek == ' ' || peek == '\t' || peek == '\r' {
+		if isRuneWhitespace(peek) {
 			if _, err := s.pop(); err != nil {
 				return fmt.Errorf("popping rune: %w", err)
 			}
@@ -633,4 +683,8 @@ func (s *Scanner) eatWhitespace() error {
 	}
 
 	return nil
+}
+
+func isRuneWhitespace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\r'
 }
