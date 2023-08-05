@@ -2,6 +2,7 @@ package gochart_lang
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
@@ -83,6 +84,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 type ASTNodeStatechart struct {
 	Name     string
 	Triggers []*ASTNodeTrigger
+	States   []*ASTNodeState
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
@@ -94,10 +96,11 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	// The name.
-	nameToken, err := p.consume(Token_Identifier)
+	nameTokens, err := p.consume(Token_Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("expect name after \"statechart\" token")
 	}
+	name := nameTokens[0].literal
 
 	// Optional ( ).
 	if p.peekToken(Token_LeftParen) {
@@ -112,6 +115,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 
 	// Statechart body.
 	var triggers []*ASTNodeTrigger
+	var states []*ASTNodeState
 	{
 		// {
 		if _, err := p.consume(Token_LeftBrace); err != nil {
@@ -121,15 +125,20 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		// We start a loop searching for things within the body.
 		// It closes when we find a right paren.
 		for !p.peekToken(Token_RightBrace) {
-
-			// Check for triggers.
-			if p.peekToken(Token_KeywordTrigger) {
-				trigger, err := p.parseTrigger()
-				if err != nil {
-					return nil, err
-				}
+			// Check if there is a trigger.
+			if trigger, ok, err := p.parseTrigger(); err != nil {
+				return nil, fmt.Errorf("statechart %q: parsing trigger: %w", name, err)
+			} else if ok {
 				triggers = append(triggers, trigger)
 			}
+
+			// Check if there is a state.
+			if state, ok, err := p.parseState(); err != nil {
+				return nil, fmt.Errorf("statechart %q: parsing state: %w", name, err)
+			} else if ok {
+				states = append(states, state)
+			}
+
 		}
 
 		if _, err := p.consume(Token_RightBrace); err != nil {
@@ -138,8 +147,9 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	return &ASTNodeStatechart{
-		Name:     nameToken[0].literal,
+		Name:     name,
 		Triggers: triggers,
+		States:   states,
 	}, nil
 }
 
@@ -154,22 +164,22 @@ type ASTNodeTrigger struct {
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
 
-func (p *Parser) parseTrigger() (*ASTNodeTrigger, error) {
-	// trigger keyword.
-	if _, err := p.consume(Token_KeywordTrigger); err != nil {
-		return nil, err
+func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
+	// If we found the trigger keyword, we found a trigger.
+	if _, ok := p.match(Token_KeywordTrigger); !ok {
+		return nil, false, nil
 	}
 
 	// The name.
 	nameToken, err := p.consume(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect name after \"trigger\" token")
+		return nil, false, fmt.Errorf("expect name after \"trigger\" token")
 	}
 	name := nameToken[0].literal
 
 	// First paren.
 	if _, err := p.consume(Token_LeftParen); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Optionally we could have arguments.
@@ -177,19 +187,172 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, error) {
 	if p.peek().id == Token_TriggerArgs {
 		argsToken, err := p.consume(Token_TriggerArgs)
 		if err != nil {
-			return nil, fmt.Errorf("consuming args token: %w", err)
+			return nil, false, fmt.Errorf("consuming args token: %w", err)
 		}
 		args = argsToken[0].literal
 	}
 
 	// Last paren.
 	if _, err := p.consume(Token_RightParen); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	return &ASTNodeTrigger{
 		Name:       name,
 		ArgsString: args,
+	}, true, nil
+}
+
+// State -------------------------------------------------------------------------------------------
+//
+// State -> 'state' NAME ( '(' ( StateOption ( ',' StateOption )* ')' ) StateBody
+// State -> 'state' NAME 'StateOptions? StateBody
+
+type ASTNodeState struct {
+	Name     string
+	Options  []*ASTNodeStateOption
+	Children []*ASTNodeState
+}
+
+var _ ASTNode = (*ASTNodeState)(nil)
+
+func (p *Parser) parseState() (*ASTNodeState, bool, error) {
+	// If we found  the 'state' keyword, we parse it.
+	if _, ok := p.match(Token_KeywordState); !ok {
+		return nil, false, nil
+	}
+
+	// The name.
+	nameToken, err := p.consume(Token_Identifier)
+	if err != nil {
+		return nil, false, fmt.Errorf("expect name after \"trigger\" token")
+	}
+	name := nameToken[0].literal
+
+	// The options.
+	var options []*ASTNodeStateOption
+	if opts, ok, err := p.parseStateOptions(); err != nil {
+		return nil, false, fmt.Errorf("state %q: parsing options: %w", name, err)
+	} else if ok {
+		options = opts
+	}
+
+	if _, err := p.consume(Token_LeftBrace); err != nil {
+		return nil, false, fmt.Errorf("state %q: parsing state body: %w", name, err)
+	}
+
+	if _, err := p.consume(Token_RightBrace); err != nil {
+		return nil, false, fmt.Errorf("state %q: closing state body: %w", name, err)
+	}
+
+	return &ASTNodeState{
+		Name:    name,
+		Options: options,
+	}, true, nil
+}
+
+type StateOptionValueType int
+
+const (
+	ValueType_None StateOptionValueType = iota
+	ValueType_String
+	ValueType_Integer
+	ValueType_Boolean
+)
+
+type ASTNodeStateOption struct {
+	Name      string
+	ValueType StateOptionValueType
+	Value     string
+}
+
+var _ ASTNode = (*ASTNodeStateOption)(nil)
+
+// StateOptions ------------------------------------------------------------------------------------
+//
+// StateOptions -> ( '(' StateOption ( ',' StateOption )* ')' )?
+
+func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
+	// If we have no left paren, then there is no options.
+	if _, ok := p.match(Token_LeftParen); !ok {
+		return nil, false, nil
+	}
+
+	var options []*ASTNodeStateOption
+
+	// Parse the first option.
+	option, err := p.parseStateOption()
+	if err != nil {
+		return nil, false, fmt.Errorf("parsing first option: %w", err)
+	}
+	options = append(options, option)
+
+	// See if we have more options.
+	for !p.atEnd() {
+		// A ',' indicates that we are going to have another option.
+		if _, ok := p.match(Token_Comma); !ok {
+			break
+		}
+
+		// Parse the next option.
+		option, err := p.parseStateOption()
+		if err != nil {
+			return nil, false, fmt.Errorf("parsing option: %w", err)
+		}
+		options = append(options, option)
+	}
+
+	// Close the options ')'
+	if _, err := p.consume(Token_RightParen); err != nil {
+		return nil, false, fmt.Errorf("unclosed state options parenthesis: %w", err)
+	}
+
+	return options, true, nil
+}
+
+// StateOption -> NAME ( '=' ( IDENTIFIER | STRING | NUMBER | true | false ) )?
+
+func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
+	// The name.
+	nameToken, err := p.consume(Token_Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("expect name after \"trigger\" token")
+	}
+	name := nameToken[0].literal
+
+	// See if there is an optional value.
+	valueType := ValueType_None
+	var value string
+	if _, ok := p.match(Token_Equal); ok {
+		if token, ok := p.match(Token_Identifier); ok {
+			valueType = ValueType_String
+			value = token.literal
+		} else if token, ok := p.match(Token_String); ok {
+			valueType = ValueType_String
+			value = token.literal
+		} else if token, ok := p.match(Token_Integer); ok {
+			_, err := strconv.Atoi(token.literal)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
+			}
+			valueType = ValueType_Integer
+			value = token.literal
+		} else if token, ok := p.match(Token_Boolean); ok {
+			_, err := strconv.ParseBool(token.literal)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
+			}
+			valueType = ValueType_Boolean
+			value = token.literal
+		} else {
+			return nil, fmt.Errorf("unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
+		}
+	}
+
+	return &ASTNodeStateOption{
+		Name:      name,
+		ValueType: valueType,
+		Value:     value,
 	}, nil
 }
 
@@ -201,8 +364,8 @@ func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
 	var tokens []*Token
 
 	for _, id := range ids {
-		if p.peek().id != id {
-			return nil, fmt.Errorf("expected %q, but got %q", p.peek().id, id)
+		if !p.peekToken(id) {
+			return nil, fmt.Errorf("expected %q, but got %q", id, p.peek().id)
 		}
 		tokens = append(tokens, p.advance())
 	}
@@ -212,21 +375,18 @@ func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
 
 // match returns whether the current token matches any of the particular tokens being asked for.
 // If the match is successful, it also consumes the token and advances the stream.
-func (p *Parser) match(ids ...TokenIdentifier) bool {
+func (p *Parser) match(id TokenIdentifier) (*Token, bool) {
 	if p.atEnd() {
-		return false
+		return nil, false
 	}
 
-	peek := p.peek()
-	for _, id := range ids {
-		// If the peeked token matches the type, we advance the stream forward.
-		if peek.id == id {
-			p.advance()
-			return true
-		}
+	// If the peeked token matches the type, we advance the stream forward.
+	if p.peekToken(id) {
+		token := p.advance()
+		return token, true
 	}
 
-	return false
+	return nil, false
 }
 
 // peek looks at the current token pointed by the stream.

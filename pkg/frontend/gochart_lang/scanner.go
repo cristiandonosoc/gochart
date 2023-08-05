@@ -8,8 +8,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/bradenaw/juniper/xslices"
+	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
 // ScanError is a custom error associated with scanning.

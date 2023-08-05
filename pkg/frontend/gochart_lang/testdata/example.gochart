@@ -2,4 +2,15 @@ statechart Example {
 	trigger Execute()
 	trigger Update(float dt)
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
+
+	state First {
+
+	}
+
+	state Second(Option1) {
+
+	}
+
+	state Third(Opt1, Opt2, Opt3 = Identifier, Opt4 = "String", Opt5 = 2123, Opt6 = true, Opt7 = false) {
+	}
 }
