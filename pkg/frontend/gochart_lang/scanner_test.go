@@ -13,7 +13,7 @@ func TestGatherTokens(t *testing.T) {
 	input := `
 // This is a comment.
 (( )){} // Grouping stuff.
-[["this is a string literal"]]
+<<[["this is a string literal"]]>>
 "literal"
    "multiline true
   string""after_line"
@@ -33,11 +33,15 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_LeftBrace, literal: "{", line: 3, char: 6},
 		{id: Token_RightBrace, literal: "}", line: 3, char: 7},
 
-		{id: Token_LeftBracket, literal: "[", line: 4, char: 1},
-		{id: Token_LeftBracket, literal: "[", line: 4, char: 2},
-		{id: Token_String, literal: "this is a string literal", line: 4, char: 3},
-		{id: Token_RightBracket, literal: "]", line: 4, char: 29},
-		{id: Token_RightBracket, literal: "]", line: 4, char: 30},
+		{id: Token_LeftAngleBracket, literal: "<", line: 4, char: 1},
+		{id: Token_LeftAngleBracket, literal: "<", line: 4, char: 2},
+		{id: Token_LeftBracket, literal: "[", line: 4, char: 3},
+		{id: Token_LeftBracket, literal: "[", line: 4, char: 4},
+		{id: Token_String, literal: "this is a string literal", line: 4, char: 5},
+		{id: Token_RightBracket, literal: "]", line: 4, char: 31},
+		{id: Token_RightBracket, literal: "]", line: 4, char: 32},
+		{id: Token_RightAngleBracket, literal: ">", line: 4, char: 33},
+		{id: Token_RightAngleBracket, literal: ">", line: 4, char: 34},
 
 		{id: Token_String, literal: "literal", line: 5, char: 1},
 		{id: Token_String, literal: `multiline true

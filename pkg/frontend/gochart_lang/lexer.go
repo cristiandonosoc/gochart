@@ -13,14 +13,16 @@ const (
 	Token_Invalid TokenIdentifier = iota
 
 	// Single character tokens.
-	Token_LeftParen    // '('
-	Token_RightParen   // ')'
-	Token_LeftBrace    // '{'
-	Token_RightBrace   // '}'
-	Token_LeftBracket  // '['
-	Token_RightBracket // ']'
-	Token_Equal        // '='
-	Token_Comma        // ','
+	Token_LeftParen         // '('
+	Token_RightParen        // ')'
+	Token_LeftBrace         // '{'
+	Token_RightBrace        // '}'
+	Token_LeftBracket       // '['
+	Token_RightBracket      // ']'
+	Token_LeftAngleBracket  // '<'
+	Token_RightAngleBracket // '>'
+	Token_Equal             // '='
+	Token_Comma             // ','
 
 	Token_Boolean // 'true' | 'false'
 

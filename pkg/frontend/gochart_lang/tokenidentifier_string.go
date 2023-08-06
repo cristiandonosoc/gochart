@@ -15,24 +15,26 @@ func _() {
 	_ = x[Token_RightBrace-4]
 	_ = x[Token_LeftBracket-5]
 	_ = x[Token_RightBracket-6]
-	_ = x[Token_Equal-7]
-	_ = x[Token_Comma-8]
-	_ = x[Token_Boolean-9]
-	_ = x[Token_String-10]
-	_ = x[Token_Integer-11]
-	_ = x[Token_KeywordStatechart-12]
-	_ = x[Token_KeywordState-13]
-	_ = x[Token_KeywordTransition-14]
-	_ = x[Token_KeywordTrigger-15]
-	_ = x[Token_KeywordNull-16]
-	_ = x[Token_TriggerArgs-17]
-	_ = x[Token_Identifier-18]
-	_ = x[Token_EOF-19]
+	_ = x[Token_LeftAngleBracket-7]
+	_ = x[Token_RightAngleBracket-8]
+	_ = x[Token_Equal-9]
+	_ = x[Token_Comma-10]
+	_ = x[Token_Boolean-11]
+	_ = x[Token_String-12]
+	_ = x[Token_Integer-13]
+	_ = x[Token_KeywordStatechart-14]
+	_ = x[Token_KeywordState-15]
+	_ = x[Token_KeywordTransition-16]
+	_ = x[Token_KeywordTrigger-17]
+	_ = x[Token_KeywordNull-18]
+	_ = x[Token_TriggerArgs-19]
+	_ = x[Token_Identifier-20]
+	_ = x[Token_EOF-21]
 }
 
-const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordTransitionToken_KeywordTriggerToken_KeywordNullToken_TriggerArgsToken_IdentifierToken_EOF"
+const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_LeftAngleBracketToken_RightAngleBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordTransitionToken_KeywordTriggerToken_KeywordNullToken_TriggerArgsToken_IdentifierToken_EOF"
 
-var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 121, 132, 145, 157, 170, 193, 211, 234, 254, 271, 288, 304, 313}
+var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 132, 155, 166, 177, 190, 202, 215, 238, 256, 279, 299, 316, 333, 349, 358}
 
 func (i TokenIdentifier) String() string {
 	if i < 0 || i >= TokenIdentifier(len(_TokenIdentifier_index)-1) {

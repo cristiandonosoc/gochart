@@ -207,6 +207,12 @@ NEXT_TOKEN_LOOP:
 		case ']':
 			tokens = append(tokens, s.newToken(Token_RightBracket, string(r)))
 			break NEXT_TOKEN_LOOP
+		case '<':
+			tokens = append(tokens, s.newToken(Token_LeftAngleBracket, string(r)))
+			break NEXT_TOKEN_LOOP
+		case '>':
+			tokens = append(tokens, s.newToken(Token_RightAngleBracket, string(r)))
+			break NEXT_TOKEN_LOOP
 		case '=':
 			tokens = append(tokens, s.newToken(Token_Equal, string(r)))
 			break NEXT_TOKEN_LOOP
