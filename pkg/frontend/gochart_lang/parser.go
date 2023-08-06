@@ -91,24 +91,23 @@ var _ ASTNode = (*ASTNodeStatechart)(nil)
 
 func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	// statechart keyword.
-	if _, err := p.consume(Token_KeywordStatechart); err != nil {
+	if _, err := p.consumeToken(Token_KeywordStatechart); err != nil {
 		return nil, err
 	}
 
 	// The name.
-	nameTokens, err := p.consume(Token_Identifier)
+	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("expect name after \"statechart\" token")
 	}
-	name := nameTokens[0].literal
 
 	// Optional ( ).
 	if p.peekToken(Token_LeftParen) {
-		if _, err := p.consume(Token_LeftParen); err != nil {
+		if _, err := p.consumeToken(Token_LeftParen); err != nil {
 			return nil, err
 		}
 
-		if _, err := p.consume(Token_RightParen); err != nil {
+		if _, err := p.consumeToken(Token_RightParen); err != nil {
 			return nil, err
 		}
 	}
@@ -118,7 +117,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	var states []*ASTNodeState
 	{
 		// {
-		if _, err := p.consume(Token_LeftBrace); err != nil {
+		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
 			return nil, err
 		}
 
@@ -141,7 +140,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 
 		}
 
-		if _, err := p.consume(Token_RightBrace); err != nil {
+		if _, err := p.consumeToken(Token_RightBrace); err != nil {
 			return nil, err
 		}
 	}
@@ -171,29 +170,28 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
 	}
 
 	// The name.
-	nameToken, err := p.consume(Token_Identifier)
+	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, false, fmt.Errorf("expect name after \"trigger\" token")
 	}
-	name := nameToken[0].literal
 
 	// First paren.
-	if _, err := p.consume(Token_LeftParen); err != nil {
+	if _, err := p.consumeToken(Token_LeftParen); err != nil {
 		return nil, false, err
 	}
 
 	// Optionally we could have arguments.
 	var args string
 	if p.peek().id == Token_TriggerArgs {
-		argsToken, err := p.consume(Token_TriggerArgs)
+		argsStr, err := p.consumeTokenLiteral(Token_TriggerArgs)
 		if err != nil {
 			return nil, false, fmt.Errorf("consuming args token: %w", err)
 		}
-		args = argsToken[0].literal
+		args = argsStr
 	}
 
 	// Last paren.
-	if _, err := p.consume(Token_RightParen); err != nil {
+	if _, err := p.consumeToken(Token_RightParen); err != nil {
 		return nil, false, err
 	}
 
@@ -224,11 +222,10 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 	}
 
 	// The name.
-	nameToken, err := p.consume(Token_Identifier)
+	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, false, fmt.Errorf("expect name after \"trigger\" token")
 	}
-	name := nameToken[0].literal
 
 	// The options.
 	var options []*ASTNodeStateOption
@@ -242,7 +239,7 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 	var transitions []*ASTNodeStateTransition
 	{
 		// The body opening '{'
-		if _, err := p.consume(Token_LeftBrace); err != nil {
+		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
 			return nil, false, fmt.Errorf("state %q: parsing state body: %w", name, err)
 		}
 
@@ -261,7 +258,7 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 		}
 
 		// The body closing '}'
-		if _, err := p.consume(Token_RightBrace); err != nil {
+		if _, err := p.consumeToken(Token_RightBrace); err != nil {
 			return nil, false, fmt.Errorf("state %q: closing state body: %w", name, err)
 		}
 	}
@@ -308,7 +305,7 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 	}
 
 	// Close the options ')'
-	if _, err := p.consume(Token_RightParen); err != nil {
+	if _, err := p.consumeToken(Token_RightParen); err != nil {
 		return nil, false, fmt.Errorf("unclosed state options parenthesis: %w", err)
 	}
 
@@ -336,11 +333,10 @@ var _ ASTNode = (*ASTNodeStateOption)(nil)
 
 func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	// The name.
-	nameToken, err := p.consume(Token_Identifier)
+	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("expect name after \"trigger\" token")
 	}
-	name := nameToken[0].literal
 
 	// See if there is an optional value.
 	valueType := ValueType_None
@@ -426,7 +422,7 @@ func (p *Parser) parseStateTransition() (*ASTNodeStateTransition, bool, error) {
 
 // consume is a mix of match and advance, that tries to consume the given list of tokens and gives
 // and error if it cannot. Returns the list of consumed tokens.
-func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
+func (p *Parser) consumeTokens(ids ...TokenIdentifier) ([]*Token, error) {
 	var tokens []*Token
 
 	for _, id := range ids {
@@ -441,7 +437,7 @@ func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
 
 // consumeToken is a variation of consume that only returns one token for convenience.
 func (p *Parser) consumeToken(id TokenIdentifier) (*Token, error) {
-	tokens, err := p.consume(id)
+	tokens, err := p.consumeTokens(id)
 	if err != nil {
 		return nil, err
 	}
@@ -451,6 +447,18 @@ func (p *Parser) consumeToken(id TokenIdentifier) (*Token, error) {
 	}
 
 	return tokens[0], nil
+}
+
+// consumeTokenLiteral is an even more refived convenience variation that tries to consume a token
+// and returns the literal instead of the token. This is useful for identifier nodes that we really
+// care the literal.
+func (p *Parser) consumeTokenLiteral(id TokenIdentifier) (string, error) {
+	token, err := p.consumeToken(id)
+	if err != nil {
+		return "", err
+	}
+
+	return token.literal, nil
 }
 
 // match returns whether the current token matches any of the particular tokens being asked for.
