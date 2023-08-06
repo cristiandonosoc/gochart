@@ -104,6 +104,11 @@ func TestReadSimple(t *testing.T) {
 								ValueType: ValueType_Boolean,
 								Value:     "false",
 							},
+							{
+								Name:      "Opt8",
+								ValueType: ValueType_Integer,
+								Value:     "22",
+							},
 						},
 						Transitions: []*ASTNodeStateTransition{
 							{

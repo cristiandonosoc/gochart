@@ -520,16 +520,16 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 // handleString gets called when a '"' character is found. Will create the string token and add it
 // to the list.
 func (s *Scanner) handleString() (*Token, error) {
+	// We cache the start of the token to then returning when creating the token.
+	startLine := s.line
+	startChar := s.currentRuneCountInLine + 1
+
 	// We assume the caller called us with a '"' rune.
 	if r, err := s.pop(); err != nil {
 		return nil, fmt.Errorf("popping rune: %w", err)
 	} else if r != '"' {
 		return nil, fmt.Errorf("string handling expected a '\"' first rune, got %q", r)
 	}
-
-	// We cache the start of the token to then returning when creating the token.
-	startLine := s.line
-	startChar := s.currentRuneCountInLine
 
 	// We consume until we find another '"' token.
 	matched := false
@@ -597,6 +597,9 @@ func (s *Scanner) handleBoolean() (*Token, bool, error) {
 func (s *Scanner) handleInteger() (*Token, bool, error) {
 	var runes []rune
 
+	startLine := s.line
+	startChar := s.currentRuneCountInLine + 1
+
 	// We go along searching for numbers.
 	for !s.atEnd() {
 		peek, err := s.peek()
@@ -628,12 +631,17 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 		return nil, false, fmt.Errorf("peeking rune: %w", err)
 	}
 
-	acceptable := []rune{' ', '\n', ','}
+	acceptable := []rune{' ', '\n', ',', ')'}
 	if xslices.Count(acceptable, peek) == 0 {
 		return nil, false, fmt.Errorf("numbers must be separated by %v, got %q", acceptable, peek)
 	}
 
-	return s.newToken(Token_Integer, string(runes)), true, nil
+	return &Token{
+		id:      Token_Integer,
+		literal: string(runes),
+		line:    startLine,
+		char:    startChar,
+	}, true, nil
 }
 
 func (s *Scanner) handleComment() error {

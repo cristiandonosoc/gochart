@@ -12,7 +12,7 @@ statechart Example {
 		transition Execute > First
 	}
 
-	state Third(Opt1, Opt2, Opt3 = Identifier, Opt4 = "String", Opt5 = 2123, Opt6 = true, Opt7 = false) {
+	state Third(Opt1, Opt2, Opt3 = Identifier, Opt4 = "String", Opt5 = 2123, Opt6 = true, Opt7 = false, Opt8=22) {
 		transition SomeMessage > Second
 
 		state ThirdChild1(OptChild1, OptChild2 = IdentifierChild) {
