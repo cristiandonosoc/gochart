@@ -4,13 +4,15 @@ statechart Example {
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
 
 	state First {
-
+		transition null > Third
+		transition Execute > Second
 	}
 
 	state Second(Option1) {
-
+		transition Execute > First
 	}
 
 	state Third(Opt1, Opt2, Opt3 = Identifier, Opt4 = "String", Opt5 = 2123, Opt6 = true, Opt7 = false) {
+		transition SomeMessage > Second
 	}
 }

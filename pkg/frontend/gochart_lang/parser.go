@@ -209,9 +209,10 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
 // State -> 'state' NAME 'StateOptions? StateBody
 
 type ASTNodeState struct {
-	Name     string
-	Options  []*ASTNodeStateOption
-	Children []*ASTNodeState
+	Name        string
+	Options     []*ASTNodeStateOption
+	Transitions []*ASTNodeStateTransition
+	Children    []*ASTNodeState
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -237,36 +238,40 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 		options = opts
 	}
 
-	if _, err := p.consume(Token_LeftBrace); err != nil {
-		return nil, false, fmt.Errorf("state %q: parsing state body: %w", name, err)
-	}
+	// The body.
+	var transitions []*ASTNodeStateTransition
+	{
+		// The body opening '{'
+		if _, err := p.consume(Token_LeftBrace); err != nil {
+			return nil, false, fmt.Errorf("state %q: parsing state body: %w", name, err)
+		}
 
-	if _, err := p.consume(Token_RightBrace); err != nil {
-		return nil, false, fmt.Errorf("state %q: closing state body: %w", name, err)
+		// We loop searching for things that can be in the body.
+		for !p.atEnd() {
+			// If we peek a right brace, we know the body is closed.
+			if p.peekToken(Token_RightBrace) {
+				break
+			}
+
+			if transition, ok, err := p.parseStateTransition(); err != nil {
+				return nil, false, fmt.Errorf("state %q: parsing transition: %w", name, err)
+			} else if ok {
+				transitions = append(transitions, transition)
+			}
+		}
+
+		// The body closing '}'
+		if _, err := p.consume(Token_RightBrace); err != nil {
+			return nil, false, fmt.Errorf("state %q: closing state body: %w", name, err)
+		}
 	}
 
 	return &ASTNodeState{
-		Name:    name,
-		Options: options,
+		Name:        name,
+		Options:     options,
+		Transitions: transitions,
 	}, true, nil
 }
-
-type StateOptionValueType int
-
-const (
-	ValueType_None StateOptionValueType = iota
-	ValueType_String
-	ValueType_Integer
-	ValueType_Boolean
-)
-
-type ASTNodeStateOption struct {
-	Name      string
-	ValueType StateOptionValueType
-	Value     string
-}
-
-var _ ASTNode = (*ASTNodeStateOption)(nil)
 
 // StateOptions ------------------------------------------------------------------------------------
 //
@@ -312,6 +317,23 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 
 // StateOption -> NAME ( '=' ( IDENTIFIER | STRING | NUMBER | true | false ) )?
 
+type StateOptionValueType int
+
+const (
+	ValueType_None StateOptionValueType = iota
+	ValueType_String
+	ValueType_Integer
+	ValueType_Boolean
+)
+
+type ASTNodeStateOption struct {
+	Name      string
+	ValueType StateOptionValueType
+	Value     string
+}
+
+var _ ASTNode = (*ASTNodeStateOption)(nil)
+
 func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	// The name.
 	nameToken, err := p.consume(Token_Identifier)
@@ -356,6 +378,50 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	}, nil
 }
 
+// StateTransition ---------------------------------------------------------------------------------
+//
+// StateTransition -> 'transition' ( 'null' | IDENTIFIER ) > IDENTIFIER
+
+type ASTNodeStateTransition struct {
+	Trigger     string
+	TargetState string
+}
+
+var _ ASTNode = (*ASTNodeState)(nil)
+
+func (p *Parser) parseStateTransition() (*ASTNodeStateTransition, bool, error) {
+	// Check if there is a 'transition' keyword.
+	if _, ok := p.match(Token_KeywordTransition); !ok {
+		return nil, false, nil
+	}
+
+	// Check if it's a null transition. If not, we expect an identifier.
+	var triggerName string
+	if _, ok := p.match(Token_KeywordNull); !ok {
+		triggerToken, err := p.consumeToken(Token_Identifier)
+		if err != nil {
+			return nil, false, fmt.Errorf("expected null or identifier token: %w", err)
+		}
+		triggerName = triggerToken.literal
+	}
+
+	// The right angle bracket.
+	if _, err := p.consumeToken(Token_RightAngleBracket); err != nil {
+		return nil, false, fmt.Errorf("after transition trigger identifier: %w", err)
+	}
+
+	// We now expect the trigger identifier.
+	stateToken, err := p.consumeToken(Token_Identifier)
+	if err != nil {
+		return nil, false, fmt.Errorf("expect identifier after >: %w", err)
+	}
+
+	return &ASTNodeStateTransition{
+		Trigger:     triggerName,
+		TargetState: stateToken.literal,
+	}, true, nil
+}
+
 // HELPERS -----------------------------------------------------------------------------------------
 
 // consume is a mix of match and advance, that tries to consume the given list of tokens and gives
@@ -371,6 +437,20 @@ func (p *Parser) consume(ids ...TokenIdentifier) ([]*Token, error) {
 	}
 
 	return tokens, nil
+}
+
+// consumeToken is a variation of consume that only returns one token for convenience.
+func (p *Parser) consumeToken(id TokenIdentifier) (*Token, error) {
+	tokens, err := p.consume(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tokens) != 1 {
+		return nil, fmt.Errorf("expecting to consume %q to return only one token, got %v", id, tokens)
+	}
+
+	return tokens[0], nil
 }
 
 // match returns whether the current token matches any of the particular tokens being asked for.

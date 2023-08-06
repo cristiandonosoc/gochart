@@ -42,6 +42,16 @@ func TestReadSimple(t *testing.T) {
 				States: []*ASTNodeState{
 					{
 						Name: "First",
+						Transitions: []*ASTNodeStateTransition{
+							{
+								Trigger:     "",
+								TargetState: "Third",
+							},
+							{
+								Trigger:     "Execute",
+								TargetState: "Second",
+							},
+						},
 					},
 					{
 						Name: "Second",
@@ -49,6 +59,12 @@ func TestReadSimple(t *testing.T) {
 							{
 								Name:      "Option1",
 								ValueType: ValueType_None,
+							},
+						},
+						Transitions: []*ASTNodeStateTransition{
+							{
+								Trigger:     "Execute",
+								TargetState: "First",
 							},
 						},
 					},
@@ -87,6 +103,12 @@ func TestReadSimple(t *testing.T) {
 								Name:      "Opt7",
 								ValueType: ValueType_Boolean,
 								Value:     "false",
+							},
+						},
+						Transitions: []*ASTNodeStateTransition{
+							{
+								Trigger:     "SomeMessage",
+								TargetState: "Second",
 							},
 						},
 					},
@@ -172,6 +194,16 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			assert.Equal(t, want.Name, got.Name, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.ValueType, got.ValueType, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.Value, got.Value, "%s, Option %d", ctxStr, i)
+		}
+	}
+
+	if assert.Equal(t, len(want.Transitions), len(got.Transitions)) {
+		for i := 0; i < len(want.Transitions); i++ {
+			want := want.Transitions[i]
+			got := got.Transitions[i]
+
+			assert.Equal(t, want.Trigger, got.Trigger, "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
 		}
 	}
 }
