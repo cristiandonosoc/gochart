@@ -237,6 +237,7 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 
 	// The body.
 	var transitions []*ASTNodeStateTransition
+	var children []*ASTNodeState
 	{
 		// The body opening '{'
 		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
@@ -250,10 +251,18 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 				break
 			}
 
+			// See if we found a transition.
 			if transition, ok, err := p.parseStateTransition(); err != nil {
 				return nil, false, fmt.Errorf("state %q: parsing transition: %w", name, err)
 			} else if ok {
 				transitions = append(transitions, transition)
+			}
+
+			// See if we found a child state.
+			if child, ok, err := p.parseState(); err != nil {
+				return nil, false, fmt.Errorf("state %q: parse child state: %w", name, err)
+			} else if ok {
+				children = append(children, child)
 			}
 		}
 
@@ -267,6 +276,7 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 		Name:        name,
 		Options:     options,
 		Transitions: transitions,
+		Children:    children,
 	}, true, nil
 }
 

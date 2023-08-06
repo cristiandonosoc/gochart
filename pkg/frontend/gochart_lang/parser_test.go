@@ -111,6 +111,48 @@ func TestReadSimple(t *testing.T) {
 								TargetState: "Second",
 							},
 						},
+						Children: []*ASTNodeState{
+							{
+								Name: "ThirdChild1",
+								Options: []*ASTNodeStateOption{
+									{
+										Name: "OptChild1",
+									},
+									{
+										Name:      "OptChild2",
+										ValueType: ValueType_String,
+										Value:     "IdentifierChild",
+									},
+								},
+								Children: []*ASTNodeState{
+									{
+										Name: "ThirdGrandChild",
+										Options: []*ASTNodeStateOption{
+											{
+												Name:      "OptGrandChild",
+												ValueType: ValueType_Boolean,
+												Value:     "false",
+											},
+										},
+										Transitions: []*ASTNodeStateTransition{
+											{
+												Trigger:     "Execute",
+												TargetState: "Second",
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "ThirdChild2",
+								Transitions: []*ASTNodeStateTransition{
+									{
+										Trigger:     "",
+										TargetState: "ThirdGrandChild",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -149,6 +191,7 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 		}
 	}
 
+	statechartName := want.Name
 	if assert.Equal(t, len(want.States), len(got.States), "Not same amount of states") {
 		for i := 0; i < len(want.States); i++ {
 			want := want.States[i]
@@ -156,7 +199,7 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 
 			sc := &stateComparer{
 				index:          i,
-				statechartName: want.Name,
+				statechartName: statechartName,
 			}
 			sc.compare(t, want, got)
 		}
@@ -169,9 +212,9 @@ type triggerComparer struct {
 }
 
 func (tc *triggerComparer) compare(t *testing.T, want, got *ASTNodeTrigger) {
-	assert.Equal(t, want.Name, got.Name, "Statechart %s, Trigger %d", tc.statechartName, tc.index)
+	assert.Equal(t, want.Name, got.Name, "Statechart %q, Trigger %d", tc.statechartName, tc.index)
 
-	ctxStr := fmt.Sprintf("Statechart %s, Trigger %d (%s)", tc.statechartName, tc.index, want.Name)
+	ctxStr := fmt.Sprintf("Statechart %q, Trigger %d (%s)", tc.statechartName, tc.index, want.Name)
 
 	assert.Equal(t, want.ArgsString, got.ArgsString, ctxStr)
 }
@@ -179,14 +222,16 @@ func (tc *triggerComparer) compare(t *testing.T, want, got *ASTNodeTrigger) {
 type stateComparer struct {
 	index          int
 	statechartName string
+	parentState    string
 }
 
 func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 	assert.Equal(t, want.Name, got.Name, "Statechart %s, State %d", sc.statechartName, sc.index)
 
-	ctxStr := fmt.Sprintf("Statechart %s, Trigger %d (%s)", sc.statechartName, sc.index, want.Name)
+	ctxStr := fmt.Sprintf("Statechart %s, State %q, Parent %q, Trigger %d (%s)", sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
 
-	if assert.Equal(t, len(want.Options), len(got.Options)) {
+	// Compare options.
+	if assert.Equal(t, len(want.Options), len(got.Options), ctxStr) {
 		for i := 0; i < len(want.Options); i++ {
 			want := want.Options[i]
 			got := got.Options[i]
@@ -197,13 +242,30 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 		}
 	}
 
-	if assert.Equal(t, len(want.Transitions), len(got.Transitions)) {
+	// Compare transitions.
+	if assert.Equal(t, len(want.Transitions), len(got.Transitions), ctxStr) {
 		for i := 0; i < len(want.Transitions); i++ {
 			want := want.Transitions[i]
 			got := got.Transitions[i]
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
+		}
+	}
+
+	// Compare children.
+	parentStateName := want.Name
+	if assert.Equal(t, len(want.Children), len(got.Children), ctxStr) {
+		for i := 0; i < len(want.Children); i++ {
+			want := want.Children[i]
+			got := got.Children[i]
+
+			subComparer := &stateComparer{
+				index:          i,
+				statechartName: sc.statechartName,
+				parentState:    parentStateName,
+			}
+			subComparer.compare(t, want, got)
 		}
 	}
 }
