@@ -24,14 +24,15 @@ func _() {
 	_ = x[Token_KeywordState-13]
 	_ = x[Token_KeywordTransition-14]
 	_ = x[Token_KeywordTrigger-15]
-	_ = x[Token_TriggerArgs-16]
-	_ = x[Token_Identifier-17]
-	_ = x[Token_EOF-18]
+	_ = x[Token_KeywordNull-16]
+	_ = x[Token_TriggerArgs-17]
+	_ = x[Token_Identifier-18]
+	_ = x[Token_EOF-19]
 }
 
-const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordTransitionToken_KeywordTriggerToken_TriggerArgsToken_IdentifierToken_EOF"
+const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordTransitionToken_KeywordTriggerToken_KeywordNullToken_TriggerArgsToken_IdentifierToken_EOF"
 
-var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 121, 132, 145, 157, 170, 193, 211, 234, 254, 271, 287, 296}
+var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 121, 132, 145, 157, 170, 193, 211, 234, 254, 271, 288, 304, 313}
 
 func (i TokenIdentifier) String() string {
 	if i < 0 || i >= TokenIdentifier(len(_TokenIdentifier_index)-1) {

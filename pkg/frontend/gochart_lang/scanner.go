@@ -52,6 +52,7 @@ func NewScanner() *Scanner {
 			"state":      Token_KeywordState,
 			"transition": Token_KeywordTransition,
 			"trigger":    Token_KeywordTrigger,
+			"null":       Token_KeywordNull,
 		},
 	}
 }

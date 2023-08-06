@@ -17,7 +17,7 @@ func TestGatherTokens(t *testing.T) {
 "literal"
    "multiline true
   string""after_line"
-  statechart state transition aabb a0123456789b
+  statechart state transition aabb a0123456789b null
 	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>),=,
 	,= true false true
 1 22 333 4444
@@ -50,6 +50,7 @@ func TestGatherTokens(t *testing.T) {
 
 		{id: Token_Identifier, literal: "aabb", line: 8, char: 31},
 		{id: Token_Identifier, literal: "a0123456789b", line: 8, char: 36},
+		{id: Token_KeywordNull, literal: "null", line: 8, char: 49},
 
 		{id: Token_KeywordTrigger, literal: "trigger", line: 9, char: 2},
 		{id: Token_Identifier, literal: "SomeTrigger", line: 9, char: 10},

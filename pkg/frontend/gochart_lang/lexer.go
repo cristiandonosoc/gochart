@@ -13,26 +13,27 @@ const (
 	Token_Invalid TokenIdentifier = iota
 
 	// Single character tokens.
-	Token_LeftParen    // (
-	Token_RightParen   // )
-	Token_LeftBrace    // {
-	Token_RightBrace   // }
-	Token_LeftBracket  // [
-	Token_RightBracket // ]
-	Token_Equal        // =
-	Token_Comma        // ,
+	Token_LeftParen    // '('
+	Token_RightParen   // ')'
+	Token_LeftBrace    // '{'
+	Token_RightBrace   // '}'
+	Token_LeftBracket  // '['
+	Token_RightBracket // ']'
+	Token_Equal        // '='
+	Token_Comma        // ','
 
-	Token_Boolean // true | false
+	Token_Boolean // 'true' | 'false'
 
 	// literals.
 	Token_String  // "content"
 	Token_Integer // 123456
 
 	// Keywords
-	Token_KeywordStatechart // statechart
-	Token_KeywordState      // state
-	Token_KeywordTransition // transition
-	Token_KeywordTrigger    // trigger
+	Token_KeywordStatechart // 'statechart'
+	Token_KeywordState      // 'state'
+	Token_KeywordTransition // 'transition'
+	Token_KeywordTrigger    // 'trigger'
+	Token_KeywordNull       // 'null'
 
 	// Represents the argument string of a trigger.
 	Token_TriggerArgs
