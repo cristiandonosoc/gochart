@@ -24,17 +24,19 @@ func _() {
 	_ = x[Token_Integer-13]
 	_ = x[Token_KeywordStatechart-14]
 	_ = x[Token_KeywordState-15]
-	_ = x[Token_KeywordTransition-16]
-	_ = x[Token_KeywordTrigger-17]
-	_ = x[Token_KeywordNull-18]
-	_ = x[Token_TriggerArgs-19]
-	_ = x[Token_Identifier-20]
-	_ = x[Token_EOF-21]
+	_ = x[Token_KeywordEnter-16]
+	_ = x[Token_KeywordExit-17]
+	_ = x[Token_KeywordTransition-18]
+	_ = x[Token_KeywordTrigger-19]
+	_ = x[Token_KeywordNull-20]
+	_ = x[Token_TriggerArgs-21]
+	_ = x[Token_Identifier-22]
+	_ = x[Token_EOF-23]
 }
 
-const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_LeftAngleBracketToken_RightAngleBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordTransitionToken_KeywordTriggerToken_KeywordNullToken_TriggerArgsToken_IdentifierToken_EOF"
+const _TokenIdentifier_name = "Token_InvalidToken_LeftParenToken_RightParenToken_LeftBraceToken_RightBraceToken_LeftBracketToken_RightBracketToken_LeftAngleBracketToken_RightAngleBracketToken_EqualToken_CommaToken_BooleanToken_StringToken_IntegerToken_KeywordStatechartToken_KeywordStateToken_KeywordEnterToken_KeywordExitToken_KeywordTransitionToken_KeywordTriggerToken_KeywordNullToken_TriggerArgsToken_IdentifierToken_EOF"
 
-var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 132, 155, 166, 177, 190, 202, 215, 238, 256, 279, 299, 316, 333, 349, 358}
+var _TokenIdentifier_index = [...]uint16{0, 13, 28, 44, 59, 75, 92, 110, 132, 155, 166, 177, 190, 202, 215, 238, 256, 274, 291, 314, 334, 351, 368, 384, 393}
 
 func (i TokenIdentifier) String() string {
 	if i < 0 || i >= TokenIdentifier(len(_TokenIdentifier_index)-1) {

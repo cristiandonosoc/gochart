@@ -33,6 +33,8 @@ const (
 	// Keywords
 	Token_KeywordStatechart // 'statechart'
 	Token_KeywordState      // 'state'
+	Token_KeywordEnter      // 'enter'
+	Token_KeywordExit       // 'exit'
 	Token_KeywordTransition // 'transition'
 	Token_KeywordTrigger    // 'trigger'
 	Token_KeywordNull       // 'null'

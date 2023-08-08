@@ -16,12 +16,13 @@ func TestGatherTokens(t *testing.T) {
 <<[["this is a string literal"]]>>
 "literal"
    "multiline true
-  string""after_line"
+  string""after_line enter exit statechart state transition trigger null"
   statechart state transition aabb a0123456789b null
 	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>),=,
 	,= true false true
 123456789 22
 333, 4444)
+enter exit
 `
 
 	r := strings.NewReader(input)
@@ -47,7 +48,7 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_String, literal: "literal", line: 5, char: 1},
 		{id: Token_String, literal: `multiline true
   string`, line: 6, char: 4},
-		{id: Token_String, literal: "after_line", line: 7, char: 10},
+		{id: Token_String, literal: "after_line enter exit statechart state transition trigger null", line: 7, char: 10},
 
 		{id: Token_KeywordStatechart, literal: "statechart", line: 8, char: 3},
 		{id: Token_KeywordState, literal: "state", line: 8, char: 14},
@@ -80,7 +81,10 @@ func TestGatherTokens(t *testing.T) {
 		{id: Token_Integer, literal: "4444", line: 12, char: 6},
 		{id: Token_RightParen, literal: ")", line: 12, char: 10},
 
-		{id: Token_EOF, line: 13, char: 0},
+		{id: Token_KeywordEnter, literal: "enter", line: 13, char: 1},
+		{id: Token_KeywordExit, literal: "exit", line: 13, char: 7},
+
+		{id: Token_EOF, line: 14, char: 0},
 	}
 
 	s := NewScanner()
