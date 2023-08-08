@@ -132,7 +132,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			}
 
 			// Check if there is a state.
-			if state, ok, err := p.parseState(); err != nil {
+			if state, ok, err := p.parseState(nil); err != nil {
 				return nil, fmt.Errorf("statechart %q: parsing state: %w", name, err)
 			} else if ok {
 				states = append(states, state)
@@ -208,6 +208,7 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
 
 type ASTNodeState struct {
 	Name           string
+	ParentName     string
 	Options        []*ASTNodeStateOption
 	EnterReactions []*ASTNodeStateReaction
 	ExitReactions  []*ASTNodeStateReaction
@@ -217,7 +218,7 @@ type ASTNodeState struct {
 
 var _ ASTNode = (*ASTNodeState)(nil)
 
-func (p *Parser) parseState() (*ASTNodeState, bool, error) {
+func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 	// If we found  the 'state' keyword, we parse it.
 	if _, ok := p.match(Token_KeywordState); !ok {
 		return nil, false, nil
@@ -235,6 +236,18 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 		return nil, false, fmt.Errorf("state %q: parsing options: %w", name, err)
 	} else if ok {
 		options = opts
+	}
+
+	// Create the state to be passed to the children.
+	var parentName string
+	if parent != nil {
+		parentName = parent.Name
+	}
+
+	state := &ASTNodeState{
+		Name:       name,
+		Options:    options,
+		ParentName: parentName,
 	}
 
 	// The body.
@@ -277,7 +290,7 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 			}
 
 			// See if we found a child state.
-			if child, ok, err := p.parseState(); err != nil {
+			if child, ok, err := p.parseState(state); err != nil {
 				return nil, false, fmt.Errorf("state %q: parse child state: %w", name, err)
 			} else if ok {
 				children = append(children, child)
@@ -290,14 +303,13 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 		}
 	}
 
-	return &ASTNodeState{
-		Name:           name,
-		Options:        options,
-		EnterReactions: enterReactions,
-		ExitReactions:  exitReactions,
-		Transitions:    transitions,
-		Children:       children,
-	}, true, nil
+	// Fill in the rest of the state.
+	state.EnterReactions = enterReactions
+	state.ExitReactions = exitReactions
+	state.Transitions = transitions
+	state.Children = children
+
+	return state, true, nil
 }
 
 // StateOptions ------------------------------------------------------------------------------------

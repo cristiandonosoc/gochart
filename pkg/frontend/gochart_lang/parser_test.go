@@ -134,7 +134,8 @@ func TestReadSimple(t *testing.T) {
 						},
 						Children: []*ASTNodeState{
 							{
-								Name: "ThirdChild1",
+								Name:       "ThirdChild1",
+								ParentName: "Third",
 								Options: []*ASTNodeStateOption{
 									{
 										Name: "OptChild1",
@@ -147,7 +148,8 @@ func TestReadSimple(t *testing.T) {
 								},
 								Children: []*ASTNodeState{
 									{
-										Name: "ThirdGrandChild",
+										Name:       "ThirdGrandChild",
+										ParentName: "ThirdChild1",
 										Options: []*ASTNodeStateOption{
 											{
 												Name:      "OptGrandChild",
@@ -175,7 +177,8 @@ func TestReadSimple(t *testing.T) {
 								},
 							},
 							{
-								Name: "ThirdChild2",
+								Name:       "ThirdChild2",
+								ParentName: "Third",
 								Transitions: []*ASTNodeStateTransition{
 									{
 										Trigger:     "",
@@ -319,4 +322,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			subComparer.compare(t, want, got)
 		}
 	}
+
+	// Compare parent.
+	assert.Equal(t, want.ParentName, got.ParentName, ctxStr)
 }
