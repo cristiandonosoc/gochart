@@ -4,6 +4,12 @@ statechart Example {
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
 
 	state First {
+		enter
+		enter Third
+
+		exit
+		exit Third
+
 		transition null > Third
 		transition Execute > Second
 	}
@@ -18,6 +24,9 @@ statechart Example {
 		state ThirdChild1(OptChild1, OptChild2 = IdentifierChild) {
 			state ThirdGrandChild(OptGrandChild = false) {
 				transition Execute > Second
+
+				enter
+				exit Update
 			}
 		}
 

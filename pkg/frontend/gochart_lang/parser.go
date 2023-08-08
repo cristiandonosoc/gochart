@@ -207,10 +207,12 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
 // State -> 'state' NAME 'StateOptions? StateBody
 
 type ASTNodeState struct {
-	Name        string
-	Options     []*ASTNodeStateOption
-	Transitions []*ASTNodeStateTransition
-	Children    []*ASTNodeState
+	Name           string
+	Options        []*ASTNodeStateOption
+	EnterReactions []*ASTNodeStateReaction
+	ExitReactions  []*ASTNodeStateReaction
+	Transitions    []*ASTNodeStateTransition
+	Children       []*ASTNodeState
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -236,6 +238,8 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 	}
 
 	// The body.
+	var enterReactions []*ASTNodeStateReaction
+	var exitReactions []*ASTNodeStateReaction
 	var transitions []*ASTNodeStateTransition
 	var children []*ASTNodeState
 	{
@@ -249,6 +253,20 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 			// If we peek a right brace, we know the body is closed.
 			if p.peekToken(Token_RightBrace) {
 				break
+			}
+
+			// See if we found an enter reaction.
+			if reaction, ok, err := p.parseStateEnterReaction(); err != nil {
+				return nil, false, fmt.Errorf("state %q: parsing enter reaction: %w", name, err)
+			} else if ok {
+				enterReactions = append(enterReactions, reaction)
+			}
+
+			// See if we found an exit reaction.
+			if reaction, ok, err := p.parseStateExitReaction(); err != nil {
+				return nil, false, fmt.Errorf("state %q: parsing exit reaction: %w", name, err)
+			} else if ok {
+				exitReactions = append(exitReactions, reaction)
 			}
 
 			// See if we found a transition.
@@ -273,10 +291,12 @@ func (p *Parser) parseState() (*ASTNodeState, bool, error) {
 	}
 
 	return &ASTNodeState{
-		Name:        name,
-		Options:     options,
-		Transitions: transitions,
-		Children:    children,
+		Name:           name,
+		Options:        options,
+		EnterReactions: enterReactions,
+		ExitReactions:  exitReactions,
+		Transitions:    transitions,
+		Children:       children,
 	}, true, nil
 }
 
@@ -382,6 +402,42 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 		ValueType: valueType,
 		Value:     value,
 	}, nil
+}
+
+// StateReaction -----------------------------------------------------------------------------------
+//
+// StateReaction -> 'enter' ( '(' IDENTIFIER ')' )?
+//               ->  'exit' ( '(' IDENTIFIER ')' )?
+
+type ASTNodeStateReaction struct {
+	Trigger string
+}
+
+var _ ASTNode = (*ASTNodeStateReaction)(nil)
+
+func (p *Parser) parseStateEnterReaction() (*ASTNodeStateReaction, bool, error) {
+	return p.parseStateReaction(Token_KeywordEnter)
+}
+
+func (p *Parser) parseStateExitReaction() (*ASTNodeStateReaction, bool, error) {
+	return p.parseStateReaction(Token_KeywordExit)
+}
+
+func (p *Parser) parseStateReaction(keywordToken TokenIdentifier) (*ASTNodeStateReaction, bool, error) {
+	// Check if we found the keyword we were expecting.
+	if _, ok := p.match(keywordToken); !ok {
+		return nil, false, nil
+	}
+
+	// We check to see if the user indicated a trigger associated with the reaction.
+	var triggerName string
+	if triggerToken, ok := p.match(Token_Identifier); ok {
+		triggerName = triggerToken.literal
+	}
+
+	return &ASTNodeStateReaction{
+		Trigger: triggerName,
+	}, true, nil
 }
 
 // StateTransition ---------------------------------------------------------------------------------

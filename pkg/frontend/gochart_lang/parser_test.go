@@ -42,6 +42,22 @@ func TestReadSimple(t *testing.T) {
 				States: []*ASTNodeState{
 					{
 						Name: "First",
+						EnterReactions: []*ASTNodeStateReaction{
+							{
+								Trigger: "",
+							},
+							{
+								Trigger: "Third",
+							},
+						},
+						ExitReactions: []*ASTNodeStateReaction{
+							{
+								Trigger: "",
+							},
+							{
+								Trigger: "Third",
+							},
+						},
 						Transitions: []*ASTNodeStateTransition{
 							{
 								Trigger:     "",
@@ -137,6 +153,16 @@ func TestReadSimple(t *testing.T) {
 												Name:      "OptGrandChild",
 												ValueType: ValueType_Boolean,
 												Value:     "false",
+											},
+										},
+										EnterReactions: []*ASTNodeStateReaction{
+											{
+												Trigger: "",
+											},
+										},
+										ExitReactions: []*ASTNodeStateReaction{
+											{
+												Trigger: "Update",
 											},
 										},
 										Transitions: []*ASTNodeStateTransition{
@@ -244,6 +270,26 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			assert.Equal(t, want.Name, got.Name, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.ValueType, got.ValueType, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.Value, got.Value, "%s, Option %d", ctxStr, i)
+		}
+	}
+
+	// Compare enter reactions.
+	if assert.Equal(t, len(want.EnterReactions), len(got.EnterReactions), ctxStr) {
+		for i := 0; i < len(want.EnterReactions); i++ {
+			want := want.EnterReactions[i]
+			got := got.EnterReactions[i]
+
+			assert.Equal(t, want.Trigger, got.Trigger, "%s, Option %d", ctxStr, i)
+		}
+	}
+
+	// Compare exit reactions.
+	if assert.Equal(t, len(want.ExitReactions), len(got.ExitReactions), ctxStr) {
+		for i := 0; i < len(want.ExitReactions); i++ {
+			want := want.ExitReactions[i]
+			got := got.ExitReactions[i]
+
+			assert.Equal(t, want.Trigger, got.Trigger, "%s, Option %d", ctxStr, i)
 		}
 	}
 
