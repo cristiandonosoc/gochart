@@ -22,9 +22,10 @@ type TriggerData struct {
 }
 
 type StateData struct {
-	Name    string `yaml:"name"`
-	Default bool   `yaml:"default"`
-	Parent  string `yaml:"parent"`
+	Name   string `yaml:"name"`
+	Parent string `yaml:"parent"`
+
+	Default bool `yaml:"default"`
 
 	DefaultEnter          bool     `yaml:"default_enter"`
 	EnterReactionTriggers []string `yaml:"enter_reaction_triggers"`
