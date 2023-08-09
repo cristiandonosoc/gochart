@@ -1,11 +1,11 @@
 package ir
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -175,19 +175,19 @@ func compareTransition(t *testing.T, want, got *Transition) {
 // HELPER FUNCTIONS --------------------------------------------------------------------------------
 
 func findState(t *testing.T, states []*State, name string) *State {
-	res := xslices.Filter(states, func(s *State) bool {
+	i := slices.IndexFunc(states, func(s *State) bool {
 		return s.Name == name
 	})
-	require.Equal(t, 1, len(res))
-	return res[0]
+	require.NotEqual(t, i, -1)
+	return states[i]
 }
 
 func findTrigger(t *testing.T, triggers []*Trigger, name string) *Trigger {
-	res := xslices.Filter(triggers, func(trigger *Trigger) bool {
-		return trigger.Name == name
+	i := slices.IndexFunc(triggers, func(t *Trigger) bool {
+		return t.Name == name
 	})
-	require.Equal(t, 1, len(res))
-	return res[0]
+	require.NotEqual(t, i, -1)
+	return triggers[i]
 }
 
 func setParenthood(t *testing.T, states []*State, parentName, childName string) {

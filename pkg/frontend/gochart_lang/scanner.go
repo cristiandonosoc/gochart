@@ -5,10 +5,10 @@ package gochart_lang
 import (
 	"fmt"
 	"io"
+	"slices"
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
@@ -634,8 +634,12 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 	}
 
 	acceptable := []rune{' ', '\n', ',', ')'}
-	if xslices.Count(acceptable, peek) == 0 {
-		return nil, false, fmt.Errorf("numbers must be separated by %v, got %q", acceptable, peek)
+	if !slices.Contains(acceptable, peek) {
+		printable := make([]string, 0, len(acceptable))
+		for _, r := range acceptable {
+			printable = append(printable, fmt.Sprintf("'%s'", string(r)))
+		}
+		return nil, false, fmt.Errorf("numbers must be separated by %v, got %q", printable, peek)
 	}
 
 	return &Token{

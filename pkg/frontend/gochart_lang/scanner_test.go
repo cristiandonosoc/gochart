@@ -2,10 +2,10 @@ package gochart_lang
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -122,7 +122,7 @@ func printTokenErrors(t *testing.T, want, got []*Token, errorLines ...int) {
 	t.Log("\nError Summary:\n")
 
 	for i := 0; i < len(want) || i < len(got); i++ {
-		isErrorLine := (xslices.Count(errorLines, i) > 0)
+		isErrorLine := slices.Contains(errorLines, i)
 
 		wantStr := "Want: <empty>"
 		if i < len(want) {

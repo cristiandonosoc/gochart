@@ -2,10 +2,9 @@ package ir
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode"
-
-	"github.com/bradenaw/juniper/xslices"
 )
 
 func ParseCppArguments(argString string) ([]*TriggerArgument, error) {
@@ -69,7 +68,7 @@ func (cpp *cppArgumentParser) splitArguments(argString string) ([]string, error)
 		}
 
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			if xslices.Count(cpp.allowedChars, r) == 0 {
+			if !slices.Contains(cpp.allowedChars, r) {
 				return nil, fmt.Errorf("char %d: invalid char %q", i, r)
 			}
 		}

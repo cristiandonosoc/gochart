@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
-
-	"github.com/bradenaw/juniper/xslices"
 )
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
@@ -184,11 +182,14 @@ func (ih *inputHandler) collectReactions(triggerNames []string) ([]*StateReactio
 		triggers = append(triggers, trigger)
 	}
 
-	return xslices.Map(triggers, func(t *Trigger) *StateReaction {
-		return &StateReaction{
-			Trigger: t,
-		}
-	}), nil
+	reactions := make([]*StateReaction, 0, len(triggers))
+	for _, trigger := range triggers {
+		reactions = append(reactions, &StateReaction{
+			Trigger: trigger,
+		})
+	}
+
+	return reactions, nil
 }
 
 func (ih *inputHandler) collectTransitions() error {
