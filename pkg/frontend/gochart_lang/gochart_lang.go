@@ -3,6 +3,7 @@
 package gochart_lang
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -20,13 +21,37 @@ func NewGochartLangFrontend() *gochartLangFrontend {
 }
 
 func (glf *gochartLangFrontend) Process(r io.Reader) (*frontend.StatechartData, error) {
-	// data, err := io.ReadAll(r)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("reading input reader: %w", err)
-	// }
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("reading input reader: %w", err)
+	}
 
-	// var scdata frontend.StatechartData
-	return nil, fmt.Errorf("IMPLEMENT ME")
+	scanner := NewScanner()
+	tokens, errors := scanner.gatherTokens(bytes.NewReader(data))
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Printf("Lexing error: %v\n", err)
+		}
+		return nil, fmt.Errorf("gochart: parsing input file")
+	}
+
+	parser := NewParser()
+	root, errors := parser.Parse(tokens)
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Printf("Parsing error: %v\n", err)
+		}
+		return nil, fmt.Errorf("gochart: parsing input file")
+	}
+
+	if len(root.statecharts) != 1 {
+		return nil, fmt.Errorf("For now only one statechart is supported per file")
+	}
+
+	ft := newFrontendTranslator()
+	scdata := ft.translateStatechart(root.statecharts[0])
+
+	return scdata, nil
 }
 
 // AST TO OUTPUT TRANSLATION -----------------------------------------------------------------------
