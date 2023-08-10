@@ -33,7 +33,3 @@ func (yf *yamlFrontend) Process(r io.Reader) (*frontend.StatechartData, error) {
 
 	return &scdata, nil
 }
-
-func (yf *yamlFrontend) ProcessFromFile(path string) (*frontend.StatechartData, error) {
-	return frontend.ProcessFromFile(yf, path)
-}

@@ -29,10 +29,6 @@ func (glf *gochartLangFrontend) Process(r io.Reader) (*frontend.StatechartData, 
 	return nil, fmt.Errorf("IMPLEMENT ME")
 }
 
-func (glf *gochartLangFrontend) ProcessFromFile(path string) (*frontend.StatechartData, error) {
-	return frontend.ProcessFromFile(glf, path)
-}
-
 // AST TO OUTPUT TRANSLATION -----------------------------------------------------------------------
 //
 // This section translated from the AST nodes into the format the output expects.

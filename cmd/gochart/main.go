@@ -1,26 +1,60 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
-func readFrontend(path string) (*frontend.StatechartData, error) {
-	yf := yaml.NewYamlFrontend()
+var (
+	flags = struct {
+		input        string
+		frontendKind frontend.FrontendKind
+		backendKind  backend.BackendKind
+		printOnly    bool
+		headerOutput string
+		bodyOutput   string
+	}{}
+)
 
-	scdata, err := yf.ProcessFromFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("processign statechart yaml %q: %w", path, err)
+func parseFlags() error {
+	frontendFlag := flag.String("frontend", "yaml", "What frontend to use")
+	backendFlag := flag.String("backend", "cpp", "Want backend to generate to")
+	flag.BoolVar(&flags.printOnly, "print-only", false, "Whether we should just print, instead of generate")
+	flag.StringVar(&flags.headerOutput, "header-output", "", "Where to output the header (.h) file. Cpp backend only.")
+	flag.StringVar(&flags.bodyOutput, "body-output", "", "Where to output the body (.cpp) file. Cpp backend only.")
+
+	flag.Parse()
+
+	if err := flags.frontendKind.Set(*frontendFlag); err != nil {
+		return err
 	}
 
-	return scdata, nil
+	if err := flags.backendKind.Set(*backendFlag); err != nil {
+		return err
+	}
+
+	if !flags.printOnly {
+		if flags.headerOutput == "" || flags.bodyOutput == "" {
+			return fmt.Errorf("if --print-only is not set, then --header-output and --body-output must be set")
+		}
+	}
+
+	if len(flag.Args()) != 1 {
+		return fmt.Errorf("Wrong amount of arguments")
+	}
+	flags.input = flag.Args()[0]
+
+	return nil
 }
 
 func writeToFile(path string, r io.Reader) error {
@@ -43,74 +77,47 @@ func writeToFile(path string, r io.Reader) error {
 	return nil
 }
 
-func ensureDirectoriesExists(headerPath, bodyPath string) error {
-	if ok, err := ensureDirExists(filepath.Dir(headerPath)); err != nil {
-		return fmt.Errorf("ensuring %q owning directory exists: %w", headerPath, err)
-	} else if !ok {
-		return fmt.Errorf("parent path for %q is not a directory", headerPath)
-	}
-
-	if ok, err := ensureDirExists(filepath.Dir(bodyPath)); err != nil {
-		return fmt.Errorf("ensuring %q owning directory exists: %w", bodyPath, err)
-	} else if !ok {
-		return fmt.Errorf("parent path for %q is not a directory", bodyPath)
-	}
-
-	return nil
-}
-
-func ensureDirExists(path string) (bool, error) {
-	if info, err := os.Stat(path); err != nil {
-		return false, fmt.Errorf("stat %q: %w", path, err)
-	} else {
-		if !info.IsDir() {
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
 func internalMain() error {
-	var yamlPath string
-	var headerPath string
-	var bodyPath string
-	onlyPrint := true
-
-	if len(os.Args) == 2 {
-		yamlPath = os.Args[1]
-	} else if len(os.Args) == 4 {
-		onlyPrint = false
-
-		yamlPath = os.Args[1]
-		headerPath = os.Args[2]
-		bodyPath = os.Args[3]
-	} else {
-		return fmt.Errorf("Usage: gochart <PATH> [<HEADER_PATH> <BODY_PATH>]")
+	if err := parseFlags(); err != nil {
+		flag.Usage()
+		fmt.Println("Usage: gochart [FLAGS] INPUT")
+		return fmt.Errorf("parsing commandline: %w", err)
 	}
 
-	scdata, err := readFrontend(yamlPath)
+	// Get the frontend and read the yaml.
+	var gf frontend.GochartFrontend
+	switch flags.frontendKind {
+	case frontend.FrontendKind_Gochart:
+		gf = gochart_lang.NewGochartLangFrontend()
+	case frontend.FrontendKind_Yaml:
+		gf = yaml.NewYamlFrontend()
+	}
+
+	scdata, err := frontend.ProcessFromFile(gf, flags.input)
 	if err != nil {
-		return fmt.Errorf("reading frontend: %w", err)
+		return fmt.Errorf("parsing input file: %w", err)
 	}
 
+	// Process the generated data into intermediary format.
 	sc, err := ir.ProcessStatechartData(scdata)
 	if err != nil {
 		return fmt.Errorf("processing statechart data: %w", err)
 	}
 
-	backend := cpp.NewCppGochartBackend(func(o *cpp.BackendOptions) {
-		// For now we just assume the include is in the same directory.
-		if headerPath != "" {
-			o.HeaderInclude = filepath.Base(headerPath)
-		}
-	})
-	headerData, bodyData, err := backend.Generate(sc)
+	var gb backend.GochartBackend
+	if flags.backendKind == backend.BackendKind_Cpp {
+		gb = cpp.NewCppGochartBackend(func(o *cpp.BackendOptions) {
+			// For now we just assume the include is in the same directory.
+			o.HeaderInclude = filepath.Base(flags.headerOutput)
+		})
+	}
+
+	headerData, bodyData, err := gb.Generate(sc)
 	if err != nil {
 		return fmt.Errorf("generating backend: %w", err)
 	}
 
-	if onlyPrint {
+	if flags.printOnly {
 		header, err := io.ReadAll(headerData)
 		if err != nil {
 			return fmt.Errorf("reading the header data: %w", err)
@@ -125,17 +132,19 @@ func internalMain() error {
 		fmt.Println(string(header))
 		fmt.Println("BODY *****")
 		fmt.Println(string(body))
-	} else {
-		if err := writeToFile(headerPath, headerData); err != nil {
-			return fmt.Errorf("writing header: %w", err)
-		}
-		fmt.Printf("Wrote header to %s\n", headerPath)
 
-		if err := writeToFile(bodyPath, bodyData); err != nil {
-			return fmt.Errorf("writing body: %w", err)
-		}
-		fmt.Printf("Wrote body to %s\n", bodyPath)
+		return nil
 	}
+
+	if err := writeToFile(flags.headerOutput, headerData); err != nil {
+		return fmt.Errorf("writing header: %w", err)
+	}
+	fmt.Printf("Wrote header to %s\n", flags.headerOutput)
+
+	if err := writeToFile(flags.bodyOutput, bodyData); err != nil {
+		return fmt.Errorf("writing body: %w", err)
+	}
+	fmt.Printf("Wrote body to %s\n", flags.bodyOutput)
 
 	return nil
 }

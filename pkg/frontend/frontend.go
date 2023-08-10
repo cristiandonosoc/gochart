@@ -4,10 +4,35 @@ package frontend
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
-	"fmt"
+	"strings"
 )
+
+// FrontendKind is an enum holding all the possible frontends available.
+type FrontendKind int
+
+const (
+	// FrontendKind_Gochart represents the main language with a custom parser.
+	FrontendKind_Gochart FrontendKind = iota
+
+	// FrontendKind_Yaml is a simple yaml parser, mostly used for development purposes.
+	FrontendKind_Yaml
+)
+
+func (fk *FrontendKind) Set(value string) error {
+	switch strings.ToLower(value) {
+	case "gochart":
+		*fk = FrontendKind_Gochart
+	case "yaml":
+		*fk = FrontendKind_Yaml
+	default:
+		return fmt.Errorf("invalid frontend value: want gochart or yaml, got %v", value)
+	}
+
+	return nil
+}
 
 // GochartFrontend is the abstract interface for all frontends, regardless of the type of data they
 // consume. This is used to decouple language specifications from the rest of the program.
@@ -15,10 +40,6 @@ type GochartFrontend interface {
 	// Process takes the content describing input for this frontend and is meant to return frontend
 	// data that can then be consumed by others parts of the program, mostly the |ir| package.
 	Process(r io.Reader) (*StatechartData, error)
-
-	// ProcessFromFile is meant to read the contents of a file pointed by |path| and return the
-	// statechart definition from it.
-	ProcessFromFile(path string) (*StatechartData, error)
 }
 
 // ProcessFromFile is a convenience function that reads a whole file and pass it to the particular
