@@ -208,6 +208,8 @@ func (s *State) HasExitReaction(trigger *Trigger) bool {
 	return false
 }
 
+// STATE OPTIONS -----------------------------------------------------------------------------------
+
 // STATE REACTION ----------------------------------------------------------------------------------
 
 type StateReaction struct {

@@ -28,10 +28,23 @@ type StateData struct {
 	Default bool `yaml:"default"`
 
 	EnterReactionTriggers []string `yaml:"enter_reaction_triggers"`
-	ExitReactionTriggers []string `yaml:"exit_reaction_triggers"`
+	ExitReactionTriggers  []string `yaml:"exit_reaction_triggers"`
 
 	// Index represents in what order it was found.
 	Index int
+}
+
+//go:generate stringer -type=StateOptionValueKind
+type StateOptionValueKind int
+
+const (
+	StateOptionValueKind_None StateOptionValueKind = iota
+	StateOptionValueKind_String
+	StateOptionValueKind_Integer
+	StateOptionValueKind_Boolean
+)
+
+type StateOptionData struct {
 }
 
 type TransitionData struct {

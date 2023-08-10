@@ -5,10 +5,10 @@ statechart Example {
 
 	state First {
 		enter
-		enter Third
+		enter Execute
 
+		exit Execute
 		exit
-		exit Third
 
 		transition null > Third
 		transition Execute > Second
