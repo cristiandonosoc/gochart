@@ -9,7 +9,7 @@ import (
 
 func ParseCppArguments(argString string) ([]*TriggerArgument, error) {
 	cpp := &cppArgumentParser{
-		allowedChars: []rune{'_', '<', '>', ':', ' ', '&', '(', ')', ','},
+		allowedChars: []rune{'_', '<', '>', ':', ' ', '&', '(', ')', ',', '*'},
 	}
 	return cpp.parseArguments(argString)
 }
