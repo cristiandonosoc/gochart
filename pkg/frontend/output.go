@@ -27,10 +27,7 @@ type StateData struct {
 
 	Default bool `yaml:"default"`
 
-	DefaultEnter          bool     `yaml:"default_enter"`
 	EnterReactionTriggers []string `yaml:"enter_reaction_triggers"`
-
-	DefaultExit          bool     `yaml:"default_exit"`
 	ExitReactionTriggers []string `yaml:"exit_reaction_triggers"`
 
 	// Index represents in what order it was found.

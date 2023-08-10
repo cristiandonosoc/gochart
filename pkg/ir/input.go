@@ -143,24 +143,12 @@ func (ih *inputHandler) collectStates() error {
 		if err != nil {
 			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
 		}
-		// Special case the default trigger, which is an enter reaction with a nil trigger.
-		if state.frontendData.DefaultEnter {
-			enters = append(enters, &StateReaction{
-				Trigger: nil,
-			})
-		}
 		state.EnterReactions = enters
 
 		// Collect the exit reactions.
 		exits, err := ih.collectReactions(state.frontendData.ExitReactionTriggers)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting exit reactions: %w", name, err)
-		}
-		// Special case the default trigger, which is an exit reaction with a nil trigger.
-		if state.frontendData.DefaultExit {
-			exits = append(exits, &StateReaction{
-				Trigger: nil,
-			})
 		}
 		state.ExitReactions = exits
 	}
@@ -173,8 +161,21 @@ func (ih *inputHandler) collectStates() error {
 }
 
 func (ih *inputHandler) collectReactions(triggerNames []string) ([]*StateReaction, error) {
+	defaultFound := false
+
 	var triggers []*Trigger
 	for _, triggerName := range triggerNames {
+		// Special case the empty trigger name, which is a default reaction with a nil trigger.
+		if triggerName == "" {
+			if defaultFound {
+				return nil, fmt.Errorf("two default reactions found, only one allowed")
+			}
+
+			triggers = append(triggers, nil)
+			defaultFound = true
+			continue
+		}
+
 		trigger, ok := ih.triggerMap[triggerName]
 		if !ok {
 			return nil, fmt.Errorf("cannot find trigger %q", triggerName)
