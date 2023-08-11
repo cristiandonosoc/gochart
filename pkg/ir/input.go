@@ -106,7 +106,6 @@ func (ih *inputHandler) collectStates() error {
 		// For now, we simply create the state. Parenthood will be set on a second pass.
 		state := &State{
 			Name:         statedata.Name,
-			Default:      statedata.Default,
 			frontendData: statedata,
 		}
 		states = append(states, state)
@@ -135,6 +134,12 @@ func (ih *inputHandler) collectStates() error {
 		}
 		parent.Children = append(parent.Children, state)
 		state.Parent = parent
+
+		// Parse the options for this state.
+		op := newOptionParser(state)
+		if err := op.parseOptions(state.frontendData.Options); err != nil {
+			return fmt.Errorf("state %q: parsing options: %w", state.Name, err)
+		}
 	}
 
 	// We collect the transition reactions.

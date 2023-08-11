@@ -6,11 +6,10 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
-//go:generate stringer -type=StateOptionKind
-type StateOptionKind int
+type StateOptionKind string
 
 const (
-	StateOptionKind_Default StateOptionKind = iota
+	StateOptionKind_Default StateOptionKind = "default"
 )
 
 type StateOption struct {
@@ -22,8 +21,8 @@ type StateOption struct {
 	boolValue   bool
 }
 
-func (so *StateOption) Name() string {
-	return so.Kind.String()
+func (so *StateOption) String() string {
+	return string(so.Kind)
 }
 
 func (so *StateOption) StringValue() string {
@@ -48,4 +47,45 @@ func (so *StateOption) BoolValue() bool {
 	}
 
 	return so.boolValue
+}
+
+// Option parser -----------------------------------------------------------------------------------
+
+type optionParser struct {
+	state *State
+}
+
+func newOptionParser(state *State) *optionParser {
+	return &optionParser{
+		state: state,
+	}
+}
+
+func (op *optionParser) parseOptions(frontendOptions []*frontend.StateOptionData) error {
+	for _, fo := range frontendOptions {
+		switch fo.Name {
+		case string(StateOptionKind_Default):
+			if err := op.parseDefaultOption(fo); err != nil {
+				return fmt.Errorf("parsing default option: %w", err)
+			}
+		default:
+			return fmt.Errorf("unrecognized state option %q", fo.Name)
+		}
+	}
+
+	return nil
+}
+
+func (op *optionParser) parseDefaultOption(fo *frontend.StateOptionData) error {
+	if op.state.Default {
+		return fmt.Errorf("default option already found")
+	}
+
+	if fo.ValueKind != frontend.StateOptionValueKind_None {
+		return fmt.Errorf("default option has no value associated, found %q", fo.ValueKind)
+	}
+
+	op.state.Default = true
+
+	return nil
 }
