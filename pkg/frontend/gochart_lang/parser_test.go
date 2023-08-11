@@ -76,7 +76,7 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeStateOption{
 							{
 								Name:      "Option1",
-								ValueType: frontend.StateOptionValueKind_None,
+								ValueKind: frontend.StateOptionValueKind_None,
 							},
 						},
 						Transitions: []*ASTNodeStateTransition{
@@ -91,40 +91,40 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeStateOption{
 							{
 								Name:      "Opt1",
-								ValueType: frontend.StateOptionValueKind_None,
+								ValueKind: frontend.StateOptionValueKind_None,
 							},
 							{
 								Name:      "Opt2",
-								ValueType: frontend.StateOptionValueKind_None,
+								ValueKind: frontend.StateOptionValueKind_None,
 							},
 							{
 								Name:      "Opt3",
-								ValueType: frontend.StateOptionValueKind_String,
+								ValueKind: frontend.StateOptionValueKind_String,
 								Value:     "Identifier",
 							},
 							{
 								Name:      "Opt4",
-								ValueType: frontend.StateOptionValueKind_String,
+								ValueKind: frontend.StateOptionValueKind_String,
 								Value:     "String",
 							},
 							{
 								Name:      "Opt5",
-								ValueType: frontend.StateOptionValueKind_Integer,
+								ValueKind: frontend.StateOptionValueKind_Integer,
 								Value:     "2123",
 							},
 							{
 								Name:      "Opt6",
-								ValueType: frontend.StateOptionValueKind_Boolean,
+								ValueKind: frontend.StateOptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt7",
-								ValueType: frontend.StateOptionValueKind_Boolean,
+								ValueKind: frontend.StateOptionValueKind_Boolean,
 								Value:     "false",
 							},
 							{
 								Name:      "Opt8",
-								ValueType: frontend.StateOptionValueKind_Integer,
+								ValueKind: frontend.StateOptionValueKind_Integer,
 								Value:     "22",
 							},
 						},
@@ -144,7 +144,7 @@ func TestReadSimple(t *testing.T) {
 									},
 									{
 										Name:      "OptChild2",
-										ValueType: frontend.StateOptionValueKind_String,
+										ValueKind: frontend.StateOptionValueKind_String,
 										Value:     "IdentifierChild",
 									},
 								},
@@ -155,7 +155,7 @@ func TestReadSimple(t *testing.T) {
 										Options: []*ASTNodeStateOption{
 											{
 												Name:      "OptGrandChild",
-												ValueType: frontend.StateOptionValueKind_Boolean,
+												ValueKind: frontend.StateOptionValueKind_Boolean,
 												Value:     "false",
 											},
 										},
@@ -273,7 +273,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.Options[i]
 
 			assert.Equal(t, want.Name, got.Name, "%s, Option %d", ctxStr, i)
-			assert.Equal(t, want.ValueType, got.ValueType, "%s, Option %d", ctxStr, i)
+			assert.Equal(t, want.ValueKind, got.ValueKind, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.Value, got.Value, "%s, Option %d", ctxStr, i)
 		}
 	}

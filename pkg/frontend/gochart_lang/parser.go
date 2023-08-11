@@ -361,7 +361,7 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 
 type ASTNodeStateOption struct {
 	Name      string
-	ValueType frontend.StateOptionValueKind
+	ValueKind frontend.StateOptionValueKind
 	Value     string
 }
 
@@ -375,28 +375,28 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	}
 
 	// See if there is an optional value.
-	valueType := frontend.StateOptionValueKind_None
+	valueKind := frontend.StateOptionValueKind_None
 	var value string
 	if _, ok := p.match(Token_Equal); ok {
 		if token, ok := p.match(Token_Identifier); ok {
-			valueType = frontend.StateOptionValueKind_String
+			valueKind = frontend.StateOptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_String); ok {
-			valueType = frontend.StateOptionValueKind_String
+			valueKind = frontend.StateOptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_Integer); ok {
 			_, err := strconv.Atoi(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
 			}
-			valueType = frontend.StateOptionValueKind_Integer
+			valueKind = frontend.StateOptionValueKind_Integer
 			value = token.literal
 		} else if token, ok := p.match(Token_Boolean); ok {
 			_, err := strconv.ParseBool(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
 			}
-			valueType = frontend.StateOptionValueKind_Boolean
+			valueKind = frontend.StateOptionValueKind_Boolean
 			value = token.literal
 		} else {
 			return nil, fmt.Errorf("unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
@@ -405,7 +405,7 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 
 	return &ASTNodeStateOption{
 		Name:      name,
-		ValueType: valueType,
+		ValueKind: valueKind,
 		Value:     value,
 	}, nil
 }
