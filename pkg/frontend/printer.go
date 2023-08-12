@@ -1,8 +1,9 @@
 package frontend
 
 import (
-	"fmt"
 	"io"
+
+	"github.com/cristiandonosoc/gochart/internal/printer"
 )
 
 const (
@@ -10,99 +11,99 @@ const (
 )
 
 // Printer is a helper struct meant to pretty print the frontend data.
-type printer struct {
-	indent int
-	w      io.Writer
-
+type frontendPrinter struct {
 	sc *StatechartData
+	p  *printer.Printer
 }
 
-func NewPrinter(w io.Writer) *printer {
-	return &printer{
-		w: w,
+func NewPrinter(w io.Writer) *frontendPrinter {
+	p := printer.NewPrinter(w)
+
+	return &frontendPrinter{
+		p: p,
 	}
 }
 
-func (p *printer) PrintStatechart(sc *StatechartData) {
-	p.sc = sc
+func (fp *frontendPrinter) PrintStatechart(sc *StatechartData) {
+	fp.sc = sc
 
-	p.writeLine("Statechart %s", sc.Name)
+	fp.p.WriteLine("Statechart %s", sc.Name)
 
-	p.pushIndent()
-	defer p.popIndent()
+	fp.p.PushIndent()
+	defer fp.p.PopIndent()
 
 	for _, trigger := range sc.Triggers {
-		p.printTrigger(trigger)
+		fp.printTrigger(trigger)
 	}
 
 	for _, state := range sc.States {
-		p.printState(state)
+		fp.printState(state)
 	}
 }
 
-func (p *printer) printTrigger(trigger *TriggerData) {
-	p.writeLine("Trigger %s(%s)", trigger.Name, trigger.ArgsString)
+func (fp *frontendPrinter) printTrigger(trigger *TriggerData) {
+	fp.p.WriteLine("Trigger %s(%s)", trigger.Name, trigger.ArgsString)
 }
 
-func (p *printer) printState(state *StateData) {
-	p.writeLine("State %s", state.Name)
+func (fp *frontendPrinter) printState(state *StateData) {
+	fp.p.WriteLine("State %s", state.Name)
 
-	p.pushIndent()
-	defer p.popIndent()
+	fp.p.PushIndent()
+	defer fp.p.PopIndent()
 
-	p.writeLine("Parent %q", state.Parent)
+	fp.p.WriteLine("Parent %q", state.Parent)
 
 	{
-		p.writeLine("Options:")
-		p.pushIndent()
-		p.printStateOptions(state.Options)
-		p.popIndent()
+		fp.p.WriteLine("Options:")
+		fp.p.PushIndent()
+		fp.printStateOptions(state.Options)
+		fp.p.PopIndent()
 	}
 
 	{
 		// Print all the transitions for this state.
 		var transitions []*TransitionData
-		for _, transition := range p.sc.Transitions {
+		for _, transition := range fp.sc.Transitions {
 			if transition.From == state.Name {
 				transitions = append(transitions, transition)
 			}
 		}
-		p.writeLine("Transitions:")
-		p.pushIndent()
-		p.printTransitions(transitions)
-		p.popIndent()
+		fp.p.WriteLine("Transitions:")
+		fp.p.PushIndent()
+		fp.printTransitions(transitions)
+		fp.p.PopIndent()
 	}
 
 	{
-		p.writeLine("Enter Reactions:")
-		p.pushIndent()
-		p.printReactions("Enter", state.EnterReactions)
-		p.popIndent()
+		fp.p.WriteLine("Enter Reactions:")
+		fp.p.PushIndent()
+		fp.printReactions("Enter", state.EnterReactions)
+		fp.p.PopIndent()
 	}
 
 	{
-		p.writeLine("Exit Reactions:")
-		p.pushIndent()
-		p.printReactions("Exit", state.ExitReactions)
-		p.popIndent()
+		fp.p.WriteLine("Exit Reactions:")
+		fp.p.PushIndent()
+		fp.printReactions("Exit", state.ExitReactions)
+		fp.p.PopIndent()
 	}
 
 }
 
-func (p *printer) printStateOptions(options []*StateOptionData) {
+func (fp *frontendPrinter) printStateOptions(options []*StateOptionData) {
 	if len(options) == 0 {
-		p.writeLine("No options")
+		fp.p.WriteLine("No options")
 		return
 	}
 
 	for _, option := range options {
-		p.writeLine("Option %s (Kind: %s, Value: %q)", option.Name, option.ValueKind, option.Value)
+		fp.p.WriteLine("Option %s (Kind: %s, Value: %q)", option.Name, option.ValueKind, option.Value)
 	}
 }
 
-func (p *printer) printTransitions(transitions []*TransitionData) {
+func (fp *frontendPrinter) printTransitions(transitions []*TransitionData) {
 	if len(transitions) == 0 {
-		p.writeLine("No transitions")
+		fp.p.WriteLine("No transitions")
 		return
 	}
 
@@ -112,39 +113,22 @@ func (p *printer) printTransitions(transitions []*TransitionData) {
 			trigger = transition.Trigger
 		}
 
-		p.writeLine("Transition %s > %s", trigger, transition.To)
+		fp.p.WriteLine("Transition %s > %s", trigger, transition.To)
 	}
 }
 
-func (p *printer) printReactions(kind string, reactions []string) {
+func (fp *frontendPrinter) printReactions(kind string, reactions []string) {
 	if len(reactions) == 0 {
-		p.writeLine("No %s reactions", kind)
+		fp.p.WriteLine("No %s reactions", kind)
 		return
 	}
 
 	for _, reaction := range reactions {
 		if reaction == "" {
-			p.writeLine("%s", kind)
+			fp.p.WriteLine("%s", kind)
 			continue
 		}
 
-		p.writeLine("%s(%s)", kind, reaction)
-	}
-}
-
-func (p *printer) writeLine(format string, args ...interface{}) {
-	result := fmt.Sprintf(format, args...)
-	final := fmt.Sprintf("%*s%s\n", p.indent, " ", result)
-	p.w.Write([]byte(final))
-}
-
-func (p *printer) pushIndent() {
-	p.indent += indentAmount
-}
-
-func (p *printer) popIndent() {
-	p.indent -= indentAmount
-	if p.indent < 0 {
-		panic("Unmatched popIndent")
+		fp.p.WriteLine("%s(%s)", kind, reaction)
 	}
 }
