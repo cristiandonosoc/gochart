@@ -303,10 +303,19 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 		}
 
 		// We loop searching for things that can be in the body.
+		// We have to be careful to not have 2 passes without finding anything, as that means that we're
+		// stuck in an infinite loop.
+		loopsWithoutFound := 0
+
 		for !p.atEnd() {
 			// If we peek a right brace, we know the body is closed.
 			if p.peekToken(Token_RightBrace) {
 				break
+			}
+
+			loopsWithoutFound++
+			if loopsWithoutFound > 1 {
+				return nil, false, fmt.Errorf("state parsing made 2 loops without finding something. This is 100%% a parser bug. Please file a bug report with your repro.")
 			}
 
 			// See if we found an enter reaction.
@@ -314,6 +323,7 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 				return nil, false, fmt.Errorf("state %q: parsing enter reaction: %w", name, err)
 			} else if ok {
 				enterReactions = append(enterReactions, reaction)
+				loopsWithoutFound = 0
 			}
 
 			// See if we found an exit reaction.
@@ -321,6 +331,7 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 				return nil, false, fmt.Errorf("state %q: parsing exit reaction: %w", name, err)
 			} else if ok {
 				exitReactions = append(exitReactions, reaction)
+				loopsWithoutFound = 0
 			}
 
 			// See if we found a transition.
@@ -328,6 +339,7 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 				return nil, false, fmt.Errorf("state %q: parsing transition: %w", name, err)
 			} else if ok {
 				transitions = append(transitions, transition)
+				loopsWithoutFound = 0
 			}
 
 			// See if we found a child state.
@@ -335,6 +347,7 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 				return nil, false, fmt.Errorf("state %q: parse child state: %w", name, err)
 			} else if ok {
 				children = append(children, child)
+				loopsWithoutFound = 0
 			}
 		}
 

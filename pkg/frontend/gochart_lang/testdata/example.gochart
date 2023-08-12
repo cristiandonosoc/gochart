@@ -5,9 +5,9 @@ statechart Example {
 
 	state First {
 		enter
-		enter Execute
+		enter(Execute)
 
-		exit Execute
+		exit(Execute)
 		exit
 
 		transition null > Third
@@ -26,7 +26,7 @@ statechart Example {
 				transition Execute > Second
 
 				enter
-				exit Update
+				exit(Update)
 			}
 		}
 
