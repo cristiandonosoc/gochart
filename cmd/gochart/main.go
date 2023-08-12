@@ -21,6 +21,7 @@ var (
 		frontendKind  frontend.FrontendKind
 		backendKind   backend.BackendKind
 		printFrontend bool
+		printIR       bool
 		printOutput   bool
 		headerOutput  string
 		bodyOutput    string
@@ -31,7 +32,9 @@ func parseFlags() error {
 	frontendFlag := flag.String("frontend", "yaml", "What frontend to use")
 	backendFlag := flag.String("backend", "cpp", "Want backend to generate to")
 	flag.BoolVar(&flags.printFrontend, "print-frontend", false,
-		"Whether we should only print the result of the frontend.")
+		"Whether we should just print the result of the frontend.")
+	flag.BoolVar(&flags.printIR, "print-ir", false,
+		"Whether we should just print the result of the IR pass")
 	flag.BoolVar(&flags.printOutput, "print-backend", false,
 		"Whether we should just print eh result of the backend, instead of generating files")
 	flag.StringVar(&flags.headerOutput, "header-output", "", "Where to output the header (.h) file. Cpp backend only.")
@@ -47,7 +50,7 @@ func parseFlags() error {
 		return err
 	}
 
-	if !flags.printFrontend {
+	if !flags.printFrontend && !flags.printIR {
 		if !flags.printOutput {
 			if flags.headerOutput == "" || flags.bodyOutput == "" {
 				return fmt.Errorf("if --print-only is not set, then --header-output and --body-output must be set")
@@ -111,9 +114,15 @@ func internalMain() error {
 	}
 
 	// Process the generated data into intermediary format.
-	sc, err := ir.ProcessStatechartData(frontendData)
+	irData, err := ir.ProcessStatechartData(frontendData)
 	if err != nil {
 		return fmt.Errorf("processing statechart data: %w", err)
+	}
+
+	if flags.printIR {
+		printer := ir.NewPrinter(os.Stdout)
+		printer.PrintStatechart(irData)
+		return nil
 	}
 
 	var gb backend.GochartBackend
@@ -124,7 +133,7 @@ func internalMain() error {
 		})
 	}
 
-	headerData, bodyData, err := gb.Generate(sc)
+	headerData, bodyData, err := gb.Generate(irData)
 	if err != nil {
 		return fmt.Errorf("generating backend: %w", err)
 	}

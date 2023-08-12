@@ -6,11 +6,6 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/printer"
 )
 
-const (
-	indentAmount = 4
-)
-
-// Printer is a helper struct meant to pretty print the frontend data.
 type frontendPrinter struct {
 	sc *StatechartData
 	p  *printer.Printer
