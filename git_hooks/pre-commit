@@ -45,22 +45,30 @@ EOF
 	exit 1
 fi
 
+Header() {
+	echo "-------------------------------------------------------------------------------------------"
+	echo "$1"
+	echo "-------------------------------------------------------------------------------------------"
+}
+
 ExitWithError() {
 	echo "$1"
 	echo "Aborting commit."
 	exit 1
 }
 
-echo "Running Go tests"
+Header "Go tests"
+# --------------------------------------------------------------------------------------------------
 
-# Run go tests.
-go test ./...
+go test -v ./...
 
 if  [ $? -ne 0 ]; then
 	ExitWithError "Go tests failed!"
 fi
 
-# Test formatting.
+Header "Running gofmt"
+# --------------------------------------------------------------------------------------------------
+
 has_formatting_error=0
 staged_files=$(git diff --cached --name-only)
 for file in $staged_files
@@ -69,8 +77,7 @@ do
 	if [[ "$file" == *.go ]]; then
 		gofmt_out=$(gofmt -d "$file")
 		if [[ $gofmt_out ]]; then
-			echo "gofmt check failed for $file"
-			echo $gofmt_out
+			echo "- $file: gofmt check failed!"
 			has_formatting_error=1
 		fi
 	fi
