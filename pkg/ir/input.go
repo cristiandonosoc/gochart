@@ -135,15 +135,17 @@ func (ih *inputHandler) collectStates() error {
 		parent.Children = append(parent.Children, state)
 		state.Parent = parent
 
+	}
+
+	// Collect extra data from the states.
+	for name, state := range stateMap {
 		// Parse the options for this state.
 		op := newOptionParser(state)
 		if err := op.parseOptions(state.frontendData.Options); err != nil {
 			return fmt.Errorf("state %q: parsing options: %w", state.Name, err)
 		}
-	}
 
-	// We collect the transition reactions.
-	for name, state := range stateMap {
+		// Collect the enter reactions.
 		enters, err := ih.collectReactions(state.frontendData.EnterReactions)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
@@ -158,9 +160,49 @@ func (ih *inputHandler) collectStates() error {
 		state.ExitReactions = exits
 	}
 
+	// Now that we have a pass of the state, we can set some options (such as default child).
+	for _, state := range stateMap {
+		// For each state, if there is no default child, the first child should be default.
+		// TODO(cdc): Make the first-child-as-default heuristic toggable via options.
+		if err := ih.determineDefaultChild(state.Name, state.Children); err != nil {
+			return fmt.Errorf("determining default child: %w", err)
+		}
+	}
+
+	// Perform some setup at the root level as well.
+	{
+		if err := ih.determineDefaultChild("Statechart Root", roots); err != nil {
+			return fmt.Errorf("determining default child: %w", err)
+		}
+	}
+
 	ih.rootStates = roots
 	ih.states = states
 	ih.stateMap = stateMap
+
+	return nil
+}
+
+// Separate function for validating child state, as this is also used at the root level.
+func (ih *inputHandler) determineDefaultChild(parentName string, states []*State) error {
+	// No children, there is nothing to do.
+	if len(states) == 0 {
+		return nil
+	}
+
+	defaultFound := false
+	for _, state := range states {
+		if state.Default {
+			if defaultFound {
+				return fmt.Errorf("state %q has more than one default child", parentName)
+			}
+
+			defaultFound = true
+		}
+	}
+	if !defaultFound {
+		states[0].Default = true
+	}
 
 	return nil
 }

@@ -12,7 +12,6 @@ import (
 )
 
 func TestReadSimpleYaml(t *testing.T) {
-	t.Skip()
 	wantTriggers := []*Trigger{
 		{
 			Name: "Trigger1",
