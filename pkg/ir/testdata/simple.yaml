@@ -7,20 +7,20 @@ states:
   - name: StateA
     options:
       - name: "default"
-    enter_reaction_triggers:
+    enter_reactions:
       - "Trigger1"
       - ""
-    exit_reaction_triggers:
+    exit_reactions:
       - "Trigger1"
       - ""
   - name: StateB
     default: true
     parent: StateA
-    exit_reaction_triggers:
+    exit_reactions:
       - "Trigger1"
   - name: StateC
     parent: StateA
-    enter_reaction_triggers:
+    enter_reactions:
       - "Trigger1"
       - ""
 transitions:

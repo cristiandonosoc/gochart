@@ -110,11 +110,11 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*fronten
 	}
 
 	for _, er := range ns.EnterReactions {
-		state.EnterReactionTriggers = append(state.EnterReactionTriggers, er.Trigger)
+		state.EnterReactions = append(state.EnterReactions, er.Trigger)
 	}
 
 	for _, er := range ns.ExitReactions {
-		state.ExitReactionTriggers = append(state.ExitReactionTriggers, er.Trigger)
+		state.ExitReactions = append(state.ExitReactions, er.Trigger)
 	}
 	states = append(states, state)
 

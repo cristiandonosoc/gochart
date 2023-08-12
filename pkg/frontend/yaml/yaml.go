@@ -99,11 +99,11 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *frontend.StateData 
 	}
 
 	for _, er := range ys.EnterReactions {
-		state.EnterReactionTriggers = append(state.EnterReactionTriggers, er)
+		state.EnterReactions = append(state.EnterReactions, er)
 	}
 
 	for _, er := range ys.ExitReactions {
-		state.ExitReactionTriggers = append(state.ExitReactionTriggers, er)
+		state.ExitReactions = append(state.ExitReactions, er)
 	}
 
 	return state

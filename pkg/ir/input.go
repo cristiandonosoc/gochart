@@ -144,14 +144,14 @@ func (ih *inputHandler) collectStates() error {
 
 	// We collect the transition reactions.
 	for name, state := range stateMap {
-		enters, err := ih.collectReactions(state.frontendData.EnterReactionTriggers)
+		enters, err := ih.collectReactions(state.frontendData.EnterReactions)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
 		}
 		state.EnterReactions = enters
 
 		// Collect the exit reactions.
-		exits, err := ih.collectReactions(state.frontendData.ExitReactionTriggers)
+		exits, err := ih.collectReactions(state.frontendData.ExitReactions)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting exit reactions: %w", name, err)
 		}

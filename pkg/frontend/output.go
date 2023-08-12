@@ -27,8 +27,8 @@ type StateData struct {
 
 	Options []*StateOptionData
 
-	EnterReactionTriggers []string `yaml:"enter_reaction_triggers"`
-	ExitReactionTriggers  []string `yaml:"exit_reaction_triggers"`
+	EnterReactions []string `yaml:"enter_reactions"`
+	ExitReactions  []string `yaml:"exit_reactions"`
 
 	// Index represents in what order it was found.
 	Index int
