@@ -11,13 +11,16 @@ import (
 )
 
 type gochartLangFrontend struct {
+	verbose bool
 }
 
 var _ frontend.GochartFrontend = (*gochartLangFrontend)(nil)
 
 // NewFrontend returns a frontend capable of parting the gochart language.
-func NewGochartLangFrontend() *gochartLangFrontend {
-	return &gochartLangFrontend{}
+func NewGochartLangFrontend(verbose bool) *gochartLangFrontend {
+	return &gochartLangFrontend{
+		verbose: verbose,
+	}
 }
 
 func (glf *gochartLangFrontend) Process(r io.Reader) (*frontend.StatechartData, error) {
@@ -35,7 +38,7 @@ func (glf *gochartLangFrontend) Process(r io.Reader) (*frontend.StatechartData, 
 		return nil, fmt.Errorf("gochart: parsing input file")
 	}
 
-	parser := NewParser()
+	parser := NewParser(glf.verbose)
 	root, errors := parser.Parse(tokens)
 	if len(errors) > 0 {
 		for _, err := range errors {

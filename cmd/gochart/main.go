@@ -25,6 +25,8 @@ var (
 		printOutput   bool
 		headerOutput  string
 		bodyOutput    string
+
+		verbose bool
 	}{}
 )
 
@@ -35,10 +37,11 @@ func parseFlags() error {
 		"Whether we should just print the result of the frontend.")
 	flag.BoolVar(&flags.printIR, "print-ir", false,
 		"Whether we should just print the result of the IR pass")
-	flag.BoolVar(&flags.printOutput, "print-backend", false,
+	flag.BoolVar(&flags.printOutput, "print-output", false,
 		"Whether we should just print eh result of the backend, instead of generating files")
 	flag.StringVar(&flags.headerOutput, "header-output", "", "Where to output the header (.h) file. Cpp backend only.")
 	flag.StringVar(&flags.bodyOutput, "body-output", "", "Where to output the body (.cpp) file. Cpp backend only.")
+	flag.BoolVar(&flags.verbose, "verbose", false, "Print verbose debug output")
 
 	flag.Parse()
 
@@ -93,11 +96,15 @@ func internalMain() error {
 		return fmt.Errorf("parsing commandline: %w", err)
 	}
 
+	if flags.verbose {
+		fmt.Printf("FLAGS PARSED: %+v\n", flags)
+	}
+
 	// Get the frontend and read the yaml.
 	var gf frontend.GochartFrontend
 	switch flags.frontendKind {
 	case frontend.FrontendKind_Gochart:
-		gf = gochart_lang.NewGochartLangFrontend()
+		gf = gochart_lang.NewGochartLangFrontend(flags.verbose)
 	case frontend.FrontendKind_Yaml:
 		gf = yaml.NewYamlFrontend()
 	}

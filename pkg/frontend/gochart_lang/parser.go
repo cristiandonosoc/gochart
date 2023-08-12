@@ -12,10 +12,16 @@ import (
 type Parser struct {
 	tokens  []*Token
 	current int
+
+	currentStatechart string
+	currentState      string
+	verbose           bool
 }
 
-func NewParser() *Parser {
-	return &Parser{}
+func NewParser(verbose bool) *Parser {
+	return &Parser{
+		verbose: verbose,
+	}
 }
 
 // Parse receives a slice of tokens as given by the |Scanner| and tries to match it against the
@@ -45,6 +51,8 @@ var _ ASTNode = (*ASTNodeRoot)(nil)
 
 // root -> statechart+
 func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
+	p.debuglog("Parsing root node")
+
 	root := &ASTNodeRoot{}
 
 	var statecharts []*ASTNodeStatechart
@@ -92,6 +100,8 @@ type ASTNodeStatechart struct {
 var _ ASTNode = (*ASTNodeStatechart)(nil)
 
 func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
+	p.debuglog("parsing statechart node")
+
 	// statechart keyword.
 	if _, err := p.consumeToken(Token_KeywordStatechart); err != nil {
 		return nil, err
@@ -101,6 +111,15 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("expect name after \"statechart\" token")
+	}
+
+	// Debug tracking.
+	{
+		prevStatechart := p.currentStatechart
+		p.currentStatechart = name
+		defer func() {
+			p.currentStatechart = prevStatechart
+		}()
 	}
 
 	// Optional ( ).
@@ -166,8 +185,11 @@ type ASTNodeTrigger struct {
 var _ ASTNode = (*ASTNodeTrigger)(nil)
 
 func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
+	p.debuglog("parsing trigger node")
+
 	// If we found the trigger keyword, we found a trigger.
 	if _, ok := p.match(Token_KeywordTrigger); !ok {
+		p.debuglog("-> no trigger %q found. Skipping.", Token_KeywordTrigger)
 		return nil, false, nil
 	}
 
@@ -197,10 +219,14 @@ func (p *Parser) parseTrigger() (*ASTNodeTrigger, bool, error) {
 		return nil, false, err
 	}
 
-	return &ASTNodeTrigger{
+	trigger := &ASTNodeTrigger{
 		Name:       name,
 		ArgsString: args,
-	}, true, nil
+	}
+
+	p.debuglog("-> parsed trigger: %+v", trigger)
+
+	return trigger, true, nil
 }
 
 // State -------------------------------------------------------------------------------------------
@@ -222,8 +248,11 @@ type ASTNodeState struct {
 var _ ASTNode = (*ASTNodeState)(nil)
 
 func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
+	p.debuglog("parsing state node")
+
 	// If we found  the 'state' keyword, we parse it.
 	if _, ok := p.match(Token_KeywordState); !ok {
+		p.debuglog("-> no state %q found. Skipping.", Token_KeywordState)
 		return nil, false, nil
 	}
 
@@ -231,6 +260,15 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
 		return nil, false, fmt.Errorf("expect name after \"trigger\" token")
+	}
+
+	// Debug tracking.
+	{
+		prevState := p.currentState
+		p.currentState = name
+		defer func() {
+			p.currentState = prevState
+		}()
 	}
 
 	// The options.
@@ -320,8 +358,11 @@ func (p *Parser) parseState(parent *ASTNodeState) (*ASTNodeState, bool, error) {
 // StateOptions -> ( '(' StateOption ( ',' StateOption )* ')' )?
 
 func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
+	p.debuglog("parsing state options node")
+
 	// If we have no left paren, then there is no options.
 	if _, ok := p.match(Token_LeftParen); !ok {
+		p.debuglog("-> -> no options %q found. Skipping.", Token_LeftParen)
 		return nil, false, nil
 	}
 
@@ -368,6 +409,8 @@ type ASTNodeStateOption struct {
 var _ ASTNode = (*ASTNodeStateOption)(nil)
 
 func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
+	p.debuglog("-> parsing state option")
+
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
@@ -403,11 +446,15 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 		}
 	}
 
-	return &ASTNodeStateOption{
+	option := &ASTNodeStateOption{
 		Name:      name,
 		ValueKind: valueKind,
 		Value:     value,
-	}, nil
+	}
+
+	p.debuglog("-> -> parsed option: %+v", option)
+
+	return option, nil
 }
 
 // StateReaction -----------------------------------------------------------------------------------
@@ -422,28 +469,42 @@ type ASTNodeStateReaction struct {
 var _ ASTNode = (*ASTNodeStateReaction)(nil)
 
 func (p *Parser) parseStateEnterReaction() (*ASTNodeStateReaction, bool, error) {
+	p.debuglog("parsing enter reaction")
 	return p.parseStateReaction(Token_KeywordEnter)
 }
 
 func (p *Parser) parseStateExitReaction() (*ASTNodeStateReaction, bool, error) {
+	p.debuglog("parsing exit reaction")
 	return p.parseStateReaction(Token_KeywordExit)
 }
 
 func (p *Parser) parseStateReaction(keywordToken TokenIdentifier) (*ASTNodeStateReaction, bool, error) {
 	// Check if we found the keyword we were expecting.
 	if _, ok := p.match(keywordToken); !ok {
+		p.debuglog("-> no reaction %q found. Skipping.", keywordToken)
 		return nil, false, nil
 	}
 
 	// We check to see if the user indicated a trigger associated with the reaction.
 	var triggerName string
-	if triggerToken, ok := p.match(Token_Identifier); ok {
-		triggerName = triggerToken.literal
+	if _, ok := p.match(Token_LeftParen); ok {
+		name, err := p.consumeTokenLiteral(Token_Identifier)
+		if err != nil {
+			return nil, false, fmt.Errorf("expected identifier after reaction (: %w", err)
+		}
+		triggerName = name
+
+		if _, err := p.consumeToken(Token_RightParen); err != nil {
+			return nil, false, fmt.Errorf("expected closing paren after reaction identifier: %w", err)
+		}
 	}
 
-	return &ASTNodeStateReaction{
+	reaction := &ASTNodeStateReaction{
 		Trigger: triggerName,
-	}, true, nil
+	}
+
+	p.debuglog("-> parsed reaction: %+v", reaction)
+	return reaction, true, nil
 }
 
 // StateTransition ---------------------------------------------------------------------------------
@@ -458,8 +519,11 @@ type ASTNodeStateTransition struct {
 var _ ASTNode = (*ASTNodeState)(nil)
 
 func (p *Parser) parseStateTransition() (*ASTNodeStateTransition, bool, error) {
+	p.debuglog("parsing transition")
+
 	// Check if there is a 'transition' keyword.
 	if _, ok := p.match(Token_KeywordTransition); !ok {
+		p.debuglog("-> no transition %q found. Skipping.", Token_KeywordTransition)
 		return nil, false, nil
 	}
 
@@ -484,10 +548,13 @@ func (p *Parser) parseStateTransition() (*ASTNodeStateTransition, bool, error) {
 		return nil, false, fmt.Errorf("expect identifier after >: %w", err)
 	}
 
-	return &ASTNodeStateTransition{
+	transition := &ASTNodeStateTransition{
 		Trigger:     triggerName,
 		TargetState: stateToken.literal,
-	}, true, nil
+	}
+
+	p.debuglog("-> parsed transition: %+v", transition)
+	return transition, true, nil
 }
 
 // HELPERS -----------------------------------------------------------------------------------------
@@ -589,4 +656,14 @@ func (p *Parser) atEnd() bool {
 		return p.tokens[p.current].id == Token_EOF
 	}
 	return p.current >= len(p.tokens)
+}
+
+// Debug -------------------------------------------------------------------------------------------
+
+func (p *Parser) debuglog(format string, args ...interface{}) {
+	if !p.verbose {
+		return
+	}
+
+	fmt.Printf("GOCHART PARSER: STATECHART %q, STATE: %q: %s\n", p.currentStatechart, p.currentState, fmt.Sprintf(format, args...))
 }
