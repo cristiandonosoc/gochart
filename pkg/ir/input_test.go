@@ -12,8 +12,7 @@ import (
 )
 
 func TestReadSimpleYaml(t *testing.T) {
-	t.Skip("REINSTANTE THIS TEST WHEN YAML SUPPORTS OPTIONS")
-
+	t.Skip()
 	wantTriggers := []*Trigger{
 		{
 			Name: "Trigger1",

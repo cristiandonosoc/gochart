@@ -36,7 +36,7 @@ func validateState(state *State) error {
 	// If it has children, at least one of them has to be marked default child.
 	if len(state.Children) > 0 {
 		if err := validateDefaultChildExists(state.Children); err != nil {
-			return fmt.Errorf("validating that default child exists: %w", err)
+			return fmt.Errorf("state %q: validating that default child exists: %w", state.Name, err)
 		}
 	}
 

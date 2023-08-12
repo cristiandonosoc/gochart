@@ -5,7 +5,8 @@ triggers:
   - name: Trigger2
 states:
   - name: StateA
-    default: true
+    options:
+      - name: "default"
     enter_reaction_triggers:
       - "Trigger1"
       - ""
