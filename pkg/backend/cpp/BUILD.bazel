@@ -16,6 +16,6 @@ go_library(
     deps = [
         "//pkg/backend",
         "//pkg/ir",
-        "@com_github_masterminds_sprig_v3//:go_default_library",
+        "@com_github_masterminds_sprig_v3//:sprig",
     ],
 )

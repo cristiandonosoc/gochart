@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
@@ -59,7 +60,10 @@ func TestReadSimpleYaml(t *testing.T) {
 
 	yf := yaml.NewYamlFrontend()
 
-	scdata, err := frontend.ProcessFromFile(yf, "testdata/simple.yaml")
+	path, err := test_support.RunfilePath("testdata/simple.yaml")
+	require.NoError(t, err)
+
+	scdata, err := frontend.ProcessFromFile(yf, path)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
 

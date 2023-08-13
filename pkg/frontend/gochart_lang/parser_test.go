@@ -3,9 +3,9 @@ package gochart_lang
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"testing"
 
+	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestReadSimple(t *testing.T) {
-	data, err := os.ReadFile("testdata/example.gochart")
+	data, err := test_support.ReadRunfile("testdata/example.gochart")
 	require.NoError(t, err)
 
 	scanner := NewScanner()
