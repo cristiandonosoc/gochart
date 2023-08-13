@@ -1,0 +1,23 @@
+statechart Simple {
+	trigger Trigger1(int foo, float bar)
+	trigger Trigger2()
+
+	state StateA(default) {
+		enter
+		enter(Trigger1)
+
+		exit(Trigger1)
+		exit
+
+		state StateB {
+			exit(Trigger1)
+
+			transition Trigger1 > StateC
+		}
+
+		state StateC {
+			enter
+			enter(Trigger1)
+		}
+	}
+}
