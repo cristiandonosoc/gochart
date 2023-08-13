@@ -7,9 +7,9 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
-
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 //go:embed header.template.h body.template.cpp

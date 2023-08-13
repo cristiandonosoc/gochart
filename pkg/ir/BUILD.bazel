@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ir",
+    srcs = [
+        "cpp.go",
+        "input.go",
+        "ir.go",
+        "printer.go",
+        "state_options.go",
+        "validator.go",
+    ],
+    importpath = "github.com/cristiandonosoc/gochart/pkg/ir",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/printer",
+        "//pkg/frontend",
+    ],
+)
+
+go_test(
+    name = "ir_test",
+    srcs = [
+        "cpp_test.go",
+        "input_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":ir"],
+    deps = [
+        "//pkg/frontend",
+        "//pkg/frontend/yaml",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

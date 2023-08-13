@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cpp",
+    srcs = [
+        "cpp.go",
+        "header.template.h",
+        "templates.go",
+    ],
+    embedsrcs = [
+        "body.template.cpp",
+        "header.template.h",
+    ],
+    importpath = "github.com/cristiandonosoc/gochart/pkg/backend/cpp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/backend",
+        "//pkg/ir",
+        "@com_github_masterminds_sprig_v3//:go_default_library",
+    ],
+)

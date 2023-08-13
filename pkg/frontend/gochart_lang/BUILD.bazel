@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gochart_lang",
+    srcs = [
+        "gochart_lang.go",
+        "lexer.go",
+        "parser.go",
+        "scanner.go",
+        "tokenidentifier_string.go",
+    ],
+    importpath = "github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/frontend"],
+)
+
+go_test(
+    name = "gochart_lang_test",
+    srcs = [
+        "parser_test.go",
+        "scanner_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":gochart_lang"],
+    deps = [
+        "//pkg/frontend",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

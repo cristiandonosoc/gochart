@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gochart_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/cristiandonosoc/gochart/cmd/gochart",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/backend",
+        "//pkg/backend/cpp",
+        "//pkg/frontend",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/frontend/yaml",
+        "//pkg/ir",
+    ],
+)
+
+go_binary(
+    name = "gochart",
+    embed = [":gochart_lib"],
+    visibility = ["//visibility:public"],
+)
