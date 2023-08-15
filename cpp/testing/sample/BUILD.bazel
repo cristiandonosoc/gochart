@@ -4,3 +4,10 @@ cc_test(
 	srcs = ["hello_test.cc"],
 	deps = ["@com_google_googletest//:gtest_main"],
 )
+
+cc_binary(
+	name = "hello_clang_cl",
+	srcs = [
+		"main.cc",
+	],
+)
