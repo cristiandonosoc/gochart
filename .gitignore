@@ -5,4 +5,5 @@ examples/full_flow/*.generated.cpp
 examples/full_flow/*.generated.cpp.BACKUP
 
 # Bazel ignores.
-bazel-*/
+bazel-*
+

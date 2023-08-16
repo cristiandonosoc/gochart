@@ -17,7 +17,7 @@
 #ifdef _MSC_VER
 #define GOCHART_DEBUG_BREAK __debugbreak()
 #else
-#define GOCHART_DEBUG_BREAK ___builtin_debugtrap()
+#define GOCHART_DEBUG_BREAK __builtin_trap()
 #endif
 
 namespace gochart
@@ -250,8 +250,8 @@ namespace {{$impl}}_private
         std::array<{{$stateEnum}}, kMaxRouteLength> EnterStates;
         std::array<{{$stateEnum}}, kMaxRouteLength> ExitStates;
 
-        int ExitEnd = 0;
-        int EnterEnd = 0;
+        size_t ExitEnd = 0;
+        size_t EnterEnd = 0;
     };
 
     // ComputeRoute figures out a route between any two states.
@@ -636,7 +636,7 @@ void Route::AppendExitState({{$stateEnum}} exit)
 void Route::SwapEnterStates()
 {
     // We swap the enter states in so they in the furthers from the |from| state first.
-    for (int i = 0; i <= EnterEnd; i++)
+    for (size_t i = 0; i <= EnterEnd; i++)
     {
         std::swap(EnterStates[i], EnterStates[EnterEnd - i]);
     }
