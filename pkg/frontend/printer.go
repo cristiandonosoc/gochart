@@ -3,11 +3,12 @@ package frontend
 import (
 	"io"
 
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/internal/printer"
 )
 
 type frontendPrinter struct {
-	sc *StatechartData
+	sc *output.StatechartData
 	p  *printer.Printer
 }
 
@@ -19,7 +20,7 @@ func NewPrinter(w io.Writer) *frontendPrinter {
 	}
 }
 
-func (fp *frontendPrinter) PrintStatechart(sc *StatechartData) {
+func (fp *frontendPrinter) PrintStatechart(sc *output.StatechartData) {
 	fp.sc = sc
 
 	fp.p.WriteLine("Statechart %s", sc.Name)
@@ -36,11 +37,11 @@ func (fp *frontendPrinter) PrintStatechart(sc *StatechartData) {
 	}
 }
 
-func (fp *frontendPrinter) printTrigger(trigger *TriggerData) {
+func (fp *frontendPrinter) printTrigger(trigger *output.TriggerData) {
 	fp.p.WriteLine("Trigger %s(%s)", trigger.Name, trigger.ArgsString)
 }
 
-func (fp *frontendPrinter) printState(state *StateData) {
+func (fp *frontendPrinter) printState(state *output.StateData) {
 	fp.p.WriteLine("State %s", state.Name)
 
 	fp.p.PushIndent()
@@ -57,7 +58,7 @@ func (fp *frontendPrinter) printState(state *StateData) {
 
 	{
 		// Print all the transitions for this state.
-		var transitions []*TransitionData
+		var transitions []*output.TransitionData
 		for _, transition := range fp.sc.Transitions {
 			if transition.From == state.Name {
 				transitions = append(transitions, transition)
@@ -85,7 +86,7 @@ func (fp *frontendPrinter) printState(state *StateData) {
 
 }
 
-func (fp *frontendPrinter) printStateOptions(options []*StateOptionData) {
+func (fp *frontendPrinter) printStateOptions(options []*output.StateOptionData) {
 	if len(options) == 0 {
 		fp.p.WriteLine("No options")
 		return
@@ -96,7 +97,7 @@ func (fp *frontendPrinter) printStateOptions(options []*StateOptionData) {
 	}
 }
 
-func (fp *frontendPrinter) printTransitions(transitions []*TransitionData) {
+func (fp *frontendPrinter) printTransitions(transitions []*output.TransitionData) {
 	if len(transitions) == 0 {
 		fp.p.WriteLine("No transitions")
 		return

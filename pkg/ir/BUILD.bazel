@@ -14,7 +14,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/printer",
-        "//pkg/frontend",
+        "//pkg/frontend/output",
     ],
 )
 

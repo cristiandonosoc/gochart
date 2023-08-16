@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,12 +15,10 @@ func NewYamlFrontend() *yamlFrontend {
 	return &yamlFrontend{}
 }
 
-var _ frontend.GochartFrontend = (*yamlFrontend)(nil)
-
 type yamlFrontend struct {
 }
 
-func (yf *yamlFrontend) Process(r io.Reader) (*frontend.StatechartData, error) {
+func (yf *yamlFrontend) Process(r io.Reader) (*output.StatechartData, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("reading input reader: %w", err)
@@ -49,25 +47,25 @@ func newFrontendTranslator() *frontendTranslator {
 	return &frontendTranslator{}
 }
 
-func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *frontend.StatechartData {
+func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *output.StatechartData {
 	// Collect Triggers.
-	triggers := make([]*frontend.TriggerData, 0, len(ysc.Triggers))
+	triggers := make([]*output.TriggerData, 0, len(ysc.Triggers))
 	for _, yt := range ysc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(yt))
 	}
 
 	// Collect states.
-	states := make([]*frontend.StateData, 0, len(ysc.States))
+	states := make([]*output.StateData, 0, len(ysc.States))
 	for _, ys := range ysc.States {
 		states = append(states, ft.translateState(ys))
 	}
 
-	transitions := make([]*frontend.TransitionData, 0, len(ysc.Transitions))
+	transitions := make([]*output.TransitionData, 0, len(ysc.Transitions))
 	for _, yt := range ysc.Transitions {
 		transitions = append(transitions, ft.translateTransition(yt))
 	}
 
-	return &frontend.StatechartData{
+	return &output.StatechartData{
 		Name:        ysc.Name,
 		Triggers:    triggers,
 		States:      states,
@@ -75,20 +73,20 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *frontend
 	}
 }
 
-func (ft *frontendTranslator) translateTrigger(yt *YamlTrigger) *frontend.TriggerData {
+func (ft *frontendTranslator) translateTrigger(yt *YamlTrigger) *output.TriggerData {
 	index := ft.triggerIndex
 	ft.triggerIndex += 1
-	return &frontend.TriggerData{
+	return &output.TriggerData{
 		Name:       yt.Name,
 		ArgsString: yt.ArgsString,
 		Index:      index,
 	}
 }
 
-func (ft *frontendTranslator) translateState(ys *YamlState) *frontend.StateData {
+func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 	index := ft.stateIndex
 	ft.stateIndex++
-	state := &frontend.StateData{
+	state := &output.StateData{
 		Name:   ys.Name,
 		Parent: ys.Parent,
 		Index:  index,
@@ -109,31 +107,31 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *frontend.StateData 
 	return state
 }
 
-func (ft *frontendTranslator) translateStateOption(yso *YamlStateOption) *frontend.StateOptionData {
-	option := &frontend.StateOptionData{
+func (ft *frontendTranslator) translateStateOption(yso *YamlStateOption) *output.StateOptionData {
+	option := &output.StateOptionData{
 		Name:      yso.Name,
-		ValueKind: frontend.StateOptionValueKind_None,
+		ValueKind: output.StateOptionValueKind_None,
 	}
 
 	if yso.IntValue != "" {
-		option.ValueKind = frontend.StateOptionValueKind_Integer
+		option.ValueKind = output.StateOptionValueKind_Integer
 		option.Value = yso.IntValue
 	} else if yso.StringValue != "" {
-		option.ValueKind = frontend.StateOptionValueKind_String
+		option.ValueKind = output.StateOptionValueKind_String
 		option.Value = yso.IntValue
 	} else if yso.BoolValue != "" {
-		option.ValueKind = frontend.StateOptionValueKind_Boolean
+		option.ValueKind = output.StateOptionValueKind_Boolean
 		option.Value = yso.IntValue
 	}
 
 	return option
 }
 
-func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *frontend.TransitionData {
+func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.TransitionData {
 	index := ft.transitionIndex
 	ft.transitionIndex++
 
-	return &frontend.TransitionData{
+	return &output.TransitionData{
 		From:    yt.From,
 		To:      yt.To,
 		Trigger: yt.Trigger,

@@ -11,7 +11,10 @@ go_library(
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/frontend"],
+    deps = [
+        "//pkg/frontend",
+        "//pkg/frontend/output",
+    ],
 )
 
 go_test(

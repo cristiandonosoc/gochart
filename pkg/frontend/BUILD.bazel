@@ -4,11 +4,12 @@ go_library(
     name = "frontend",
     srcs = [
         "frontend.go",
-        "output.go",
         "printer.go",
-        "stateoptionvaluekind_string.go",
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/frontend",
     visibility = ["//visibility:public"],
-    deps = ["//internal/printer"],
+    deps = [
+        "//internal/printer",
+        "//pkg/frontend/output",
+    ],
 )

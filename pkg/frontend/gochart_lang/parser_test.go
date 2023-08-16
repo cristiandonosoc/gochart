@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,7 +76,7 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeStateOption{
 							{
 								Name:      "Option1",
-								ValueKind: frontend.StateOptionValueKind_None,
+								ValueKind: output.StateOptionValueKind_None,
 							},
 						},
 						Transitions: []*ASTNodeStateTransition{
@@ -91,40 +91,40 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeStateOption{
 							{
 								Name:      "Opt1",
-								ValueKind: frontend.StateOptionValueKind_None,
+								ValueKind: output.StateOptionValueKind_None,
 							},
 							{
 								Name:      "Opt2",
-								ValueKind: frontend.StateOptionValueKind_None,
+								ValueKind: output.StateOptionValueKind_None,
 							},
 							{
 								Name:      "Opt3",
-								ValueKind: frontend.StateOptionValueKind_String,
+								ValueKind: output.StateOptionValueKind_String,
 								Value:     "Identifier",
 							},
 							{
 								Name:      "Opt4",
-								ValueKind: frontend.StateOptionValueKind_String,
+								ValueKind: output.StateOptionValueKind_String,
 								Value:     "String",
 							},
 							{
 								Name:      "Opt5",
-								ValueKind: frontend.StateOptionValueKind_Integer,
+								ValueKind: output.StateOptionValueKind_Integer,
 								Value:     "2123",
 							},
 							{
 								Name:      "Opt6",
-								ValueKind: frontend.StateOptionValueKind_Boolean,
+								ValueKind: output.StateOptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt7",
-								ValueKind: frontend.StateOptionValueKind_Boolean,
+								ValueKind: output.StateOptionValueKind_Boolean,
 								Value:     "false",
 							},
 							{
 								Name:      "Opt8",
-								ValueKind: frontend.StateOptionValueKind_Integer,
+								ValueKind: output.StateOptionValueKind_Integer,
 								Value:     "22",
 							},
 						},
@@ -144,7 +144,7 @@ func TestReadSimple(t *testing.T) {
 									},
 									{
 										Name:      "OptChild2",
-										ValueKind: frontend.StateOptionValueKind_String,
+										ValueKind: output.StateOptionValueKind_String,
 										Value:     "IdentifierChild",
 									},
 								},
@@ -155,7 +155,7 @@ func TestReadSimple(t *testing.T) {
 										Options: []*ASTNodeStateOption{
 											{
 												Name:      "OptGrandChild",
-												ValueKind: frontend.StateOptionValueKind_Boolean,
+												ValueKind: output.StateOptionValueKind_Boolean,
 												Value:     "false",
 											},
 										},

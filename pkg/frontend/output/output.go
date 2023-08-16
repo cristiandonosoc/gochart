@@ -1,4 +1,5 @@
-package frontend
+// Package output represents the output of a frontend, normally used by the IR.
+package output
 
 import (
 	"fmt"
@@ -7,28 +8,28 @@ import (
 // StatechartData is all the information a frontend needs to output about a statechart.
 // This will be consumed by the |ir| package and validated.
 type StatechartData struct {
-	Name        string            `yaml:"name"`
-	Triggers    []*TriggerData    `yaml:"triggers"`
-	States      []*StateData      `yaml:"states"`
-	Transitions []*TransitionData `yaml:"transitions"`
+	Name        string
+	Triggers    []*TriggerData
+	States      []*StateData
+	Transitions []*TransitionData
 }
 
 type TriggerData struct {
-	Name       string `yaml:"name"`
-	ArgsString string `yaml:"arguments_string"`
+	Name       string
+	ArgsString string
 
 	// Index represents in what order it was found.
 	Index int
 }
 
 type StateData struct {
-	Name   string `yaml:"name"`
-	Parent string `yaml:"parent"`
+	Name   string
+	Parent string
 
 	Options []*StateOptionData
 
-	EnterReactions []string `yaml:"enter_reactions"`
-	ExitReactions  []string `yaml:"exit_reactions"`
+	EnterReactions []string
+	ExitReactions  []string
 
 	// Index represents in what order it was found.
 	Index int
@@ -51,9 +52,9 @@ type StateOptionData struct {
 }
 
 type TransitionData struct {
-	From    string `yaml:"from"`
-	To      string `yaml:"to"`
-	Trigger string `yaml:"trigger"`
+	From    string
+	To      string
+	Trigger string
 
 	// Index represents in what order it was found.
 	Index int

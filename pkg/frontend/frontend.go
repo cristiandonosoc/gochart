@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 // FrontendKind is an enum holding all the possible frontends available.
@@ -34,18 +36,20 @@ func (fk *FrontendKind) Set(value string) error {
 	return nil
 }
 
+type FrontendOption func(opt interface{})
+
 // GochartFrontend is the abstract interface for all frontends, regardless of the type of data they
 // consume. This is used to decouple language specifications from the rest of the program.
 type GochartFrontend interface {
 	// Process takes the content describing input for this frontend and is meant to return frontend
 	// data that can then be consumed by others parts of the program, mostly the |ir| package.
-	Process(r io.Reader) (*StatechartData, error)
+	Process(r io.Reader) (*output.StatechartData, error)
 }
 
 // ProcessFromFile is a convenience function that reads a whole file and pass it to the particular
 // GochartFrontend implementation. Mostly meant for each interface implementation to use it for they
 // explosing their own |ProcessFromFile|.
-func ProcessFromFile(gf GochartFrontend, path string) (*StatechartData, error) {
+func ProcessFromFile(gf GochartFrontend, path string) (*output.StatechartData, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading %q: %w", path, err)

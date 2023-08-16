@@ -3,12 +3,12 @@ package ir
 import (
 	"fmt"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
-	scdata *frontend.StatechartData
+	scdata *output.StatechartData
 
 	triggers   []*Trigger
 	rootStates []*State
@@ -18,7 +18,7 @@ type inputHandler struct {
 	stateMap   map[string]*State
 }
 
-func ProcessStatechartData(scdata *frontend.StatechartData) (*Statechart, error) {
+func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
 	ih := inputHandler{
 		scdata:     scdata,
 		triggerMap: make(map[string]*Trigger),
@@ -69,7 +69,7 @@ func (ih *inputHandler) collectTriggers() error {
 	return nil
 }
 
-func (ih *inputHandler) createTrigger(tdata *frontend.TriggerData) (*Trigger, error) {
+func (ih *inputHandler) createTrigger(tdata *output.TriggerData) (*Trigger, error) {
 	// We make sure that the trigger doesn't exist already.
 	if _, ok := ih.triggerMap[tdata.Name]; ok {
 		return nil, fmt.Errorf("trigger %q defined twice", tdata.Name)
@@ -255,7 +255,7 @@ func (ih *inputHandler) collectTransitions() error {
 }
 
 // createTransition returns a new transition, as well as the state it stems from.
-func (ih *inputHandler) createTransition(tdata *frontend.TransitionData) (*Transition, *State, error) {
+func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transition, *State, error) {
 	from, ok := ih.stateMap[tdata.From]
 	if !ok {
 		return nil, nil, fmt.Errorf("cannot find from state %q", tdata.From)

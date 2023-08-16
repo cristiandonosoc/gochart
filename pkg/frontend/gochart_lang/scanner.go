@@ -8,8 +8,6 @@ import (
 	"slices"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
 // ScanError is a custom error associated with scanning.
@@ -64,16 +62,6 @@ func (s *Scanner) reset() {
 	s.currentRuneCount = 0
 	s.totalRunes = 0
 	s.line = 1
-}
-
-func (s *Scanner) Scan(r io.Reader) (*frontend.StatechartData, []error) {
-	// Get all the tokens in this input.
-	_, errors := s.gatherTokens(r)
-	if errors != nil {
-		return nil, errors
-	}
-
-	return &frontend.StatechartData{}, nil
 }
 
 func (s *Scanner) gatherTokens(r io.Reader) ([]*Token, []error) {

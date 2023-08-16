@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 type gochartLangFrontend struct {
 	verbose bool
 }
-
-var _ frontend.GochartFrontend = (*gochartLangFrontend)(nil)
 
 // NewFrontend returns a frontend capable of parting the gochart language.
 func NewGochartLangFrontend(verbose bool) *gochartLangFrontend {
@@ -23,7 +21,7 @@ func NewGochartLangFrontend(verbose bool) *gochartLangFrontend {
 	}
 }
 
-func (glf *gochartLangFrontend) Process(r io.Reader) (*frontend.StatechartData, error) {
+func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("reading input reader: %w", err)
@@ -71,21 +69,21 @@ func newFrontendTranslator() *frontendTranslator {
 	return &frontendTranslator{}
 }
 
-func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *frontend.StatechartData {
+func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *output.StatechartData {
 	// Collect triggers.
-	triggers := make([]*frontend.TriggerData, 0, len(nsc.Triggers))
+	triggers := make([]*output.TriggerData, 0, len(nsc.Triggers))
 	for _, nt := range nsc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(nt))
 	}
 
 	// Collect states.
-	var states []*frontend.StateData
-	var transitions []*frontend.TransitionData
+	var states []*output.StateData
+	var transitions []*output.TransitionData
 	for _, ns := range nsc.States {
 		states, transitions = ft.translateState(ns, states, transitions)
 	}
 
-	return &frontend.StatechartData{
+	return &output.StatechartData{
 		Name:        nsc.Name,
 		Triggers:    triggers,
 		States:      states,
@@ -93,20 +91,20 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *front
 	}
 }
 
-func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *frontend.TriggerData {
+func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.TriggerData {
 	index := ft.triggerIndex
 	ft.triggerIndex += 1
-	return &frontend.TriggerData{
+	return &output.TriggerData{
 		Name:       nt.Name,
 		ArgsString: nt.ArgsString,
 		Index:      index,
 	}
 }
 
-func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*frontend.StateData, transitions []*frontend.TransitionData) ([]*frontend.StateData, []*frontend.TransitionData) {
+func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.StateData, transitions []*output.TransitionData) ([]*output.StateData, []*output.TransitionData) {
 	index := ft.stateIndex
 	ft.stateIndex++
-	state := &frontend.StateData{
+	state := &output.StateData{
 		Name:   ns.Name,
 		Parent: ns.ParentName,
 		Index:  index,
@@ -125,7 +123,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*fronten
 	for _, t := range ns.Transitions {
 		index := ft.transitionIndex
 		ft.transitionIndex++
-		transition := &frontend.TransitionData{
+		transition := &output.TransitionData{
 			From:    ns.Name,
 			To:      t.TargetState,
 			Trigger: t.Trigger,

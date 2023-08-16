@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
@@ -415,7 +415,7 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 
 type ASTNodeStateOption struct {
 	Name      string
-	ValueKind frontend.StateOptionValueKind
+	ValueKind output.StateOptionValueKind
 	Value     string
 }
 
@@ -431,28 +431,28 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	}
 
 	// See if there is an optional value.
-	valueKind := frontend.StateOptionValueKind_None
+	valueKind := output.StateOptionValueKind_None
 	var value string
 	if _, ok := p.match(Token_Equal); ok {
 		if token, ok := p.match(Token_Identifier); ok {
-			valueKind = frontend.StateOptionValueKind_String
+			valueKind = output.StateOptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_String); ok {
-			valueKind = frontend.StateOptionValueKind_String
+			valueKind = output.StateOptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_Integer); ok {
 			_, err := strconv.Atoi(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
 			}
-			valueKind = frontend.StateOptionValueKind_Integer
+			valueKind = output.StateOptionValueKind_Integer
 			value = token.literal
 		} else if token, ok := p.match(Token_Boolean); ok {
 			_, err := strconv.ParseBool(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
 			}
-			valueKind = frontend.StateOptionValueKind_Boolean
+			valueKind = output.StateOptionValueKind_Boolean
 			value = token.literal
 		} else {
 			return nil, fmt.Errorf("unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
