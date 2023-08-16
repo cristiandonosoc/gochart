@@ -10,13 +10,13 @@ cc_binary(
         "statechart.generated.h",
     ],
     deps = [
-      ":gochart",
+        ":gochart",
     ],
 )
 
 generate_gochart_cpp(
-	name = "gochart",
-  src = "full_flow.gochart",
-  header_out = "statechart.generated.h",
-  cpp_out = "statechart.generated.cpp",
+    name = "gochart",
+    src = "full_flow.gochart",
+    cpp_out = "statechart.generated.cpp",
+    header_out = "statechart.generated.h",
 )

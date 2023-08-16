@@ -13,6 +13,56 @@ func toUnix(path string) string {
 	return strings.ReplaceAll(path, "\\", "/")
 }
 
+// Runfiles returns a list of all the runfiles associated with this test that contains |dir|.
+// Typical use is Runfiles("testdata")
+func Runfiles(dir string) ([]string, error) {
+	// We attempt to query Bazel to see if it can find runfiles.
+	runfiles, err := bazel.ListRunfiles()
+	if err != nil {
+		return nil, fmt.Errorf("listing runfiles: %w", err)
+	}
+
+	var candidates []string
+
+	if len(runfiles) > 0 {
+		for _, rf := range runfiles {
+			if !strings.Contains(toUnix(rf.ShortPath), dir) {
+				continue
+			}
+
+			candidates = append(candidates, rf.Path)
+
+		}
+	} else {
+		// Otherwise we open the dir and list it.
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return nil, fmt.Errorf("opening dir %q: %w", dir, err)
+		}
+
+		for _, entry := range entries {
+			candidates = append(candidates, entry.Name())
+		}
+	}
+
+	// For now we just query single level. This could be extended for recursive files.
+	result := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		stat, err := os.Stat(candidate)
+		if err != nil {
+			return nil, fmt.Errorf("os stat %q: %w", candidate, err)
+		}
+
+		if stat.IsDir() {
+			continue
+		}
+
+		result = append(result, candidate)
+	}
+
+	return result, nil
+}
+
 // RunfilePath tries to find a testdata file in a build system agnostic way, working for both Bazel
 // environments and default Go ones.
 func RunfilePath(path string) (string, error) {
