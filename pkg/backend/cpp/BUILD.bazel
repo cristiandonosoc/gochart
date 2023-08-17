@@ -4,17 +4,16 @@ go_library(
     name = "cpp",
     srcs = [
         "cpp.go",
-        "header.template.h",
         "templates.go",
     ],
     embedsrcs = [
-        "body.template.cpp",
-        "header.template.h",
+        "statechart.cpp.template",
+        "statechart.h.template",
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/cpp",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/backend",
+        "//internal/option",
         "//pkg/ir",
         "@com_github_masterminds_sprig_v3//:sprig",
     ],

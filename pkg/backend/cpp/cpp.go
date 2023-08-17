@@ -1,4 +1,4 @@
-// cpp is a Gochart backend meant to generate C++ code for statechart.
+// Package cpp is a Gochart backend meant to generate C++ code for statechart.
 package cpp
 
 import (
@@ -6,26 +6,60 @@ import (
 	"io"
 	"time"
 
-	"github.com/cristiandonosoc/gochart/pkg/backend"
+	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
-var _ backend.GochartBackend = (*cppGochartBackend)(nil)
+// Options -----------------------------------------------------------------------------------------
+
+type Options struct {
+	HeaderIncludePath string
+	Time              time.Time
+	Version           string
+
+	Verbose bool
+}
+
+func WithHeaderIncludePath(path string) option.Option {
+	return optWrapper(func(options *Options) {
+		options.HeaderIncludePath = path
+	})
+}
+
+func WithTime(t time.Time) option.Option {
+	return optWrapper(func(options *Options) {
+		options.Time = t
+	})
+}
+
+func WithVersion(version string) option.Option {
+	return optWrapper(func(options *Options) {
+		options.Version = version
+	})
+}
+
+func WithVerbose(verbose bool) option.Option {
+	return optWrapper(func(options *Options) {
+		options.Verbose = verbose
+	})
+}
+
+func optWrapper(fn func(options *Options)) option.Option {
+	return func(opts interface{}) {
+		casted := opts.(*Options)
+		fn(casted)
+	}
+}
+
+// Backend -----------------------------------------------------------------------------------------
 
 type cppGochartBackend struct {
-	options *BackendOptions
+	options *Options
 }
 
-type BackendOptions struct {
-	HeaderInclude string
-	Time          time.Time
-	Version       string
-}
-
-type Option func(*BackendOptions)
-
-func NewCppGochartBackend(opts ...Option) *cppGochartBackend {
-	options := &BackendOptions{
+func NewCppGochartBackend(opts ...option.Option) *cppGochartBackend {
+	// Get options.
+	options := &Options{
 		Version: "DEVELOPMENT",
 		Time:    time.Now(),
 	}
@@ -38,21 +72,21 @@ func NewCppGochartBackend(opts ...Option) *cppGochartBackend {
 	}
 }
 
-func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (_header, _body io.Reader, _err error) {
+func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (_header, _cpp io.Reader, _err error) {
 	tm, err := newTemplateManager(sc)
 	if err != nil {
 		return nil, nil, fmt.Errorf("building new template manager: %w", err)
 	}
 
-	header, err := tm.generateHeader(cpp.options)
+	headerResult, err := tm.generateHeader(cpp.options)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generating header: %w", err)
 	}
 
-	body, err := tm.generateBody(cpp.options)
+	cppResult, err := tm.generateBody(cpp.options)
 	if err != nil {
-		return nil, nil, fmt.Errorf("generating body: %w", err)
+		return nil, nil, fmt.Errorf("generating cpp: %w", err)
 	}
 
-	return header, body, nil
+	return headerResult, cppResult, nil
 }

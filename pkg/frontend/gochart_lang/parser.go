@@ -16,12 +16,13 @@ type Parser struct {
 
 	currentStatechart string
 	currentState      string
-	verbose           bool
+
+	options *Options
 }
 
-func NewParser(verbose bool) *Parser {
+func NewParser(options *Options) *Parser {
 	return &Parser{
-		verbose: verbose,
+		options: options,
 	}
 }
 
@@ -741,7 +742,7 @@ func (p *Parser) atEnd() bool {
 // Debug -------------------------------------------------------------------------------------------
 
 func (p *Parser) debuglog(format string, args ...interface{}) {
-	if !p.verbose {
+	if !p.options.Verbose {
 		return
 	}
 

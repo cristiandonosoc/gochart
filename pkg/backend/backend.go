@@ -19,6 +19,8 @@ const (
 	BackendKind_Cpp BackendKind = iota
 )
 
+type BackendOption func(opt interface{})
+
 func (bk *BackendKind) Set(value string) error {
 	switch strings.ToLower(value) {
 	case "cpp":

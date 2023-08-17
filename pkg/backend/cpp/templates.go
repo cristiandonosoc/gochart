@@ -12,20 +12,20 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
-//go:embed header.template.h body.template.cpp
+//go:embed statechart.h.template statechart.cpp.template
 var embeddedFS embed.FS
 
 type embedPath string
 
 const (
-	headerFilename embedPath = "header.template.h"
-	bodyFilename   embedPath = "body.template.cpp"
+	headerFilename embedPath = "statechart.h.template"
+	cppFilename    embedPath = "statechart.cpp.template"
 )
 
 // templateManager is a helper struct to handle the common context for template loading.
 type templateManager struct {
 	headerTemplate *template.Template
-	bodyTemplate   *template.Template
+	cppTemplate    *template.Template
 
 	sc *ir.Statechart
 }
@@ -36,14 +36,14 @@ func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
 		return nil, fmt.Errorf("reading header template: %w", err)
 	}
 
-	bodyTemplate, err := readTemplate(bodyFilename)
+	cppTemplate, err := readTemplate(cppFilename)
 	if err != nil {
-		return nil, fmt.Errorf("reading body template: %w", err)
+		return nil, fmt.Errorf("reading cpp template: %w", err)
 	}
 
 	return &templateManager{
 		headerTemplate: headerTemplate,
-		bodyTemplate:   bodyTemplate,
+		cppTemplate:    cppTemplate,
 		sc:             sc,
 	}, nil
 }
@@ -58,18 +58,18 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateBody(options *BackendOptions) (io.Reader, error) {
+func (tm *templateManager) generateBody(options *Options) (io.Reader, error) {
 	context := newTemplateContext(tm.sc, options)
 
 	var buf bytes.Buffer
-	if err := tm.bodyTemplate.Execute(&buf, context); err != nil {
+	if err := tm.cppTemplate.Execute(&buf, context); err != nil {
 		return nil, fmt.Errorf("executing template: %w", err)
 	}
 
 	return &buf, nil
 }
 
-func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, error) {
+func (tm *templateManager) generateHeader(options *Options) (io.Reader, error) {
 	context := newTemplateContext(tm.sc, options)
 
 	var buf bytes.Buffer
@@ -82,7 +82,8 @@ func (tm *templateManager) generateHeader(options *BackendOptions) (io.Reader, e
 
 // templateContext is a common struct that has helpers and information needed by the templates.
 type templateContext struct {
-	BackendOptions
+	Options
+
 	Statechart *ir.Statechart
 
 	// Common Use strings.
@@ -90,10 +91,10 @@ type templateContext struct {
 	InterfaceName string
 }
 
-func newTemplateContext(sc *ir.Statechart, options *BackendOptions) *templateContext {
+func newTemplateContext(sc *ir.Statechart, options *Options) *templateContext {
 	tc := &templateContext{
-		BackendOptions: *options,
-		Statechart:     sc,
+		Options:    *options,
+		Statechart: sc,
 
 		ImplName:      fmt.Sprintf("Statechart%sImpl", sc.Name),
 		InterfaceName: fmt.Sprintf("Statechart%s", sc.Name),

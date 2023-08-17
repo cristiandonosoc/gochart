@@ -104,7 +104,7 @@ func internalMain() error {
 	var gf frontend.GochartFrontend
 	switch flags.frontendKind {
 	case frontend.FrontendKind_Gochart:
-		gf = gochart_lang.NewGochartLangFrontend(flags.verbose)
+		gf = gochart_lang.NewGochartLangFrontend(gochart_lang.WithVerbose(flags.verbose))
 	case frontend.FrontendKind_Yaml:
 		gf = yaml.NewYamlFrontend()
 	}
@@ -134,10 +134,8 @@ func internalMain() error {
 
 	var gb backend.GochartBackend
 	if flags.backendKind == backend.BackendKind_Cpp {
-		gb = cpp.NewCppGochartBackend(func(o *cpp.BackendOptions) {
-			// For now we just assume the include is in the same directory.
-			o.HeaderInclude = filepath.Base(flags.headerOutput)
-		})
+		// For now we just assume the include is in the same directory.
+		gb = cpp.NewCppGochartBackend(cpp.WithHeaderIncludePath(filepath.Base(flags.headerOutput)))
 	}
 
 	headerData, bodyData, err := gb.Generate(irData)

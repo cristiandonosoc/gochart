@@ -7,17 +7,46 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
+// Options -----------------------------------------------------------------------------------------
+
+type Options struct {
+	Verbose bool
+}
+
+func WithVerbose(verbose bool) option.Option {
+	return optWrapper(func(options *Options) {
+		options.Verbose = verbose
+	})
+}
+
+func optWrapper(fn func(options *Options)) option.Option {
+	return func(opts interface{}) {
+		casted := opts.(*Options)
+		fn(casted)
+	}
+}
+
+// Frontend ----------------------------------------------------------------------------------------
+
 type gochartLangFrontend struct {
-	verbose bool
+	options *Options
 }
 
 // NewFrontend returns a frontend capable of parting the gochart language.
-func NewGochartLangFrontend(verbose bool) *gochartLangFrontend {
+func NewGochartLangFrontend(opts ...option.Option) *gochartLangFrontend {
+	// Get options.
+	options := &Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+
 	return &gochartLangFrontend{
-		verbose: verbose,
+		options: options,
 	}
 }
 
@@ -36,7 +65,7 @@ func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, er
 		return nil, fmt.Errorf("gochart: parsing input file")
 	}
 
-	parser := NewParser(glf.verbose)
+	parser := NewParser(glf.options)
 	root, errors := parser.Parse(tokens)
 	if len(errors) > 0 {
 		for _, err := range errors {
@@ -53,89 +82,4 @@ func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, er
 	scdata := ft.translateStatechart(root.statecharts[0])
 
 	return scdata, nil
-}
-
-// AST TO OUTPUT TRANSLATION -----------------------------------------------------------------------
-//
-// This section translated from the AST nodes into the format the output expects.
-
-type frontendTranslator struct {
-	triggerIndex    int
-	stateIndex      int
-	transitionIndex int
-}
-
-func newFrontendTranslator() *frontendTranslator {
-	return &frontendTranslator{}
-}
-
-func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *output.StatechartData {
-	// Collect triggers.
-	triggers := make([]*output.TriggerData, 0, len(nsc.Triggers))
-	for _, nt := range nsc.Triggers {
-		triggers = append(triggers, ft.translateTrigger(nt))
-	}
-
-	// Collect states.
-	var states []*output.StateData
-	var transitions []*output.TransitionData
-	for _, ns := range nsc.States {
-		states, transitions = ft.translateState(ns, states, transitions)
-	}
-
-	return &output.StatechartData{
-		Name:        nsc.Name,
-		Triggers:    triggers,
-		States:      states,
-		Transitions: transitions,
-	}
-}
-
-func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.TriggerData {
-	index := ft.triggerIndex
-	ft.triggerIndex += 1
-	return &output.TriggerData{
-		Name:       nt.Name,
-		ArgsString: nt.ArgsString,
-		Index:      index,
-	}
-}
-
-func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.StateData, transitions []*output.TransitionData) ([]*output.StateData, []*output.TransitionData) {
-	index := ft.stateIndex
-	ft.stateIndex++
-	state := &output.StateData{
-		Name:   ns.Name,
-		Parent: ns.ParentName,
-		Index:  index,
-	}
-
-	for _, er := range ns.EnterReactions {
-		state.EnterReactions = append(state.EnterReactions, er.Trigger)
-	}
-
-	for _, er := range ns.ExitReactions {
-		state.ExitReactions = append(state.ExitReactions, er.Trigger)
-	}
-	states = append(states, state)
-
-	// Collect the transitions.
-	for _, t := range ns.Transitions {
-		index := ft.transitionIndex
-		ft.transitionIndex++
-		transition := &output.TransitionData{
-			From:    ns.Name,
-			To:      t.TargetState,
-			Trigger: t.Trigger,
-			Index:   index,
-		}
-		transitions = append(transitions, transition)
-	}
-
-	// Collect the children.
-	for _, child := range ns.Children {
-		states, transitions = ft.translateState(child, states, transitions)
-	}
-
-	return states, transitions
 }
