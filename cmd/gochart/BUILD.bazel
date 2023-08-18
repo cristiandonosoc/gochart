@@ -7,11 +7,9 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//pkg/backend",
-        "//pkg/backend/cpp",
         "//pkg/frontend",
-        "//pkg/frontend/gochart_lang",
-        "//pkg/frontend/yaml",
-        "//pkg/ir",
+        "//pkg/gochart",
+        "@com_github_mitchellh_cli//:cli",
     ],
 )
 

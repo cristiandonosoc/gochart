@@ -5,21 +5,18 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend"
-	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
-	"github.com/cristiandonosoc/gochart/pkg/ir"
+	"github.com/cristiandonosoc/gochart/pkg/gochart"
+
+	"github.com/mitchellh/cli"
 )
 
 var (
 	flags = struct {
 		input         string
-		frontendKind  frontend.FrontendKind
-		backendKind   backend.BackendKind
 		printFrontend bool
 		printIR       bool
 		printOutput   bool
@@ -31,27 +28,18 @@ var (
 )
 
 func parseFlags() error {
-	frontendFlag := flag.String("frontend", "yaml", "What frontend to use")
-	backendFlag := flag.String("backend", "cpp", "Want backend to generate to")
 	flag.BoolVar(&flags.printFrontend, "print-frontend", false,
 		"Whether we should just print the result of the frontend.")
 	flag.BoolVar(&flags.printIR, "print-ir", false,
 		"Whether we should just print the result of the IR pass")
 	flag.BoolVar(&flags.printOutput, "print-output", false,
 		"Whether we should just print eh result of the backend, instead of generating files")
+
 	flag.StringVar(&flags.headerOutput, "header-output", "", "Where to output the header (.h) file. Cpp backend only.")
 	flag.StringVar(&flags.bodyOutput, "body-output", "", "Where to output the body (.cpp) file. Cpp backend only.")
 	flag.BoolVar(&flags.verbose, "verbose", false, "Print verbose debug output")
 
 	flag.Parse()
-
-	if err := flags.frontendKind.Set(*frontendFlag); err != nil {
-		return err
-	}
-
-	if err := flags.backendKind.Set(*backendFlag); err != nil {
-		return err
-	}
 
 	if !flags.printFrontend && !flags.printIR {
 		if !flags.printOutput {
@@ -89,88 +77,90 @@ func writeToFile(path string, r io.Reader) error {
 	return nil
 }
 
+var (
+	baseFlags = struct {
+	}{}
+)
+
+type cppCommand struct{}
+
+func (yc *cppCommand) run(args []string) error {
+	fs := flag.NewFlagSet("cpp", flag.ContinueOnError)
+
+	frontendFlags := frontend.SetFlags(fs)
+	backendFlags, err := backend.SetFlags("cpp", fs)
+	if err != nil {
+		return fmt.Errorf("setting flags for backend: %w", err)
+	}
+
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parsing flags: %w", err)
+	}
+
+	gf, err := frontend.Parse(frontendFlags)
+	if err != nil {
+		return fmt.Errorf("parsing frontend flags: %w", err)
+	}
+
+	bf, err := backend.Parse(backendFlags)
+	if err != nil {
+		return fmt.Errorf("parsing backend flags: %w", err)
+	}
+
+	gc, err := gochart.NewGochartCompiler(gf, bf)
+	if err != nil {
+		return fmt.Errorf("creating gochart compiler: %w", err)
+	}
+
+	gc.PrintIR(nil)
+	return fmt.Errorf("CPPCOMMAND: IMPLEMENT ME")
+}
+
+func (yc *cppCommand) Run(args []string) int {
+	if err := yc.run(args); err != nil {
+		fmt.Println(err)
+		return 1
+	}
+
+	return 0
+}
+
+func (c *cppCommand) Help() string {
+	help := fmt.Sprintf(`
+Usage: gochart [global options] yaml [options] [PATH]
+
+	%s
+
+Options:
+	-frontend=(gochart|yaml)	The frontend language to read the statechart from.
+														Default: gochart
+	`, c.Synopsis())
+
+	return strings.TrimSpace(help)
+}
+
+func (c *cppCommand) Synopsis() string {
+	return "Generates C++ code from statechart."
+}
+
 func internalMain() error {
-	if err := parseFlags(); err != nil {
-		flag.Usage()
-		fmt.Println("Usage: gochart [FLAGS] INPUT")
-		return fmt.Errorf("parsing commandline: %w", err)
+	c := cli.NewCLI("gochart", "1.0.0")
+	c.Args = os.Args[1:]
+
+	c.Commands = map[string]cli.CommandFactory{
+		"generate cpp": func() (cli.Command, error) {
+			return &cppCommand{}, nil
+		},
 	}
 
-	if flags.verbose {
-		fmt.Printf("FLAGS PARSED: %+v\n", flags)
-	}
-
-	// Get the frontend and read the yaml.
-	var gf frontend.GochartFrontend
-	switch flags.frontendKind {
-	case frontend.FrontendKind_Gochart:
-		gf = gochart_lang.NewGochartLangFrontend(gochart_lang.WithVerbose(flags.verbose))
-	case frontend.FrontendKind_Yaml:
-		gf = yaml.NewYamlFrontend()
-	}
-
-	frontendData, err := frontend.ProcessFromFile(gf, flags.input)
+	exitCode, err := c.Run()
 	if err != nil {
-		return fmt.Errorf("parsing input file: %w", err)
+		return fmt.Errorf("running cli: %w", err)
 	}
 
-	if flags.printFrontend {
-		printer := frontend.NewPrinter(os.Stdout)
-		printer.PrintStatechart(frontendData)
-		return nil
+	if exitCode != 0 {
+		return fmt.Errorf("Error running gochart")
 	}
-
-	// Process the generated data into intermediary format.
-	irData, err := ir.ProcessStatechartData(frontendData)
-	if err != nil {
-		return fmt.Errorf("processing statechart data: %w", err)
-	}
-
-	if flags.printIR {
-		printer := ir.NewPrinter(os.Stdout)
-		printer.PrintStatechart(irData)
-		return nil
-	}
-
-	var gb backend.GochartBackend
-	if flags.backendKind == backend.BackendKind_Cpp {
-		// For now we just assume the include is in the same directory.
-		gb = cpp.NewCppGochartBackend(cpp.WithHeaderIncludePath(filepath.Base(flags.headerOutput)))
-	}
-
-	headerData, bodyData, err := gb.Generate(irData)
-	if err != nil {
-		return fmt.Errorf("generating backend: %w", err)
-	}
-
-	if flags.printOutput {
-		header, err := io.ReadAll(headerData)
-		if err != nil {
-			return fmt.Errorf("reading the header data: %w", err)
-		}
-
-		body, err := io.ReadAll(bodyData)
-		if err != nil {
-			return fmt.Errorf("reading the body data: %w", err)
-		}
-
-		fmt.Println("HEADER *****")
-		fmt.Println(string(header))
-		fmt.Println("BODY *****")
-		fmt.Println(string(body))
-
-		return nil
-	}
-
-	if err := writeToFile(flags.headerOutput, headerData); err != nil {
-		return fmt.Errorf("writing header: %w", err)
-	}
-	fmt.Printf("Wrote header to %s\n", flags.headerOutput)
-
-	if err := writeToFile(flags.bodyOutput, bodyData); err != nil {
-		return fmt.Errorf("writing body: %w", err)
-	}
-	fmt.Printf("Wrote body to %s\n", flags.bodyOutput)
 
 	return nil
 }

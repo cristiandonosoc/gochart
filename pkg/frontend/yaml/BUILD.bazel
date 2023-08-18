@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/frontend/yaml",
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/option",
         "//pkg/frontend/output",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],

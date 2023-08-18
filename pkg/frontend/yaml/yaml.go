@@ -7,12 +7,13 @@ import (
 	"io"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/internal/option"
 
 	"gopkg.in/yaml.v2"
 )
 
-func NewYamlFrontend() *yamlFrontend {
-	return &yamlFrontend{}
+func NewYamlFrontend(opts ...option.Option) (*yamlFrontend, error) {
+	return &yamlFrontend{}, nil
 }
 
 type yamlFrontend struct {

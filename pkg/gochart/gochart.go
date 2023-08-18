@@ -6,24 +6,20 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend"
 )
 
-type Configuration struct {
-	Frontend frontend.FrontendKind
-	FrontendOptions []frontend.FrontendOption
-
-	Backend backend.BackendKind
-	BackendOptions []backend.BackendOption
-}
-
 type gochartCompiler struct {
-	conf *Configuration
+	gf frontend.GochartFrontend
+	gb backend.GochartBackend
 }
 
-func NewGochartCompiler(conf *Configuration) (*gochartCompiler, error)  {
-	return nil, fmt.Errorf("IMPLEMENT ME")
+func NewGochartCompiler(gf frontend.GochartFrontend, gb backend.GochartBackend) (*gochartCompiler, error) {
+	return &gochartCompiler{
+		gf: gf,
+		gb: gb,
+	}, nil
 }
 
 func (gc *gochartCompiler) PrintFrontend() (io.Reader, error) {
@@ -36,14 +32,10 @@ func (gc *gochartCompiler) PrintIR(w io.Writer) (io.Reader, error) {
 }
 
 type BackendOutput struct {
-	Name string
+	Name   string
 	Output io.Reader
 }
 
 func (gc *gochartCompiler) PrintBackend(w io.Writer) ([]*BackendOutput, error) {
 	return nil, fmt.Errorf("IMPLEMENT ME")
 }
-
-
-
-

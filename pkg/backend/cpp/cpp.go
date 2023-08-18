@@ -57,7 +57,7 @@ type cppGochartBackend struct {
 	options *Options
 }
 
-func NewCppGochartBackend(opts ...option.Option) *cppGochartBackend {
+func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	// Get options.
 	options := &Options{
 		Version: "DEVELOPMENT",
@@ -69,7 +69,7 @@ func NewCppGochartBackend(opts ...option.Option) *cppGochartBackend {
 
 	return &cppGochartBackend{
 		options: options,
-	}
+	}, nil
 }
 
 func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (_header, _cpp io.Reader, _err error) {

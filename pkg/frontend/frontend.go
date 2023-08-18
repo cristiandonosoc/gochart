@@ -3,40 +3,16 @@
 package frontend
 
 import (
-	"bytes"
+	"flag"
 	"fmt"
 	"io"
-	"os"
+	"sort"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 )
-
-// FrontendKind is an enum holding all the possible frontends available.
-type FrontendKind int
-
-const (
-	// FrontendKind_Gochart represents the main language with a custom parser.
-	FrontendKind_Gochart FrontendKind = iota
-
-	// FrontendKind_Yaml is a simple yaml parser, mostly used for development purposes.
-	FrontendKind_Yaml
-)
-
-func (fk *FrontendKind) Set(value string) error {
-	switch strings.ToLower(value) {
-	case "gochart":
-		*fk = FrontendKind_Gochart
-	case "yaml":
-		*fk = FrontendKind_Yaml
-	default:
-		return fmt.Errorf("invalid frontend value: want gochart or yaml, got %v", value)
-	}
-
-	return nil
-}
-
-type FrontendOption func(opt interface{})
 
 // GochartFrontend is the abstract interface for all frontends, regardless of the type of data they
 // consume. This is used to decouple language specifications from the rest of the program.
@@ -46,14 +22,48 @@ type GochartFrontend interface {
 	Process(r io.Reader) (*output.StatechartData, error)
 }
 
-// ProcessFromFile is a convenience function that reads a whole file and pass it to the particular
-// GochartFrontend implementation. Mostly meant for each interface implementation to use it for they
-// explosing their own |ProcessFromFile|.
-func ProcessFromFile(gf GochartFrontend, path string) (*output.StatechartData, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("reading %q: %w", path, err)
+type frontendFactory func(*frontendFlags) (GochartFrontend, error)
+
+var factories = map[string]frontendFactory{
+	"gochart": newGochartFrontend,
+	"yaml":    newYamlFrontend,
+}
+
+type frontendFlags struct {
+	kind string
+}
+
+// SetFlags adds all the flags available to configure the frontend.
+func SetFlags(fs *flag.FlagSet) *frontendFlags {
+	ff := &frontendFlags{}
+
+	keys := make([]string, 0, len(factories))
+	for key := range factories {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	fs.StringVar(&ff.kind, "frontend", "gochart",
+		fmt.Sprintf("The frontend language to read statechart from. Valid values: %v", keys))
+
+	return ff
+}
+
+// Parse gets the result of the fs.Parse and creates a frontend from them.
+func Parse(ff *frontendFlags) (GochartFrontend, error) {
+	factory, ok := factories[strings.ToLower(ff.kind)]
+	if !ok {
+		return nil, fmt.Errorf("unknown frontend %q", ff.kind)
 	}
 
-	return gf.Process(bytes.NewReader(data))
+	return factory(ff)
+}
+
+func newGochartFrontend(ff *frontendFlags) (GochartFrontend, error) {
+	// Parse the options.
+	return gochart_lang.NewGochartLangFrontend()
+}
+
+func newYamlFrontend(ff *frontendFlags) (GochartFrontend, error) {
+	return yaml.NewYamlFrontend()
 }

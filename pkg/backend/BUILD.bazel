@@ -5,5 +5,9 @@ go_library(
     srcs = ["backend.go"],
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/ir"],
+    deps = [
+        "//internal/option",
+        "//pkg/backend/cpp",
+        "//pkg/ir",
+    ],
 )

@@ -37,7 +37,7 @@ type gochartLangFrontend struct {
 }
 
 // NewFrontend returns a frontend capable of parting the gochart language.
-func NewGochartLangFrontend(opts ...option.Option) *gochartLangFrontend {
+func NewGochartLangFrontend(opts ...option.Option) (*gochartLangFrontend, error) {
 	// Get options.
 	options := &Options{}
 	for _, opt := range opts {
@@ -47,7 +47,7 @@ func NewGochartLangFrontend(opts ...option.Option) *gochartLangFrontend {
 
 	return &gochartLangFrontend{
 		options: options,
-	}
+	}, nil
 }
 
 func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, error) {
