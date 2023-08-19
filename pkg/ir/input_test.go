@@ -1,11 +1,12 @@
 package ir
 
 import (
+	"bytes"
+	"os"
 	"slices"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
-	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
 	"github.com/stretchr/testify/assert"
@@ -58,12 +59,16 @@ func TestReadSimpleYaml(t *testing.T) {
 	setEnterReaction(t, wantTriggers, wantStates, "StateC", "Trigger1")
 	setEnterReaction(t, wantTriggers, wantStates, "StateC", "")
 
-	yf := yaml.NewYamlFrontend()
+	yf, err := yaml.NewYamlFrontend()
+	require.NoError(t, err)
 
 	path, err := test_support.RunfilePath("testdata/simple.yaml")
 	require.NoError(t, err)
 
-	scdata, err := frontend.ProcessFromFile(yf, path)
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	scdata, err := yf.Process(bytes.NewReader(data))
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
 
