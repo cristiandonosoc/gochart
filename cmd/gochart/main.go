@@ -2,14 +2,36 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	// "github.com/cristiandonosoc/gochart/pkg/backend"
+	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/gochart"
 
 	"github.com/urfave/cli/v2"
 )
+
+func getGochartCompiler(backendKind string, cliCtx *cli.Context) (*gochart.GochartCompiler, error) {
+	// Get the frontend.
+	gf, err := frontend.Parse(cliCtx)
+	if err != nil {
+		return nil, fmt.Errorf("determining frontend: %w", err)
+	}
+
+	// If the is a backend set, we get the backend.
+	var gb backend.GochartBackend
+	if backendKind != "" {
+		result, err := backend.Parse(backendKind, cliCtx)
+		if err != nil {
+			return nil, fmt.Errorf("determining backend: %w", err)
+		}
+		gb = result
+	}
+
+	return gochart.NewGochartCompiler(gf, gb)
+}
 
 func internalMain() error {
 	app := cli.App{
@@ -33,12 +55,7 @@ func internalMain() error {
 						Description: "Print a common description of the output of the frontend. Useful for debugging.",
 						Usage:       "print [STATECHART_FILE]",
 						Action: func(cliCtx *cli.Context) error {
-							gf, err := frontend.Parse(cliCtx)
-							if err != nil {
-								return fmt.Errorf("parsing frontend: %w", err)
-							}
-
-							gc, err := gochart.NewGochartCompiler(gf, nil)
+							gc, err := getGochartCompiler("", cliCtx)
 							if err != nil {
 								return err
 							}
@@ -66,12 +83,7 @@ func internalMain() error {
 						Description: "Prints a common description of the output after processing the frontend's output.",
 						Usage:       "print [STATECHART_FILE]",
 						Action: func(cliCtx *cli.Context) error {
-							gf, err := frontend.Parse(cliCtx)
-							if err != nil {
-								return fmt.Errorf("parsing frontend: %w", err)
-							}
-
-							gc, err := gochart.NewGochartCompiler(gf, nil)
+							gc, err := getGochartCompiler("", cliCtx)
 							if err != nil {
 								return err
 							}
@@ -90,14 +102,44 @@ func internalMain() error {
 				},
 			},
 			{
-				Name:  "generate",
-				Flags: frontend.SetFlags(),
+				Name:        "backend",
+				Description: "Commands associated with the Gochart backends, which generate code/files.",
+				Flags:       frontend.SetFlags(),
 				Subcommands: []*cli.Command{
 					{
-						Name:  "cpp",
-						Usage: "Generate C++ backend",
-						Action: func(cliCtx *cli.Context) error {
-							return fmt.Errorf("GENERATE C++ IMPLEMENT ME")
+						Name:        "cpp",
+						Description: "Command associated with the C++ backend.",
+						Subcommands: []*cli.Command{
+							{
+								Name:        "print",
+								Description: "Print the generated C++ output.",
+								Usage:       "print [STATECHART_FILE]",
+								Action: func(cliCtx *cli.Context) error {
+									gc, err := getGochartCompiler("cpp", cliCtx)
+									if err != nil {
+										return err
+									}
+
+									outputs, err := gc.Generate(cliCtx.Args().Get(0))
+									if err != nil {
+										return fmt.Errorf("generating C++ output files: %w", err)
+									}
+
+									for _, output := range outputs {
+										fmt.Println(output.Name)
+										fmt.Println("---------------------------------------------------------------------")
+
+										content, err := io.ReadAll(output.Content)
+										if err != nil {
+											return fmt.Errorf("reading content for output %q: %w", output.Name, err)
+										}
+
+										fmt.Println(string(content))
+									}
+
+									return nil
+								},
+							},
 						},
 					},
 				},

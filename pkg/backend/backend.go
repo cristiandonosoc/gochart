@@ -3,14 +3,16 @@
 package backend
 
 import (
-	"flag"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+
+	"github.com/urfave/cli/v2"
 )
 
 // GochartBackend is the abstract interface for all backends, regardless of the type of language
@@ -20,47 +22,64 @@ type GochartBackend interface {
 	Generate(sc *ir.Statechart) (header, body io.Reader, err error)
 }
 
-type backendFactory interface {
-	parse() (GochartBackend, error)
+type backendFactory func(*cli.Context) (GochartBackend, error)
+
+var factories = map[string]backendFactory{
+	"cpp": newCppBackend,
 }
 
 // SetFlags adds all the flags available to configure the given backend.
-func SetFlags(backendKind string, fs *flag.FlagSet) (backendFactory, error) {
+func SetFlags(backendKind string) ([]cli.Flag, error) {
+	keys := make([]string, 0, len(factories))
+	for key := range factories {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 
 	switch strings.ToLower(backendKind) {
 	case "cpp":
-		return newCppBackendFactory(fs)
+		return setCppFlags(), nil
 	default:
-		return nil, fmt.Errorf("unknown backend %q", backendKind)
+		return nil, fmt.Errorf("unknown backend %q. Valid values: %v", backendKind, keys)
 	}
 }
 
-// Parse gets the result of the fs.Parse and creates a backend from them.
-func Parse(bf backendFactory) (GochartBackend, error) {
-	return bf.parse()
+func Parse(backendKind string, cliCtx *cli.Context) (GochartBackend, error) {
+	keys := make([]string, 0, len(factories))
+	for key := range factories {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	kind := strings.ToLower(strings.ToLower(backendKind))
+	factory, ok := factories[kind]
+	if !ok {
+		return nil, fmt.Errorf("unknown frontend %q. Valid values: %v", kind, keys)
+	}
+
+	return factory(cliCtx)
 }
 
 // CPP Backend -------------------------------------------------------------------------------------
 
-type cppBackendFactory struct {
-	headerIncludePath string
+const (
+	CPPFlag_HeaderIncludePath = "header-include-path"
+)
+
+func setCppFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:  CPPFlag_HeaderIncludePath,
+			Usage: "The INCLUDE_PATH to be added in the generated .cpp file",
+		},
+	}
 }
 
-var _ backendFactory = (*cppBackendFactory)(nil)
-
-func newCppBackendFactory(fs *flag.FlagSet) (backendFactory, error) {
-	cbf := &cppBackendFactory{}
-
-	fs.StringVar(&cbf.headerIncludePath, "header-include-path", "", "The include path to put in the generated cpp file")
-
-	return cbf, nil
-}
-
-func (cbf *cppBackendFactory) parse() (GochartBackend, error) {
+func newCppBackend(cliCtx *cli.Context) (GochartBackend, error) {
 	var options []option.Option
 
-	if cbf.headerIncludePath != "" {
-		options = append(options, cpp.WithHeaderIncludePath(cbf.headerIncludePath))
+	if path := cliCtx.String(CPPFlag_HeaderIncludePath); path != "" {
+		options = append(options, cpp.WithHeaderIncludePath(path))
 	}
 
 	return cpp.NewCppGochartBackend(options...)

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
@@ -53,18 +54,27 @@ func SetFlags() []cli.Flag {
 
 // Parse gets the result of the fs.Parse and creates a frontend from them.
 func Parse(cliCtx *cli.Context) (GochartFrontend, error) {
+	keys := make([]string, 0, len(factories))
+	for key := range factories {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
 	kind := strings.ToLower(cliCtx.String("frontend"))
 	factory, ok := factories[kind]
 	if !ok {
-		return nil, fmt.Errorf("unknown frontend %q", kind)
+		return nil, fmt.Errorf("unknown frontend %q. Valid values: %v", kind, keys)
 	}
 
 	return factory(cliCtx)
 }
 
 func newGochartFrontend(cliCtx *cli.Context) (GochartFrontend, error) {
-	// Parse the options.
-	return gochart_lang.NewGochartLangFrontend()
+	options := []option.Option{
+		gochart_lang.WithVerbose(cliCtx.Bool("verbose")),
+	}
+
+	return gochart_lang.NewGochartLangFrontend(options...)
 }
 
 func newYamlFrontend(cliCtx *cli.Context) (GochartFrontend, error) {

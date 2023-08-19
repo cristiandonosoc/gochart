@@ -9,5 +9,6 @@ go_library(
         "//internal/option",
         "//pkg/backend/cpp",
         "//pkg/ir",
+        "@com_github_urfave_cli_v2//:cli",
     ],
 )
