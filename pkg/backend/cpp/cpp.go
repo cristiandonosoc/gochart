@@ -60,9 +60,8 @@ type cppGochartBackend struct {
 func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	// Get options.
 	options := &Options{
-		HeaderIncludePath: "ADD_INCLUDE_PATH",
-		Version:           "DEVELOPMENT",
-		Time:              time.Now(),
+		Version: "DEVELOPMENT",
+		Time:    time.Now(),
 	}
 	for _, opt := range opts {
 		opt(options)
@@ -73,7 +72,11 @@ func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	}, nil
 }
 
-func (cpp *cppGochartBackend) Generate(sc *ir.Statechart) (_header, _cpp io.Reader, _err error) {
+func (cpp *cppGochartBackend) Generate(sc *ir.Statechart, opts ...option.Option) (_header, _cpp io.Reader, _err error) {
+	for _, opt := range opts {
+		opt(cpp.options)
+	}
+
 	tm, err := newTemplateManager(sc)
 	if err != nil {
 		return nil, nil, fmt.Errorf("building new template manager: %w", err)

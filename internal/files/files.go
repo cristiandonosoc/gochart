@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"slices"
 )
 
 func WriteToFile(path string, r io.Reader) error {
@@ -25,4 +27,21 @@ func WriteToFile(path string, r io.Reader) error {
 	}
 
 	return nil
+}
+
+var cpps = []string{
+	".cc",
+	".cpp",
+}
+
+// SwapHeaderCpp swaps between .cc/.cpp into .h
+func CppToHeader(path string) (string, error) {
+	ext := filepath.Ext(path)
+
+	if !slices.Contains(cpps, ext) {
+		return "", fmt.Errorf("path %q does not have C++ extension (%v). Is it a C++ file?", path, cpps)
+	}
+
+	root := path[0 : len(path)-len(ext)]
+	return root + ".h", nil
 }

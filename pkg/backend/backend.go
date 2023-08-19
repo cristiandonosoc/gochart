@@ -19,7 +19,7 @@ import (
 // they are meant to generate for. This is to decouple generated languages from the input (frontend)
 // language defined to specify them.
 type GochartBackend interface {
-	Generate(sc *ir.Statechart) (header, body io.Reader, err error)
+	Generate(sc *ir.Statechart, opts ...option.Option) (header, body io.Reader, err error)
 }
 
 type backendFactory func(*cli.Context) (GochartBackend, error)
@@ -62,25 +62,11 @@ func Parse(backendKind string, cliCtx *cli.Context) (GochartBackend, error) {
 
 // CPP Backend -------------------------------------------------------------------------------------
 
-const (
-	CPPFlag_HeaderIncludePath = "header-include-path"
-)
-
 func setCppFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:  CPPFlag_HeaderIncludePath,
-			Usage: "The INCLUDE_PATH to be added in the generated .cpp file",
-		},
-	}
+	return []cli.Flag{}
 }
 
 func newCppBackend(cliCtx *cli.Context) (GochartBackend, error) {
 	var options []option.Option
-
-	if path := cliCtx.String(CPPFlag_HeaderIncludePath); path != "" {
-		options = append(options, cpp.WithHeaderIncludePath(path))
-	}
-
 	return cpp.NewCppGochartBackend(options...)
 }
