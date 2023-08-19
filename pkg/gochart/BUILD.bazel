@@ -8,5 +8,6 @@ go_library(
     deps = [
         "//pkg/backend",
         "//pkg/frontend",
+        "//pkg/ir",
     ],
 )

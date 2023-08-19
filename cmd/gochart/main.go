@@ -11,52 +11,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// func (yc *cppCommand) run(args []string) error {
-// 	fs := flag.NewFlagSet("cpp", flag.ContinueOnError)
-//
-// 	frontendFlags := frontend.SetFlags(fs)
-// 	backendFlags, err := backend.SetFlags("cpp", fs)
-// 	if err != nil {
-// 		return fmt.Errorf("setting flags for backend: %w", err)
-// 	}
-//
-// 	if err := fs.Parse(args); err != nil {
-// 		return fmt.Errorf("parsing flags: %w", err)
-// 	}
-//
-// 	gf, err := frontend.Parse(frontendFlags)
-// 	if err != nil {
-// 		return fmt.Errorf("parsing frontend flags: %w", err)
-// 	}
-//
-// 	bf, err := backend.Parse(backendFlags)
-// 	if err != nil {
-// 		return fmt.Errorf("parsing backend flags: %w", err)
-// 	}
-//
-// 	gc, err := gochart.NewGochartCompiler(gf, bf)
-// 	if err != nil {
-// 		return fmt.Errorf("creating gochart compiler: %w", err)
-// 	}
-//
-// 	gc.PrintIR(nil)
-// 	return fmt.Errorf("CPPCOMMAND: IMPLEMENT ME")
-// }
-
-// func (c *cppCommand) Help() string {
-// 	help := fmt.Sprintf(`
-// Usage: gochart [global options] yaml [options] [PATH]
-//
-// 	%s
-//
-// Options:
-// 	-frontend=(gochart|yaml)	The frontend language to read the statechart from.
-// 														Default: gochart
-// 	`, c.Synopsis())
-//
-// 	return strings.TrimSpace(help)
-// }
-
 func internalMain() error {
 	app := cli.App{
 		Name:  "gochart",
@@ -70,13 +24,14 @@ func internalMain() error {
 		},
 		Commands: []*cli.Command{
 			{
-				Name: "frontend",
-				Flags: frontend.SetFlags(),
-				Subcommands: []*cli.Command {
+				Name:        "frontend",
+				Description: "Commands associated with the frontends. Normally used for debugging.",
+				Flags:       frontend.SetFlags(),
+				Subcommands: []*cli.Command{
 					{
-						Name: "print",
+						Name:        "print",
 						Description: "Print a common description of the output of the frontend. Useful for debugging.",
-						Usage: "print [STATECHART_FILE]",
+						Usage:       "print [STATECHART_FILE]",
 						Action: func(cliCtx *cli.Context) error {
 							gf, err := frontend.Parse(cliCtx)
 							if err != nil {
@@ -102,7 +57,40 @@ func internalMain() error {
 				},
 			},
 			{
-				Name: "generate",
+				Name:        "ir",
+				Description: "Commands associated with the IR (Intermediate Representation). Normally used for debugging.",
+				Flags:       frontend.SetFlags(),
+				Subcommands: []*cli.Command{
+					{
+						Name:        "print",
+						Description: "Prints a common description of the output after processing the frontend's output.",
+						Usage:       "print [STATECHART_FILE]",
+						Action: func(cliCtx *cli.Context) error {
+							gf, err := frontend.Parse(cliCtx)
+							if err != nil {
+								return fmt.Errorf("parsing frontend: %w", err)
+							}
+
+							gc, err := gochart.NewGochartCompiler(gf, nil)
+							if err != nil {
+								return err
+							}
+
+							if cliCtx.Args().Len() != 1 {
+								return fmt.Errorf("No input file set. Usage: %s", cliCtx.Command.Usage)
+							}
+
+							if err := gc.PrintIR(cliCtx.Args().Get(0), os.Stdout); err != nil {
+								return fmt.Errorf("printing frontend: %w", err)
+							}
+
+							return nil
+						},
+					},
+				},
+			},
+			{
+				Name:  "generate",
 				Flags: frontend.SetFlags(),
 				Subcommands: []*cli.Command{
 					{

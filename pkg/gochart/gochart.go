@@ -5,11 +5,12 @@ package gochart
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"io"
+	"os"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
 type gochartCompiler struct {
@@ -30,19 +31,37 @@ func (gc *gochartCompiler) PrintFrontend(path string, w io.Writer) error {
 		return fmt.Errorf("reading file %q: %w", path, err)
 	}
 
-	scdata, err := gc.gf.Process(bytes.NewReader(data))
+	frontendData, err := gc.gf.Process(bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("processing statechart: %w", err)
+		return fmt.Errorf("processing frontend: %w", err)
 	}
 
 	printer := frontend.NewPrinter(w)
-	printer.PrintStatechart(scdata)
+	printer.PrintStatechart(frontendData)
 
 	return nil
 }
 
-func (gc *gochartCompiler) PrintIR(w io.Writer) (io.Reader, error) {
-	return nil, fmt.Errorf("IMPLEMENT ME")
+func (gc *gochartCompiler) PrintIR(path string, w io.Writer) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading file %q: %w", path, err)
+	}
+
+	frontendData, err := gc.gf.Process(bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("processing statechart: %w", err)
+	}
+
+	irData, err := ir.ProcessStatechartData(frontendData)
+	if err != nil {
+		return fmt.Errorf("processing frontend: %w", err)
+	}
+
+	printer := ir.NewPrinter(w)
+	printer.PrintStatechart(irData)
+
+	return nil
 }
 
 type BackendOutput struct {
