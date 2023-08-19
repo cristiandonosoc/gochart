@@ -120,21 +120,47 @@ func internalMain() error {
 										return err
 									}
 
+									if cliCtx.Args().Len() != 1 {
+										return fmt.Errorf("No input file set. Usage: %s", cliCtx.Command.Usage)
+									}
+
 									outputs, err := gc.Generate(cliCtx.Args().Get(0))
 									if err != nil {
 										return fmt.Errorf("generating C++ output files: %w", err)
 									}
 
 									for _, output := range outputs {
-										fmt.Println(output.Name)
+										fmt.Println(output.Tag)
 										fmt.Println("---------------------------------------------------------------------")
 
 										content, err := io.ReadAll(output.Content)
 										if err != nil {
-											return fmt.Errorf("reading content for output %q: %w", output.Name, err)
+											return fmt.Errorf("reading content for output %q: %w", output.Tag, err)
 										}
 
 										fmt.Println(string(content))
+									}
+
+									return nil
+								},
+							},
+							{
+								Name:        "generate",
+								Description: "Generate the C++ files",
+								Usage:       "generate [STATECHART_FILE] [HEADER_OUTPUT] [CPP_OUTPUT]",
+								Action: func(cliCtx *cli.Context) error {
+									gc, err := getGochartCompiler("cpp", cliCtx)
+									if err != nil {
+										return err
+									}
+
+									if cliCtx.Args().Len() != 3 {
+										return fmt.Errorf("Not correct amout of input files. Usage: %s", cliCtx.Command.Usage)
+									}
+
+									args := cliCtx.Args()
+									if err := gc.GenerateToFiles(args.Get(0), args.Get(1), args.Get(2)); err != nil {
+										return fmt.Errorf("generating C++ to files: %w", err)
 									}
 
 									return nil

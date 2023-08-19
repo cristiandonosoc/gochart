@@ -60,8 +60,9 @@ type cppGochartBackend struct {
 func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	// Get options.
 	options := &Options{
-		Version: "DEVELOPMENT",
-		Time:    time.Now(),
+		HeaderIncludePath: "ADD_INCLUDE_PATH",
+		Version:           "DEVELOPMENT",
+		Time:              time.Now(),
 	}
 	for _, opt := range opts {
 		opt(options)

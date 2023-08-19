@@ -6,14 +6,12 @@ def generate_gochart_cpp(name, src, header_out, cpp_out, **kwargs):
       header_out,
       cpp_out,
     ],
-    cmd = ("$(execpath //cmd/gochart) --frontend=gochart " +
-          "--header-output=$(location {header_out}) " +
-          "--body-output=$(location {cpp_out}) " +
-					"$(location {src})").format(
-            src = src,
+		cmd = ("$(execpath //cmd/gochart) backend cpp generate " +
+							"$(location {src}) $(location {header_out}) $(location {cpp_out})".format(
+						src = src,
             header_out = header_out,
             cpp_out = cpp_out,
-          ),
+					)),
     tools = ["//cmd/gochart"],
   )
   native.cc_library(
