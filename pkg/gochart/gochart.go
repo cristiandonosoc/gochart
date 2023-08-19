@@ -3,7 +3,9 @@
 package gochart
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"io"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend"
@@ -22,9 +24,21 @@ func NewGochartCompiler(gf frontend.GochartFrontend, gb backend.GochartBackend) 
 	}, nil
 }
 
-func (gc *gochartCompiler) PrintFrontend() (io.Reader, error) {
-	return nil, fmt.Errorf("IMPLEMENT ME")
+func (gc *gochartCompiler) PrintFrontend(path string, w io.Writer) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading file %q: %w", path, err)
+	}
 
+	scdata, err := gc.gf.Process(bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("processing statechart: %w", err)
+	}
+
+	printer := frontend.NewPrinter(w)
+	printer.PrintStatechart(scdata)
+
+	return nil
 }
 
 func (gc *gochartCompiler) PrintIR(w io.Writer) (io.Reader, error) {

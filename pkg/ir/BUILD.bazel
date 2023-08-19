@@ -28,7 +28,6 @@ go_test(
     embed = [":ir"],
     deps = [
         "//internal/test_support",
-        "//pkg/frontend",
         "//pkg/frontend/yaml",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
