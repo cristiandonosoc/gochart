@@ -4,6 +4,7 @@ package test_support
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
@@ -41,7 +42,7 @@ func Runfiles(dir string) ([]string, error) {
 		}
 
 		for _, entry := range entries {
-			candidates = append(candidates, entry.Name())
+			candidates = append(candidates, filepath.Join(dir, entry.Name()))
 		}
 	}
 
