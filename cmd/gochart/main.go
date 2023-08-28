@@ -92,6 +92,7 @@ func internalMain() error {
 	}
 
 	commands = append(commands, backendCommands()...)
+	commands = append(commands, unrealCommands()...)
 
 	app := cli.App{
 		Name:  "gochart",

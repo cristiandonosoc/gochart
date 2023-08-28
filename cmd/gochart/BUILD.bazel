@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "backend.go",
         "main.go",
+        "unreal.go",
     ],
     importpath = "github.com/cristiandonosoc/gochart/cmd/gochart",
     visibility = ["//visibility:private"],
@@ -15,6 +16,7 @@ go_library(
         "//pkg/backend/cpp",
         "//pkg/frontend",
         "//pkg/gochart",
+        "//pkg/unreal",
         "@com_github_urfave_cli_v2//:cli",
     ],
 )
