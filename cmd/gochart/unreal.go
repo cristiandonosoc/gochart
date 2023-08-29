@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/unreal"
@@ -32,16 +33,23 @@ func unrealCommands() []*cli.Command {
 						}
 
 						sourceDir := cliCtx.Args().Get(0)
-						ui, err := unreal.NewUnrealIntegrator(context.Background(), sourceDir)
+						ui, err := unreal.NewUnrealIntegrator(nil, nil)
 						if err != nil {
 							return fmt.Errorf("creating unreal integrator: %w", err)
+						}
+
+						ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+						defer cancel()
+
+						if err := ui.Index(ctx, sourceDir); err != nil {
+							return fmt.Errorf("indexing %q: %w", sourceDir, err)
 						}
 
 						for _, gochart := range ui.Gocharts {
 							fmt.Println("GOCHART:", gochart)
 						}
 
-						return nil
+						return fmt.Errorf("IMPLEMENT ME!")
 					},
 				},
 			},

@@ -8,5 +8,9 @@ go_library(
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/unreal",
     visibility = ["//visibility:public"],
-    deps = ["@org_golang_x_sync//errgroup"],
+    deps = [
+        "//pkg/backend",
+        "//pkg/frontend",
+        "@org_golang_x_sync//errgroup",
+    ],
 )

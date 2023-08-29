@@ -13,6 +13,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// GochartFile represents a Gochart file found within an Unreal module.
+type UnrealGochart struct {
+	Path string
+
+}
+
 func findAllGochartFiles(ctx context.Context, sourceDir, extension string) ([]string, error) {
 	extension = strings.ToLower(extension)
 
