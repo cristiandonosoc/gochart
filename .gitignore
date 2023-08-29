@@ -6,4 +6,5 @@ examples/full_flow/*.generated.cpp.BACKUP
 
 # Bazel ignores.
 bazel-*
+.auth.bazelrc
 
