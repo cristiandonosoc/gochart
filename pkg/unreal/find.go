@@ -16,11 +16,10 @@ import (
 // GochartFile represents a Gochart file found within an Unreal module.
 type UnrealGochart struct {
 	Path string
-
 }
 
-func findAllGochartFiles(ctx context.Context, sourceDir, extension string) ([]string, error) {
-	extension = strings.ToLower(extension)
+func indexUnrealProject(ctx context.Context, sourceDir, gochartExtension string) ([]string, []*UnrealModule, error) {
+	gochartExtension = strings.ToLower(gochartExtension)
 
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -53,6 +52,7 @@ func findAllGochartFiles(ctx context.Context, sourceDir, extension string) ([]st
 
 	// Map: Verify each directory for gochart files.
 	foundGochartCh := make(chan string)
+	foundBuildFileCh := make(chan string)
 	{
 		workers := 100
 		var wg sync.WaitGroup
@@ -72,15 +72,24 @@ func findAllGochartFiles(ctx context.Context, sourceDir, extension string) ([]st
 							continue
 						}
 
-						if filepath.Ext(file.Name()) != extension {
-							continue
+						// If we found an gochart file, we send it to the channel.
+						if filepath.Ext(file.Name()) == gochartExtension {
+							select {
+							case foundGochartCh <- filepath.Join(dir, file.Name()):
+								continue
+							case <-ctx.Done():
+								return ctx.Err()
+							}
 						}
 
-						select {
-						case foundGochartCh <- filepath.Join(dir, file.Name()):
-							continue
-						case <-ctx.Done():
-							return ctx.Err()
+						// If we find an build file, we send it to the channel.
+						if IsUnrealBuildFile(file.Name()) {
+							select {
+							case foundBuildFileCh <- filepath.Join(dir, file.Name()):
+								continue
+							case <-ctx.Done():
+								return ctx.Err()
+							}
 						}
 					}
 				}
@@ -89,31 +98,58 @@ func findAllGochartFiles(ctx context.Context, sourceDir, extension string) ([]st
 			})
 		}
 
-		// Close the channel.
+		// Close the channels.
 		g.Go(func() error {
 			wg.Wait()
 			close(foundGochartCh)
+			close(foundBuildFileCh)
 			return nil
 		})
 	}
 
-	// Reduce: all the found directories into a list.
-	var gocharts []string
+	// Reduce: all the found gocharts and build files into a list.
+	gochartSet := make(map[string]struct{})
+	moduleSet := make(map[string]struct{})
 	{
 		g.Go(func() error {
 			for gochart := range foundGochartCh {
-				gocharts = append(gocharts, gochart)
+				if _, ok := gochartSet[gochart]; ok {
+					return fmt.Errorf("gochart %q indexed twice!", gochart)
+				}
+				gochartSet[gochart] = struct{}{}
 			}
+			return nil
+		})
 
+		g.Go(func() error {
+			for buildFile := range foundBuildFileCh {
+				buildFile := filepath.Clean(buildFile)
+				if _, ok := moduleSet[buildFile]; ok {
+					return fmt.Errorf("module build file %q indexed twice!", buildFile)
+				}
+				moduleSet[buildFile] = struct{}{}
+			}
 			return nil
 		})
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	gocharts := make([]string, 0, len(gochartSet))
+	for gochart := range gochartSet {
+		gocharts = append(gocharts, gochart)
+	}
 	sort.Strings(gocharts)
 
-	return gocharts, nil
+	modules := make([]*UnrealModule, 0, len(moduleSet))
+	for buildFile := range moduleSet {
+		modules = append(modules, NewUnrealModule(buildFile))
+	}
+	sort.Slice(modules, func(i, j int) bool {
+		return modules[i].BaseDir < modules[j].BaseDir
+	})
+
+	return gocharts, modules, nil
 }

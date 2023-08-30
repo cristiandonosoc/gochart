@@ -38,7 +38,7 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("creating unreal integrator: %w", err)
 						}
 
-						ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+						ctx, cancel := context.WithTimeout(context.Background(), 10000*time.Second)
 						defer cancel()
 
 						if err := ui.Index(ctx, sourceDir); err != nil {

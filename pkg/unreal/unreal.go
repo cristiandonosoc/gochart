@@ -30,6 +30,7 @@ func gochartErrorf(gochart, format string, args ...interface{}) *GochartError {
 
 type unrealIntegrator struct {
 	Gocharts []string
+	Modules  []*UnrealModule
 
 	gf frontend.GochartFrontend
 	gb backend.GochartBackend
@@ -46,12 +47,18 @@ func NewUnrealIntegrator(gf frontend.GochartFrontend, gb backend.GochartBackend)
 
 func (ui *unrealIntegrator) Index(ctx context.Context, sourceDir string) error {
 
-	gocharts, err := findAllGochartFiles(ctx, sourceDir, GochartExtension)
+	gocharts, modules, err := indexUnrealProject(ctx, sourceDir, GochartExtension)
 	if err != nil {
 		return fmt.Errorf("finding all gochart files in %q: %w", sourceDir, err)
 	}
 
 	ui.Gocharts = gocharts
+	ui.Modules = modules
+
+	for _, module := range ui.Modules {
+		fmt.Println("MODULE:", module)
+	}
+
 	return nil
 }
 
