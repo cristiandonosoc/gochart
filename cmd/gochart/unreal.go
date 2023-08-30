@@ -45,11 +45,14 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("indexing %q: %w", sourceDir, err)
 						}
 
-						for _, gochart := range ui.Gocharts {
-							fmt.Println("GOCHART:", gochart)
+						if errors := ui.Generate("Win64"); len(errors) != 0 {
+							for _, err := range errors {
+								fmt.Printf("generating gocharts: %v\n", err)
+							}
+							return fmt.Errorf("FAILED")
 						}
 
-						return fmt.Errorf("IMPLEMENT ME!")
+						return nil
 					},
 				},
 			},

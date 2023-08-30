@@ -55,10 +55,6 @@ func (ui *unrealIntegrator) Index(ctx context.Context, sourceDir string) error {
 	ui.Gocharts = gocharts
 	ui.Modules = modules
 
-	for _, module := range ui.Modules {
-		fmt.Println("MODULE:", module)
-	}
-
 	return nil
 }
 
@@ -99,5 +95,6 @@ func (ui *unrealIntegrator) generateGochart(gochart string) error {
 	// 	return fmt.Errorf("generating files: %w", err)
 	// }
 
-	return fmt.Errorf("IMPLEMENT ME")
+	fmt.Println("GENERATE:", gochart)
+	return nil
 }
