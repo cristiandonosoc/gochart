@@ -13,10 +13,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (ui *unrealIntegrator) indexUnrealProject(ctx context.Context, sourceDir, gochartExtension string) error {
-	gochartPaths, modules, err := queryUnrealProject(ctx, sourceDir, GochartExtension)
+func (ui *unrealIntegrator) indexUnrealProject(ctx context.Context, projectDir, gochartExtension string) error {
+	sourceDir := filepath.Join(projectDir, "Source")
+	gochartPaths, modules, err := queryUnrealSources(ctx, sourceDir, GochartExtension)
 	if err != nil {
-		return fmt.Errorf("querying unreal project at %q: %w", sourceDir, err)
+		return fmt.Errorf("querying unreal project at %q: %w", projectDir, err)
 	}
 
 	ui.Modules = modules
@@ -33,26 +34,6 @@ func (ui *unrealIntegrator) indexUnrealProject(ctx context.Context, sourceDir, g
 	ui.Gocharts = gocharts
 
 	return nil
-}
-
-func (ui *unrealIntegrator) NewUnrealFile(path string) (*UnrealFile, error) {
-	path = filepath.Clean(path)
-
-	stat, err := os.Stat(path)
-	if err != nil {
-		return nil, fmt.Errorf("stat %q: %w", path, err)
-	}
-
-	module, err := ui.identifyModule(path)
-	if err != nil {
-		return nil, fmt.Errorf("identifying module for %q: %w", path, err)
-	}
-
-	return &UnrealFile{
-		Path:     path,
-		Module:   module,
-		FileInfo: stat,
-	}, nil
 }
 
 func (ui *unrealIntegrator) identifyModule(path string) (*UnrealModule, error) {
@@ -87,7 +68,10 @@ func (ui *unrealIntegrator) identifyModule(path string) (*UnrealModule, error) {
 	return candidate, nil
 }
 
-func queryUnrealProject(ctx context.Context, sourceDir, gochartExtension string) ([]string, []*UnrealModule, error) {
+// queryUnrealSources scans the whole |Source| directory of an unreal project and searches for:
+// - Gochart files.
+// - Modules (by finding the .Build.cs files within it).
+func queryUnrealSources(ctx context.Context, projectDir, gochartExtension string) ([]string, []*UnrealModule, error) {
 	gochartExtension = strings.ToLower(gochartExtension)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -98,7 +82,11 @@ func queryUnrealProject(ctx context.Context, sourceDir, gochartExtension string)
 		g.Go(func() error {
 			defer close(dirsToCheckCh)
 
-			err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
+			err := filepath.WalkDir(projectDir, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return fmt.Errorf("path %q: %w", path, err)
+				}
+
 				if !d.IsDir() {
 					return nil
 				}
@@ -112,7 +100,7 @@ func queryUnrealProject(ctx context.Context, sourceDir, gochartExtension string)
 			})
 
 			if err != nil {
-				return fmt.Errorf("walking dir %q: %w", sourceDir, err)
+				return fmt.Errorf("walking dir %q: %w", projectDir, err)
 			}
 
 			return nil
