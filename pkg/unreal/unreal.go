@@ -73,6 +73,10 @@ const (
 
 	// Inline means generating the files right next to the gochart file.
 	GenerationStrategy_Inline
+
+	// ModuleGeneratedDir creates a Generated directory in the module root and append the internal
+	// route to it.
+	GenerationStrategy_ModuleGeneratedDir
 )
 
 func (ui *unrealIntegrator) Generate(platformId string, strategy GenerationStrategy) []error {
@@ -272,6 +276,9 @@ func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform Unr
 		base = filepath.Join(base, gochart.Module.Name, filepath.Dir(gochart.InternalPath()))
 	case GenerationStrategy_Inline:
 		base = filepath.Dir(gochart.Path)
+	case GenerationStrategy_ModuleGeneratedDir:
+		base = filepath.Join(gochart.Module.BaseDir, "Generated")
+		base = filepath.Join(base, filepath.Dir(gochart.InternalPath()))
 	default:
 		return "", "", fmt.Errorf("unknown generation strategy: %s", strategy)
 	}

@@ -10,11 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[GenerationStrategy_Intermediate-0]
 	_ = x[GenerationStrategy_Inline-1]
+	_ = x[GenerationStrategy_ModuleGeneratedDir-2]
 }
 
-const _GenerationStrategy_name = "GenerationStrategy_IntermediateGenerationStrategy_Inline"
+const _GenerationStrategy_name = "GenerationStrategy_IntermediateGenerationStrategy_InlineGenerationStrategy_ModuleGeneratedDir"
 
-var _GenerationStrategy_index = [...]uint8{0, 31, 56}
+var _GenerationStrategy_index = [...]uint8{0, 31, 56, 93}
 
 func (i GenerationStrategy) String() string {
 	if i < 0 || i >= GenerationStrategy(len(_GenerationStrategy_index)-1) {

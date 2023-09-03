@@ -50,7 +50,7 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("indexing %q: %w", sourceDir, err)
 						}
 
-						if errors := ui.Generate("Win64", unreal.GenerationStrategy_Inline); len(errors) != 0 {
+						if errors := ui.Generate("Win64", unreal.GenerationStrategy_ModuleGeneratedDir); len(errors) != 0 {
 							for _, err := range errors {
 								fmt.Printf("generating gocharts: %v\n", err)
 							}
