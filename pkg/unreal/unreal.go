@@ -64,7 +64,18 @@ func (ui *unrealIntegrator) Index(ctx context.Context, projectDir string) error 
 	return nil
 }
 
-func (ui *unrealIntegrator) Generate(platformId string) []error {
+//go:generate stringer -type=GenerationStrategy
+type GenerationStrategy int
+
+const (
+	// Intermediate means generating files into the project's intermediate files.
+	GenerationStrategy_Intermediate GenerationStrategy = iota
+
+	// Inline means generating the files right next to the gochart file.
+	GenerationStrategy_Inline
+)
+
+func (ui *unrealIntegrator) Generate(platformId string, strategy GenerationStrategy) []error {
 	if len(ui.Gocharts) == 0 {
 		return []error{fmt.Errorf("No gocharts listed. Did you call Index?")}
 	}
@@ -74,9 +85,11 @@ func (ui *unrealIntegrator) Generate(platformId string) []error {
 		return []error{fmt.Errorf("could not find platform for %q: %w", platformId, err)}
 	}
 
+	fmt.Printf("Running generation for project %s, Platform: %s, Generation Strategy: %s\n", ui.ProjectDir, platform, strategy)
+
 	var errors []error
 	for _, gochart := range ui.Gocharts {
-		if err := ui.generateGochart(gochart, platform); err != nil {
+		if err := ui.generateGochart(gochart, platform, strategy); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -84,8 +97,8 @@ func (ui *unrealIntegrator) Generate(platformId string) []error {
 	return errors
 }
 
-func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform UnrealPlatform) error {
-	gfc, err := ui.NewGochartFileContext(gochart, platform)
+func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform UnrealPlatform, strategy GenerationStrategy) error {
+	gfc, err := ui.NewGochartFileContext(gochart, platform, strategy)
 	if err != nil {
 		return fmt.Errorf("generating gochart context for %q: %w", gochart.Name(), err)
 	}
@@ -138,8 +151,8 @@ type GochartFileContext struct {
 	Cpp    *UnrealFile
 }
 
-func (ui *unrealIntegrator) NewGochartFileContext(gochart *UnrealFile, platform UnrealPlatform) (*GochartFileContext, error) {
-	headerPath, cppPath, err := ui.gochartOutputPaths(gochart, platform)
+func (ui *unrealIntegrator) NewGochartFileContext(gochart *UnrealFile, platform UnrealPlatform, strategy GenerationStrategy) (*GochartFileContext, error) {
+	headerPath, cppPath, err := ui.gochartOutputPaths(gochart, platform, strategy)
 	if err != nil {
 		return nil, fmt.Errorf("getting output paths: %w", err)
 	}
@@ -244,16 +257,24 @@ func (gfc *GochartFileContext) writeIfDifferent(uf *UnrealFile, r io.Reader) err
 
 // gochartOutputPaths gets the output paths belonging to this particular gochart.
 // Intermediate/Build/<PLATFORM>/UnrealEditor/Inc/Gochart/<MODULE>/<INTERNAL_PATH>/<NAME>.gochart.(h|cpp)
-func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform UnrealPlatform) (_header string, _cpp string, _err error) {
+func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform UnrealPlatform, strategy GenerationStrategy) (_header string, _cpp string, _err error) {
 	if ui.ProjectDir == "" {
 		return "", "", fmt.Errorf("project dir is empty. Did you call Index?")
 	}
 
-	// First it's built by the intermediate platform location.
-	base := filepath.Join(ui.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc", "Gochart")
+	var base string
+	switch strategy {
+	case GenerationStrategy_Intermediate:
+		// First it's built by the intermediate platform location.
+		base = filepath.Join(ui.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc", "Gochart")
 
-	// Then we get to the per module place and internal path.
-	base = filepath.Join(base, gochart.Module.Name, filepath.Dir(gochart.InternalPath()))
+		// Then we get to the per module place and internal path.
+		base = filepath.Join(base, gochart.Module.Name, filepath.Dir(gochart.InternalPath()))
+	case GenerationStrategy_Inline:
+		base = filepath.Dir(gochart.Path)
+	default:
+		return "", "", fmt.Errorf("unknown generation strategy: %s", strategy)
+	}
 
 	// Now we return the output paths for the C++ backend.
 	gochartName := gochart.Name()
