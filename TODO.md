@@ -9,6 +9,10 @@
 
 ## backend/cpp
 
+- Move the generated impl into the template so that we don't need to generate the callback struct,
+  which is unnecessary data that needs to be tracked per statechart instance.
+	- This is also important so we can avoid having to declare all the headers in the statechart.
+
 - Ensure we have a version of std::function that will never allocate.
 	- We might need to bring in one.
 
@@ -20,9 +24,6 @@
 - Investigate if C++20 concepts would create nicer error messages if the owner doesn't correct
   implement the interface.
 	- Currently we rely on template generation messages, which are not the greatest.
-
-- Move the generated impl into the template so that we don't need to generate the callback struct,
-  which is unnecessary data that needs to be tracked per statechart instance.
 
 ## Testing
 
