@@ -32,8 +32,13 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("No source dir set. Usage: %s", cliCtx.Command.Usage)
 						}
 
+						gc, err := getGochartCompiler("cpp", cliCtx)
+						if err != nil {
+							return fmt.Errorf("getting gochart compiler: %w", err)
+						}
+
 						sourceDir := cliCtx.Args().Get(0)
-						ui, err := unreal.NewUnrealIntegrator(nil, nil)
+						ui, err := unreal.NewUnrealIntegrator(gc.Frontend, gc.Backend)
 						if err != nil {
 							return fmt.Errorf("creating unreal integrator: %w", err)
 						}

@@ -2,13 +2,19 @@
 package unreal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
+	cpp_backend "github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
 const (
@@ -79,32 +85,48 @@ func (ui *unrealIntegrator) Generate(platformId string) []error {
 }
 
 func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform UnrealPlatform) error {
-	gochartCtx, err := ui.NewGochartFileContext(gochart, platform)
+	gfc, err := ui.NewGochartFileContext(gochart, platform)
 	if err != nil {
 		return fmt.Errorf("generating gochart context for %q: %w", gochart.Name(), err)
 	}
 
-	// data, err := os.ReadFile(gochart)
-	// if err != nil {
-	// 	return fmt.Errorf("reading %q: %w", gochart, err)
-	// }
+	// See if we need to generated.
+	if !gfc.ShouldGenerate() {
+		fmt.Printf("Gochart %s up to date\n", gochart.Path)
+		return nil
+	}
 
-	// frontendData, err := ui.gf.Process(bytes.NewReader(data))
-	// if err != nil {
-	// 	return fmt.Errorf("processing statechart: %w", err)
-	// }
+	data, err := os.ReadFile(gfc.GochartFile.Path)
+	if err != nil {
+		return fmt.Errorf("reading %q: %w", gochart, err)
+	}
 
-	// irData, err := ir.ProcessStatechartData(frontendData)
-	// if err != nil {
-	// 	return fmt.Errorf("processing frontend: %w", err)
-	// }
+	frontendData, err := ui.gf.Process(bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("processing statechart: %w", err)
+	}
 
-	// header, cpp, err := ui.gb.Generate(irData, opts...)
-	// if err != nil {
-	// 	return fmt.Errorf("generating files: %w", err)
-	// }
+	irData, err := ir.ProcessStatechartData(frontendData)
+	if err != nil {
+		return fmt.Errorf("processing frontend: %w", err)
+	}
 
-	fmt.Println("GENERATE:", gochartCtx)
+	var opts []option.Option
+	opts = append(opts, cpp_backend.WithHeaderIncludePath(gfc.Header.Name()))
+
+	header, cpp, err := ui.gb.Generate(irData, opts...)
+	if err != nil {
+		return fmt.Errorf("generating files: %w", err)
+	}
+
+	if err := gfc.writeIfDifferent(gfc.Header, header); err != nil {
+		return fmt.Errorf("writing header if different: %w", err)
+	}
+
+	if err := gfc.writeIfDifferent(gfc.Cpp, cpp); err != nil {
+		return fmt.Errorf("writing cpp if different: %w", err)
+	}
+
 	return nil
 }
 
@@ -145,10 +167,79 @@ func (gfc *GochartFileContext) String() string {
 
 	sb.WriteString(fmt.Sprintf("Gochart: %s\n", gfc.GochartFile))
 	sb.WriteString(fmt.Sprintf("Platform: %s\n", gfc.Platform))
-	sb.WriteString(fmt.Sprintf("Header: %s\n", gfc.Header))
-	sb.WriteString(fmt.Sprintf("Cpp: %s\n", gfc.Cpp))
+
+	if gfc.Header != nil {
+		sb.WriteString(fmt.Sprintf("Header: %s\n", gfc.Header))
+	} else {
+		sb.WriteString("Header: <NONE>\n")
+	}
+
+	if gfc.Cpp != nil {
+		sb.WriteString(fmt.Sprintf("Cpp: %s\n", gfc.Cpp))
+	} else {
+		sb.WriteString("Cpp: <NONE>\n")
+	}
 
 	return sb.String()
+}
+
+func (gfc *GochartFileContext) ShouldGenerate() bool {
+	if gfc.isNewer(gfc.Header) || gfc.isNewer(gfc.Cpp) {
+		return true
+	}
+
+	return false
+}
+
+func (gfc *GochartFileContext) isNewer(uf *UnrealFile) bool {
+	// If there is no file info, it means the file does not exist.
+	if uf.FileInfo == nil {
+		return true
+	}
+
+	return gfc.GochartFile.FileInfo.ModTime().After(uf.FileInfo.ModTime())
+}
+
+func (gfc *GochartFileContext) writeIfDifferent(uf *UnrealFile, r io.Reader) error {
+	// Read the contents of the generated.
+	generatedData, err := io.ReadAll(r)
+	if err != nil {
+		return fmt.Errorf("reading generated data: %w", err)
+	}
+
+	// If the file exists, read the file and compare it to the generated data.
+	if uf.FileInfo != nil {
+		fileData, err := os.ReadFile(uf.Path)
+		if err != nil {
+			return fmt.Errorf("reading %q: %w", uf.Path, err)
+		}
+
+		// If they're equal, we just ignore.
+		if bytes.Equal(fileData, generatedData) {
+			return nil
+		}
+	}
+
+	// If we're here, it means we need to write to the file.
+
+	// Ensure the path exists.
+	if err := os.MkdirAll(filepath.Dir(uf.Path), os.ModeDir); err != nil {
+		return fmt.Errorf("creating base directories %q: %w", filepath.Dir(uf.Path), err)
+	}
+
+	// First we create or truncate the file.
+	file, err := os.Create(uf.Path)
+	if err != nil {
+		return fmt.Errorf("creating/truncating %q: %w", uf.Path, err)
+	}
+	defer file.Close()
+
+	if _, err := file.Write(generatedData); err != nil {
+		return fmt.Errorf("writing to %q: %w", uf.Path, err)
+	}
+	fmt.Printf("Wrote %q\n", uf.Path)
+
+	return nil
 }
 
 // gochartOutputPaths gets the output paths belonging to this particular gochart.
@@ -169,8 +260,8 @@ func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform Unr
 	ext := filepath.Ext(gochartName)
 	name := gochartName[0 : len(gochartName)-len(ext)]
 
-	header := filepath.Join(base, fmt.Sprintf("%s.gochart.h", name))
-	cpp := filepath.Join(base, fmt.Sprintf("%s.gochart.cpp", name))
+	header := filepath.Join(base, fmt.Sprintf("%s.gochart.generated.h", name))
+	cpp := filepath.Join(base, fmt.Sprintf("%s.gochart.generated.cpp", name))
 
 	return header, cpp, nil
 }

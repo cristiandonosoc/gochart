@@ -71,6 +71,23 @@ func (ui *unrealIntegrator) NewUnrealFile(path string) (*UnrealFile, error) {
 	}, nil
 }
 
+func (uf *UnrealFile) String() string {
+	var sb strings.Builder
+	sb.WriteString(uf.Name())
+
+	if uf.Module != nil {
+		sb.WriteString(fmt.Sprintf(" [module:%s]", uf.Module.Name))
+	}
+
+	if uf.FileInfo != nil {
+		sb.WriteString(fmt.Sprintf(" [mod:%v]", uf.FileInfo.ModTime()))
+	}
+
+	sb.WriteString(fmt.Sprintf(" [path:%s]", uf.Path))
+
+	return sb.String()
+}
+
 // Name is just the filename of the file (akin to filepath.Base).
 func (uf *UnrealFile) Name() string {
 	return filepath.Base(uf.Path)
