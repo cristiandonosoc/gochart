@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.3",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "GochartTest",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	],
+	"PreBuildSteps": {
+		"Win64": [
+			"C:\\cdc\\projects\\gochart\\bazel-bin\\cmd\\gochart\\gochart_\\gochart.exe unreal generate $(ProjectDir)"
+		]
+	}
+}

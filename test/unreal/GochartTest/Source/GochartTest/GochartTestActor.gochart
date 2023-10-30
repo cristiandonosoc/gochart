@@ -1,0 +1,9 @@
+statechart GochartTest
+{
+    trigger Update(float dt)
+
+    state Forward
+    {
+        capture(Update)
+    }
+}
