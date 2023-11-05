@@ -50,6 +50,8 @@ func TestReadSimpleYaml(t *testing.T) {
 	setEnterReaction(t, wantTriggers, wantStates, "StateA", "")
 	setExitReaction(t, wantTriggers, wantStates, "StateA", "Trigger1")
 	setExitReaction(t, wantTriggers, wantStates, "StateA", "")
+	setCapture(t, wantTriggers, wantStates, "StateA", "Trigger1")
+	setCapture(t, wantTriggers, wantStates, "StateA", "Trigger2")
 	setParenthood(t, wantStates, "StateA", "StateB")
 	setParenthood(t, wantStates, "StateA", "StateC")
 	// StateB
@@ -58,6 +60,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	// StateC
 	setEnterReaction(t, wantTriggers, wantStates, "StateC", "Trigger1")
 	setEnterReaction(t, wantTriggers, wantStates, "StateC", "")
+	setCapture(t, wantTriggers, wantStates, "StateC", "Trigger1")
 
 	yf, err := yaml.NewYamlFrontend()
 	require.NoError(t, err)
@@ -120,6 +123,9 @@ func compareState(t *testing.T, want, got *State) {
 	// Compare the exit reactions.
 	compareReactions(t, want, want.ExitReactions, got.ExitReactions)
 
+	// Compare the captures.
+	compareCaptures(t, want, want.Captures, got.Captures)
+
 	// Compare that we have the same parent.
 	// We only compare name, as otherwise we have a recursive call.
 	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
@@ -175,6 +181,29 @@ func compareReactions(t *testing.T, state *State, want, got []*StateReaction) {
 	}
 }
 
+func compareCaptures(t *testing.T, state *State, want, got []*StateCapture) {
+	if assert.Equal(t, len(want), len(got), state.Name) {
+		// Collect the names of the triggers for good error messages.
+		var wantList []string
+		var gotList []string
+		for i := 0; i < len(want); i++ {
+			want := want[i]
+			got := got[i]
+
+			wantList = append(wantList, want.String())
+			gotList = append(gotList, got.String())
+		}
+
+		for i := 0; i < len(want); i++ {
+			want := want[i]
+			got := got[i]
+
+			assert.NotNil(t, got.Trigger, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
+			assert.Equal(t, want.Trigger.Name, got.Trigger.Name, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
+		}
+	}
+}
+
 func compareTransition(t *testing.T, want, got *Transition) {
 	// We only compare names to avoid over checking.
 	assert.Equal(t, want.From.Name, got.From.Name)
@@ -221,9 +250,10 @@ func setTransition(t *testing.T, triggers []*Trigger, states []*State, fromName,
 	from.Transitions = append(from.Transitions, transition)
 }
 
-func appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger) []*StateReaction {
+func appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger, kind StateReactionKind) []*StateReaction {
 	reactions = append(reactions, &StateReaction{
 		Trigger: trigger,
+		Kind:    kind,
 	})
 
 	// Validate that the reactions are unique.
@@ -247,7 +277,7 @@ func setEnterReaction(t *testing.T, triggers []*Trigger, states []*State, stateN
 		trigger = findTrigger(t, triggers, triggerName)
 	}
 
-	state.EnterReactions = appendReaction(t, state.EnterReactions, state, trigger)
+	state.EnterReactions = appendReaction(t, state.EnterReactions, state, trigger, StateReactionKind_Enter)
 }
 
 func setExitReaction(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
@@ -259,5 +289,29 @@ func setExitReaction(t *testing.T, triggers []*Trigger, states []*State, stateNa
 		trigger = findTrigger(t, triggers, triggerName)
 	}
 
-	state.ExitReactions = appendReaction(t, state.ExitReactions, state, trigger)
+	state.ExitReactions = appendReaction(t, state.ExitReactions, state, trigger, StateReactionKind_Exit)
+}
+
+func setCapture(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
+	state := findState(t, states, stateName)
+	trigger := findTrigger(t, triggers, triggerName)
+
+	state.Captures = appendCapture(t, state.Captures, state, trigger)
+}
+
+func appendCapture(t *testing.T, captures []*StateCapture, state *State, trigger *Trigger) []*StateCapture {
+	captures = append(captures, &StateCapture{
+		Trigger: trigger,
+	})
+
+	// Validate that the captures are unique.
+	set := map[*Trigger]struct{}{}
+	for _, capture := range captures {
+		if _, ok := set[capture.Trigger]; ok {
+			t.Fatalf("State %q already has a capture for trigger %q", state.SafeName(), trigger.SafeName())
+		}
+		set[capture.Trigger] = struct{}{}
+	}
+
+	return captures
 }

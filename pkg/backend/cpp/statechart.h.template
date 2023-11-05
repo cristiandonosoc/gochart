@@ -12,18 +12,18 @@
  *
  * If you're looking for the signature you must implement for the statechart {{$interface}}.
  * Here you go:
-{{ $reactionTypes := list "Enter" "Exit" }}
+{{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $_, $state := $sc.States }}
 {{- range $_, $reactionType := $reactionTypes }}
 
 {{- if $state.HasDefaultReaction $reactionType }}
-void State{{$state.Name}}_On{{$reactionType}}();
+void State{{$state.Name}}_{{$reactionType}}();
 {{- end }}
 
 {{- range $_, $trigger := $sc.Triggers }}
 {{- if $state.HasReaction $reactionType $trigger }}
 {{- $args := $trigger.ArgsStringList | join ", " }}
-void State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}}({{$args}});
+void State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$args}});
 {{- end }}
 {{- end }}{{/* range $sc.Triggers */}}
 
@@ -92,19 +92,19 @@ public:
     //            that has such guarantee.
     struct DelegateCallbacks
     {
-        {{- $reactionTypes := list "Enter" "Exit" }}
+        {{- $reactionTypes := list "Enter" "Exit" "Capture" }}
         {{- range $_, $state := $sc.States }}
         // State {{$state.Name}}.
         {{- range $_, $reactionType := $reactionTypes }}
 
         {{- if $state.HasDefaultReaction $reactionType }}
-        std::function<void()> State{{$state.Name}}_On{{$reactionType}};
+        std::function<void()> State{{$state.Name}}_{{$reactionType}};
         {{- end }}
 
         {{- range $_, $trigger := $sc.Triggers }}
         {{- if $state.HasReaction $reactionType $trigger }}
         {{- $args := $trigger.ArgsStringList | join ", " }}
-        std::function<void({{$args}})> State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}};
+        std::function<void({{$args}})> State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}};
         {{- end }}
         {{- end }}{{/* range $sc.Triggers */}}
 
@@ -119,6 +119,7 @@ public:
 
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
     void ExitState(EState state, ETrigger trigger, const void* trigger_data);
+		void CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data);
     void ProcessTriggerQueue();
     void ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data);
 
@@ -157,20 +158,20 @@ public:
 	{
         // Create the callback structure that is going to be used by the impl.
         {{$impl}}::DelegateCallbacks callbacks{
-            {{- $reactionTypes := list "Enter" "Exit" }}
+            {{- $reactionTypes := list "Enter" "Exit" "Capture" }}
             {{- range $_, $state := $sc.States }}
             // State {{$state.Name}}.
             {{- range $_, $reactionType := $reactionTypes }}
 
             {{- if $state.HasDefaultReaction $reactionType }}
-            .State{{$state.Name}}_On{{$reactionType}} = [owner]() { owner->State{{$state.Name}}_On{{$reactionType}}(); },
+            .State{{$state.Name}}_{{$reactionType}} = [owner]() { owner->State{{$state.Name}}_{{$reactionType}}(); },
             {{- end }}
 
             {{- range $_, $trigger := $sc.Triggers }}
             {{- if $state.HasReaction $reactionType $trigger }}
             {{- $args := $trigger.ArgsStringList | join ", " }}
             {{- $argsNames := $trigger.ArgsNameList | join ", " }}
-            .State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}} = [owner]({{$args}}) { owner->State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}}({{$argsNames}}); },
+            .State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}} = [owner]({{$args}}) { owner->State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$argsNames}}); },
             {{- end }}
             {{- end }}{{/* range $sc.Triggers */}}
 

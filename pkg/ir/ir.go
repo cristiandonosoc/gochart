@@ -100,6 +100,8 @@ type State struct {
 	EnterReactions []*StateReaction
 	ExitReactions  []*StateReaction
 
+	Captures []*StateCapture
+
 	Parent       *State
 	frontendData *output.StateData
 }
@@ -163,6 +165,10 @@ func (s *State) HasDefaultReaction(reactionType string) bool {
 		return s.HasDefaultExitReaction()
 	}
 
+	if reactionType == "Capture" {
+		return false
+	}
+
 	log.Fatalf("Unknown reaction %q", reactionType)
 	panic(false)
 }
@@ -182,6 +188,10 @@ func (s *State) HasReaction(reactionType string, trigger *Trigger) bool {
 
 	if reactionType == "Exit" {
 		return s.HasExitReaction(trigger)
+	}
+
+	if reactionType == "Capture" {
+		return s.HasCapture(trigger)
 	}
 
 	log.Fatalf("Unknown reaction %q", reactionType)
@@ -208,26 +218,60 @@ func (s *State) HasExitReaction(trigger *Trigger) bool {
 	return false
 }
 
+func (s *State) HasCapture(trigger *Trigger) bool {
+	for _, capture := range s.Captures {
+		if capture.Trigger == trigger {
+			return true
+		}
+	}
+
+	return false
+}
+
 // STATE OPTIONS -----------------------------------------------------------------------------------
 
 // STATE REACTION ----------------------------------------------------------------------------------
 
+type StateReactionKind int
+
+const (
+	StateReactionKind_Enter StateReactionKind = iota
+	StateReactionKind_Exit
+)
+
+func (srk StateReactionKind) String() string {
+	switch srk {
+	case StateReactionKind_Enter:
+		return "Enter"
+	case StateReactionKind_Exit:
+		return "Exit"
+	}
+
+	panic(fmt.Sprintf("unknown reaction kind %d", srk))
+}
+
 type StateReaction struct {
 	Trigger *Trigger
-	IsEnter bool
+	Kind    StateReactionKind
 }
 
 func (sr *StateReaction) String() string {
-	var kind string = "Enter"
-	if !sr.IsEnter {
-		kind = "Exit"
-	}
-
+	kind := sr.Kind.String()
 	if sr.Trigger == nil {
 		return fmt.Sprintf("Default%s", kind)
 	}
 
 	return fmt.Sprintf("%sOn%s", kind, sr.Trigger.Name)
+}
+
+// STATE CAPTURE -----------------------------------------------------------------------------------
+
+type StateCapture struct {
+	Trigger *Trigger
+}
+
+func (sc *StateCapture) String() string {
+	return fmt.Sprintf("capture(%s)", sc.Trigger.SafeName())
 }
 
 // TRANSITION --------------------------------------------------------------------------------------

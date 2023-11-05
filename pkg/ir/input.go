@@ -146,18 +146,25 @@ func (ih *inputHandler) collectStates() error {
 		}
 
 		// Collect the enter reactions.
-		enters, err := ih.collectReactions(state.frontendData.EnterReactions)
+		enters, err := ih.collectReactions(state.frontendData.EnterReactions, StateReactionKind_Enter)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
 		}
 		state.EnterReactions = enters
 
 		// Collect the exit reactions.
-		exits, err := ih.collectReactions(state.frontendData.ExitReactions)
+		exits, err := ih.collectReactions(state.frontendData.ExitReactions, StateReactionKind_Exit)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting exit reactions: %w", name, err)
 		}
 		state.ExitReactions = exits
+
+		// Collect the captures.
+		captures, err := ih.collectCaptures(state.frontendData.Captures)
+		if err != nil {
+			return fmt.Errorf("state %q: collecting captures: %w", name, err)
+		}
+		state.Captures = captures
 	}
 
 	// Now that we have a pass of the state, we can set some options (such as default child).
@@ -207,7 +214,7 @@ func (ih *inputHandler) determineDefaultChild(parentName string, states []*State
 	return nil
 }
 
-func (ih *inputHandler) collectReactions(triggerNames []string) ([]*StateReaction, error) {
+func (ih *inputHandler) collectReactions(triggerNames []string, kind StateReactionKind) ([]*StateReaction, error) {
 	defaultFound := false
 
 	var triggers []*Trigger
@@ -234,10 +241,28 @@ func (ih *inputHandler) collectReactions(triggerNames []string) ([]*StateReactio
 	for _, trigger := range triggers {
 		reactions = append(reactions, &StateReaction{
 			Trigger: trigger,
+			Kind:    kind,
 		})
 	}
 
 	return reactions, nil
+}
+
+func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) ([]*StateCapture, error) {
+	captures := make([]*StateCapture, 0, len(frontendCaptures))
+
+	for _, fc := range frontendCaptures {
+		trigger, ok := ih.triggerMap[fc.Trigger]
+		if !ok {
+			return nil, fmt.Errorf("cannot find trigger %q", fc.Trigger)
+		}
+
+		captures = append(captures, &StateCapture{
+			Trigger: trigger,
+		})
+	}
+
+	return captures, nil
 }
 
 func (ih *inputHandler) collectTransitions() error {

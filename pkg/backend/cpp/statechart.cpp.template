@@ -322,7 +322,7 @@ void {{$impl}}::Deactivate()
 namespace {{$impl}}_private
 {
 
-{{ $reactionTypes := list "Enter" "Exit" }}
+{{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
 {{ $reactionType := . }}
 
@@ -386,7 +386,7 @@ void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}::Delegat
                 auto* data = reinterpret_cast<const {{$trigger.Name}}Data*>(trigger_data);
 
                 // Now we call the handler with the arguments.
-                callbacks.State{{$state.Name}}_On{{$reactionType}}By{{$trigger.Name}}(
+                callbacks.State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}(
                     {{- $argsLen := len $trigger.Args }}
                     {{- range $i, $arg := $trigger.Args }}
                     data->{{$arg.Name}}{{if ne $i (sub $argsLen 1)}},{{end}}
@@ -402,7 +402,7 @@ void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}::Delegat
         case {{$triggerEnum}}::Invalid:
             {{- if $state.HasDefaultReaction $reactionType }}
             // Default {{$reactionType}}.
-            callbacks.State{{$state.Name}}_On{{$reactionType}}();
+            callbacks.State{{$state.Name}}_{{$reactionType}}();
             {{- else }}
             // No default {{$reactionType}} reaction for state {{$state.SafeName}}.
             {{- end }}
@@ -481,6 +481,16 @@ void {{$impl}}::ExitState(EState state, ETrigger trigger, const void* trigger_da
     CurrentState = GetParentState(state);
 }
 
+void {{$impl}}::CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data)
+{
+		using namespace {{$impl}}_private;
+
+		assert(state != EState::Invalid);
+		assert(state == CurrentState);
+
+		CallCaptureReaction(Callbacks, state, trigger, trigger_data);
+}
+
 // ProcessTriggerQueue -----------------------------------------------------------------------------
 
 namespace {{$impl}}_private
@@ -507,6 +517,12 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}* impl, const TriggerEntry& tri
                                         &data);
                 return true;
             }
+						{{- else if $state.HasCapture $trigger }}
+						{
+                // Get the trigger data.
+                const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
+								impl->CaptureTrigger({{$stateEnum}}::{{$state.Name}}, {{$triggerEnum}}::{{$trigger.Name}}, &data);
+						}
             {{- else }}
             // State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.
             return false;

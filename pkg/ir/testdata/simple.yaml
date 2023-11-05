@@ -13,6 +13,9 @@ states:
     exit_reactions:
       - "Trigger1"
       - ""
+    captures:
+      - "Trigger1"
+      - "Trigger2"
   - name: StateB
     default: true
     parent: StateA
@@ -23,6 +26,8 @@ states:
     enter_reactions:
       - "Trigger1"
       - ""
+    captures:
+      - "Trigger1"
 transitions:
   - from: StateB
     to: StateC
