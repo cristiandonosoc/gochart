@@ -64,6 +64,12 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	}
 	states = append(states, state)
 
+	for _, c := range ns.Captures {
+		state.Captures = append(state.Captures, &output.CaptureData{
+			Trigger: c.Trigger,
+		})
+	}
+
 	// Collect the transitions.
 	for _, t := range ns.Transitions {
 		index := ft.transitionIndex

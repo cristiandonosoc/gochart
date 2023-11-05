@@ -23,6 +23,7 @@ func TestGatherTokens(t *testing.T) {
 123456789 22
 333, 4444)
 enter exit
+capture capture
 `
 
 	r := strings.NewReader(input)
@@ -84,7 +85,10 @@ enter exit
 		{id: Token_KeywordEnter, literal: "enter", line: 13, char: 1},
 		{id: Token_KeywordExit, literal: "exit", line: 13, char: 7},
 
-		{id: Token_EOF, line: 14, char: 0},
+		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 1},
+		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 9},
+
+		{id: Token_EOF, line: 15, char: 0},
 	}
 
 	s := NewScanner()

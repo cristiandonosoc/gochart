@@ -37,6 +37,7 @@ const (
 	Token_KeywordExit       // 'exit'
 	Token_KeywordTransition // 'transition'
 	Token_KeywordTrigger    // 'trigger'
+	Token_KeywordCapture    // 'capture'
 	Token_KeywordNull       // 'null'
 
 	// Represents the argument string of a trigger.

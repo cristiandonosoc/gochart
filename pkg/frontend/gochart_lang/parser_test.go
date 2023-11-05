@@ -175,6 +175,11 @@ func TestReadSimple(t *testing.T) {
 												TargetState: "Second",
 											},
 										},
+										Captures: []*ASTNodeStateCapture{
+											{
+												Trigger: "Execute",
+											},
+										},
 									},
 								},
 							},
@@ -306,6 +311,16 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
+		}
+	}
+
+	// Compare captures.
+	if assert.Equal(t, len(want.Captures), len(got.Captures), ctxStr) {
+		for i := 0; i < len(want.Captures); i++ {
+			want := want.Captures[i]
+			got := got.Captures[i]
+
+			assert.Equal(t, want.Trigger, got.Trigger, "%s, Capture %d", ctxStr, i)
 		}
 	}
 

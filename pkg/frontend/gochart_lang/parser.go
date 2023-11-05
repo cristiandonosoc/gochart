@@ -283,6 +283,7 @@ type ASTNodeState struct {
 	EnterReactions []*ASTNodeStateReaction
 	ExitReactions  []*ASTNodeStateReaction
 	Transitions    []*ASTNodeStateTransition
+	Captures       []*ASTNodeStateCapture
 	Children       []*ASTNodeState
 }
 
@@ -485,6 +486,7 @@ var expectedStateBodyStmtKeywords = []TokenIdentifier{
 	Token_KeywordEnter,
 	Token_KeywordExit,
 	Token_KeywordTransition,
+	Token_KeywordCapture,
 	Token_KeywordState,
 }
 
@@ -517,6 +519,14 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 			return false, fmt.Errorf("parsing transition: %w", err)
 		}
 		state.Transitions = append(state.Transitions, transition)
+		return true, nil
+	case Token_KeywordCapture:
+		p.debuglog("parsing state capture reaction")
+		capture, err := p.parseStateCapture(stmtToken.id)
+		if err != nil {
+			return false, fmt.Errorf("parsing capture: %w", err)
+		}
+		state.Captures = append(state.Captures, capture)
 		return true, nil
 	case Token_KeywordState:
 		p.debuglog("parsing child state node")
@@ -620,6 +630,49 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 
 	p.debuglog("-> parsed transition: %+v", transition)
 	return transition, nil
+}
+
+// StateCapture ------------------------------------------------------------------------------------
+//
+// StateCapture -> 'capture' ( IDENTIFIER )
+
+type ASTNodeStateCapture struct {
+	Trigger string
+}
+
+var _ ASTNode = (*ASTNodeState)(nil)
+
+func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapture, error) {
+	p.debuglog("parsing state capture node")
+
+	if stmtToken != Token_KeywordCapture {
+		// TODO(cdc): Mark this as a parser internal error
+		return nil, fmt.Errorf("unexpected token: expected 'capture', got: %q", stmtToken)
+	}
+
+	// The left paren.
+	if _, err := p.consumeToken(Token_LeftParen); err != nil {
+		return nil, err
+	}
+
+	// The trigger name.
+	triggerName, err := p.consumeTokenLiteral(Token_Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("expected idenfier after (: %w", err)
+	}
+
+	// Right paren.
+	if _, err := p.consumeToken(Token_RightParen); err != nil {
+		return nil, err
+	}
+
+	capture := &ASTNodeStateCapture{
+		Trigger: triggerName,
+	}
+
+	p.debuglog("-> parsed capture: %+v", capture)
+
+	return capture, nil
 }
 
 // HELPERS -----------------------------------------------------------------------------------------

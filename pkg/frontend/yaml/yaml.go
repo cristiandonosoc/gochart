@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/internal/option"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 
 	"gopkg.in/yaml.v2"
 )
@@ -103,6 +103,12 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 
 	for _, er := range ys.ExitReactions {
 		state.ExitReactions = append(state.ExitReactions, er)
+	}
+
+	for _, c := range ys.Captures {
+		state.Captures = append(state.Captures, &output.CaptureData{
+			Trigger: c,
+		})
 	}
 
 	return state

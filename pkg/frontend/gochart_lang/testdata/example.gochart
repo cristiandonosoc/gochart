@@ -27,6 +27,8 @@ statechart Example {
 
 				enter
 				exit(Update)
+
+				capture(Execute)
 			}
 		}
 

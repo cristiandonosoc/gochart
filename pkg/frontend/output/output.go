@@ -31,8 +31,14 @@ type StateData struct {
 	EnterReactions []string
 	ExitReactions  []string
 
+	Captures []*CaptureData
+
 	// Index represents in what order it was found.
 	Index int
+}
+
+type CaptureData struct {
+	Trigger string
 }
 
 //go:generate stringer -type=StateOptionValueKind

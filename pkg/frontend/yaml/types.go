@@ -20,6 +20,7 @@ type YamlState struct {
 
 	EnterReactions []string `yaml:"enter_reactions"`
 	ExitReactions  []string `yaml:"exit_reactions"`
+	Captures       []string `yaml:"captures"`
 }
 
 type YamlStateOption struct {
