@@ -5,22 +5,27 @@
 class Delegate
 {
 public:
-    void StateStateA_OnEnter() { std::cout << __FUNCTION__ << std::endl; }
-    void StateStateA_OnEnterByTrigger1(int foo, float bar)
+    void StateStateA_Enter() { std::cout << __FUNCTION__ << std::endl; }
+    void StateStateA_EnterTrigger1(int foo, float bar)
     {
         std::cout << __FUNCTION__ << ", foo: " << foo << ", bar: " << bar << std::endl;
     }
-    void StateStateA_OnExit() { std::cout << __FUNCTION__ << std::endl; }
-    void StateStateA_OnExitByTrigger1(int foo, float bar)
+    void StateStateA_Exit() { std::cout << __FUNCTION__ << std::endl; }
+    void StateStateA_ExitTrigger1(int foo, float bar)
     {
         std::cout << __FUNCTION__ << ", foo: " << foo << ", bar: " << bar << std::endl;
     }
-    void StateStateB_OnExitByTrigger1(int foo, float bar)
+    void StateStateA_CaptureTrigger1(int foo, float bar)
     {
         std::cout << __FUNCTION__ << ", foo: " << foo << ", bar: " << bar << std::endl;
     }
-    void StateStateC_OnEnter() { std::cout << __FUNCTION__ << std::endl; }
-    void StateStateC_OnEnterByTrigger1(int foo, float bar)
+
+    void StateStateB_ExitTrigger1(int foo, float bar)
+    {
+        std::cout << __FUNCTION__ << ", foo: " << foo << ", bar: " << bar << std::endl;
+    }
+    void StateStateC_Enter() { std::cout << __FUNCTION__ << std::endl; }
+    void StateStateC_EnterTrigger1(int foo, float bar)
     {
         std::cout << __FUNCTION__ << ", foo: " << foo << ", bar: " << bar << std::endl;
     }

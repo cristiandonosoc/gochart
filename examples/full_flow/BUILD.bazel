@@ -14,8 +14,16 @@ cc_binary(
     ],
 )
 
+cc_library(
+	name = "gochart",
+	hdrs = ["statechart.generated.h"],
+	srcs = ["statechart.generated.cpp"],
+	include_prefix = ".", # Add -I of dependencies.
+	deps = [":gen_gochart"],
+)
+
 generate_gochart_cpp(
-    name = "gochart",
+    name = "gen_gochart",
     src = "full_flow.gochart",
     cpp_out = "statechart.generated.cpp",
     header_out = "statechart.generated.h",

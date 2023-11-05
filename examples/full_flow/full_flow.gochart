@@ -9,6 +9,8 @@ statechart Simple {
 		exit(Trigger1)
 		exit
 
+		capture(Trigger1)
+
 		state StateB {
 			exit(Trigger1)
 
