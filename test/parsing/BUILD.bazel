@@ -6,6 +6,7 @@ go_test(
     data = glob(["testdata/**"]),
     deps = [
         "//internal/test_support",
+        "//pkg/frontend/gochart_lang",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

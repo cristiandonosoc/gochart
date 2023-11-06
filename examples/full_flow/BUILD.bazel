@@ -15,11 +15,11 @@ cc_binary(
 )
 
 cc_library(
-	name = "gochart",
-	hdrs = ["statechart.generated.h"],
-	srcs = ["statechart.generated.cpp"],
-	include_prefix = ".", # Add -I of dependencies.
-	deps = [":gen_gochart"],
+    name = "gochart",
+    srcs = ["statechart.generated.cpp"],
+    hdrs = ["statechart.generated.h"],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart"],
 )
 
 generate_gochart_cpp(
