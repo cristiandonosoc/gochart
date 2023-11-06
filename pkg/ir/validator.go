@@ -40,6 +40,23 @@ func validateState(state *State) error {
 		}
 	}
 
+	// Validate that transitions and captures don't work on the same trigger.
+	set := map[*Trigger]struct{}{}
+
+	for _, transition := range state.Transitions {
+		if _, ok := set[transition.Trigger]; ok {
+			return fmt.Errorf("state %q: Trigger %q already handled by transition or capture", state.Name, transition.Trigger.Name)
+		}
+		set[transition.Trigger] = struct{}{}
+	}
+
+	for _, capture := range state.Captures {
+		if _, ok := set[capture.Trigger]; ok {
+			return fmt.Errorf("state %q: Trigger %q already handled by transition or capture", state.Name, capture.Trigger.Name)
+		}
+		set[capture.Trigger] = struct{}{}
+	}
+
 	return nil
 }
 
