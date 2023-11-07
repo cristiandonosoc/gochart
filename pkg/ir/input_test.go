@@ -13,6 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type inputTestHelper struct {
+	triggers []*Trigger
+	states   []*State
+}
+
 func TestReadSimpleYaml(t *testing.T) {
 	wantTriggers := []*Trigger{
 		{
@@ -45,22 +50,28 @@ func TestReadSimpleYaml(t *testing.T) {
 			Name: "StateC",
 		},
 	}
+
+	ith := &inputTestHelper{
+		triggers: wantTriggers,
+		states:   wantStates,
+	}
+
 	// StateA
-	setEnterReaction(t, wantTriggers, wantStates, "StateA", "Trigger1")
-	setEnterReaction(t, wantTriggers, wantStates, "StateA", "")
-	setExitReaction(t, wantTriggers, wantStates, "StateA", "Trigger1")
-	setExitReaction(t, wantTriggers, wantStates, "StateA", "")
-	setCapture(t, wantTriggers, wantStates, "StateA", "Trigger1")
-	setCapture(t, wantTriggers, wantStates, "StateA", "Trigger2")
-	setParenthood(t, wantStates, "StateA", "StateB")
-	setParenthood(t, wantStates, "StateA", "StateC")
+	ith.setEnterReaction(t, "StateA", "Trigger1")
+	ith.setEnterReaction(t, "StateA", "")
+	ith.setExitReaction(t, "StateA", "Trigger1")
+	ith.setExitReaction(t, "StateA", "")
+	ith.setCapture(t, "StateA", "Trigger1")
+	ith.setCapture(t, "StateA", "Trigger2")
+	ith.setParenthood(t, "StateA", "StateB")
+	ith.setParenthood(t, "StateA", "StateC")
 	// StateB
-	setTransition(t, wantTriggers, wantStates, "StateB", "StateC", "Trigger1")
-	setExitReaction(t, wantTriggers, wantStates, "StateB", "Trigger1")
+	ith.setTransition(t, "StateB", "StateC", "Trigger1")
+	ith.setExitReaction(t, "StateB", "Trigger1")
 	// StateC
-	setEnterReaction(t, wantTriggers, wantStates, "StateC", "Trigger1")
-	setEnterReaction(t, wantTriggers, wantStates, "StateC", "")
-	setCapture(t, wantTriggers, wantStates, "StateC", "Trigger1")
+	ith.setEnterReaction(t, "StateC", "Trigger1")
+	ith.setEnterReaction(t, "StateC", "")
+	ith.setCapture(t, "StateC", "Trigger1")
 
 	yf, err := yaml.NewYamlFrontend()
 	require.NoError(t, err)
@@ -74,6 +85,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	scdata, err := yf.Process(bytes.NewReader(data))
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
+	require.Equal(t, len(wantStates), len(scdata.States))
 
 	sc, err := ProcessStatechartData(scdata)
 	require.NoError(t, err)
@@ -213,34 +225,34 @@ func compareTransition(t *testing.T, want, got *Transition) {
 
 // HELPER FUNCTIONS --------------------------------------------------------------------------------
 
-func findState(t *testing.T, states []*State, name string) *State {
-	i := slices.IndexFunc(states, func(s *State) bool {
+func (ith *inputTestHelper) findState(t *testing.T, name string) *State {
+	i := slices.IndexFunc(ith.states, func(s *State) bool {
 		return s.Name == name
 	})
 	require.NotEqual(t, i, -1)
-	return states[i]
+	return ith.states[i]
 }
 
-func findTrigger(t *testing.T, triggers []*Trigger, name string) *Trigger {
-	i := slices.IndexFunc(triggers, func(t *Trigger) bool {
+func (ith *inputTestHelper) findTrigger(t *testing.T, name string) *Trigger {
+	i := slices.IndexFunc(ith.triggers, func(t *Trigger) bool {
 		return t.Name == name
 	})
 	require.NotEqual(t, i, -1)
-	return triggers[i]
+	return ith.triggers[i]
 }
 
-func setParenthood(t *testing.T, states []*State, parentName, childName string) {
-	state := findState(t, states, childName)
-	parent := findState(t, states, parentName)
+func (ith *inputTestHelper) setParenthood(t *testing.T, parentName, childName string) {
+	state := ith.findState(t, childName)
+	parent := ith.findState(t, parentName)
 
 	state.Parent = parent
 	parent.Children = append(parent.Children, state)
 }
 
-func setTransition(t *testing.T, triggers []*Trigger, states []*State, fromName, toName, triggerName string) {
-	from := findState(t, states, fromName)
-	to := findState(t, states, toName)
-	trigger := findTrigger(t, triggers, triggerName)
+func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName string) {
+	from := ith.findState(t, fromName)
+	to := ith.findState(t, toName)
+	trigger := ith.findTrigger(t, triggerName)
 
 	transition := &Transition{
 		From:    from,
@@ -250,7 +262,38 @@ func setTransition(t *testing.T, triggers []*Trigger, states []*State, fromName,
 	from.Transitions = append(from.Transitions, transition)
 }
 
-func appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger, kind StateReactionKind) []*StateReaction {
+func (ith *inputTestHelper) setEnterReaction(t *testing.T, stateName, triggerName string) {
+	state := ith.findState(t, stateName)
+
+	// In this case, we can have an empty reaction, so we can have a nil trigger.
+	var trigger *Trigger
+	if triggerName != "" {
+		trigger = ith.findTrigger(t, triggerName)
+	}
+
+	state.EnterReactions = ith.appendReaction(t, state.EnterReactions, state, trigger, StateReactionKind_Enter)
+}
+
+func (ith *inputTestHelper) setExitReaction(t *testing.T, stateName, triggerName string) {
+	state := ith.findState(t, stateName)
+
+	// In this case, we can have an empty reaction, so we can have a nil trigger.
+	var trigger *Trigger
+	if triggerName != "" {
+		trigger = ith.findTrigger(t, triggerName)
+	}
+
+	state.ExitReactions = ith.appendReaction(t, state.ExitReactions, state, trigger, StateReactionKind_Exit)
+}
+
+func (ith *inputTestHelper) setCapture(t *testing.T, stateName, triggerName string) {
+	state := ith.findState(t, stateName)
+	trigger := ith.findTrigger(t, triggerName)
+
+	state.Captures = ith.appendCapture(t, state.Captures, state, trigger)
+}
+
+func (ith *inputTestHelper) appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger, kind StateReactionKind) []*StateReaction {
 	reactions = append(reactions, &StateReaction{
 		Trigger: trigger,
 		Kind:    kind,
@@ -268,38 +311,7 @@ func appendReaction(t *testing.T, reactions []*StateReaction, state *State, trig
 	return reactions
 }
 
-func setEnterReaction(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
-	state := findState(t, states, stateName)
-
-	// In this case, we can have an empty reaction, so we can have a nil trigger.
-	var trigger *Trigger
-	if triggerName != "" {
-		trigger = findTrigger(t, triggers, triggerName)
-	}
-
-	state.EnterReactions = appendReaction(t, state.EnterReactions, state, trigger, StateReactionKind_Enter)
-}
-
-func setExitReaction(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
-	state := findState(t, states, stateName)
-
-	// In this case, we can have an empty reaction, so we can have a nil trigger.
-	var trigger *Trigger
-	if triggerName != "" {
-		trigger = findTrigger(t, triggers, triggerName)
-	}
-
-	state.ExitReactions = appendReaction(t, state.ExitReactions, state, trigger, StateReactionKind_Exit)
-}
-
-func setCapture(t *testing.T, triggers []*Trigger, states []*State, stateName, triggerName string) {
-	state := findState(t, states, stateName)
-	trigger := findTrigger(t, triggers, triggerName)
-
-	state.Captures = appendCapture(t, state.Captures, state, trigger)
-}
-
-func appendCapture(t *testing.T, captures []*StateCapture, state *State, trigger *Trigger) []*StateCapture {
+func (ith *inputTestHelper) appendCapture(t *testing.T, captures []*StateCapture, state *State, trigger *Trigger) []*StateCapture {
 	captures = append(captures, &StateCapture{
 		Trigger: trigger,
 	})

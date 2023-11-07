@@ -114,7 +114,8 @@ func (ih *inputHandler) collectStates() error {
 
 	// Now we check for parenthood.
 	var roots []*State
-	for name, state := range stateMap {
+	// for name, state := range stateMap {
+	for _, state := range states {
 		// If the parent name is null, it means that this is a root state.
 		if state.frontendData.Parent == "" {
 			roots = append(roots, state)
@@ -124,7 +125,7 @@ func (ih *inputHandler) collectStates() error {
 		// Search for the parent and mark it as a child of the other.
 		parent, ok := stateMap[state.frontendData.Parent]
 		if !ok {
-			return fmt.Errorf("state %q has unexistent parent state %q", name, state.frontendData.Parent)
+			return fmt.Errorf("state %q has unexistent parent state %q", state.Name, state.frontendData.Parent)
 		}
 
 		// The parent should not have have this state already.
