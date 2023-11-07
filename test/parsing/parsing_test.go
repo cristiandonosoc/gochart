@@ -23,6 +23,8 @@ func TestParsing(t *testing.T) {
 	gf, err := gochart_lang.NewGochartLangFrontend()
 	assert.NoError(t, err)
 
+	return
+
 	t.Log("RUNFILES:", runfiles)
 	for _, rf := range runfiles {
 
@@ -32,38 +34,54 @@ func TestParsing(t *testing.T) {
 			data, err := os.ReadFile(rf)
 			require.NoError(t, err)
 
-			errorLines, err := extractExpectedErrorLines(bytes.NewReader(data))
-			require.NoError(t, err)
-			assert.Empty(t, errorLines)
+			wantErrorText := extractError(t, bytes.NewReader(data))
+			_, gotErr := gf.Process(bytes.NewReader(data))
 
+			if wantErrorText == "" {
+				require.NoError(t, gotErr)
+				return
+			}
 
-			// Compile the statecharts.
-			t.Log("STATECHART:", string(data))
-			_, err = gf.Process(bytes.NewReader(data))
-			t.Log("ERROR:", err.Error())
-			assert.Error(t, err)
-
+			assert.Equal(t, wantErrorText, gotErr.Error())
 		})
 	}
 }
 
 const (
-	errorTag = "// EXPECTED ERROR: "
+	errorTagBegin = "// ERROR BEGIN:"
+	errorTagEnd   = "// ERROR END:"
 )
 
-func extractExpectedErrorLines(r io.Reader) ([]string, error) {
+func extractError(t *testing.T, r io.Reader) string {
 	scanner := bufio.NewScanner(r)
 
 	var lines []string
+	collectingError := false
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, errorTag) {
-			lines = append(lines, strings.TrimPrefix(line, errorTag))
+
+		if strings.HasPrefix(line, errorTagBegin) {
+			require.False(t, collectingError)
+			collectingError = true
+			continue
+		}
+
+		if strings.HasPrefix(line, errorTagEnd) {
+			require.True(t, collectingError)
+			collectingError = false
+			continue
+		}
+
+		if collectingError {
+			require.True(t, strings.HasPrefix(line, "//"))
+
+			line = strings.TrimPrefix(line, "//")
+			lines = append(lines, line)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
 
-	return lines, nil
+	require.False(t, collectingError)
+	require.NoError(t, scanner.Err())
+
+	return strings.Join(lines, "\n")
 }

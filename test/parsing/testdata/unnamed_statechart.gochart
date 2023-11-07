@@ -1,3 +1,9 @@
-statechart {
+// ERROR BEGIN
+//
+//
+//
+// ERROR END
+
+statechart @asda {
 
 }

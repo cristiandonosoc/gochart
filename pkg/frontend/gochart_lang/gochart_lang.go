@@ -44,7 +44,6 @@ func NewGochartLangFrontend(opts ...option.Option) (*gochartLangFrontend, error)
 		opt(options)
 	}
 
-
 	return &gochartLangFrontend{
 		options: options,
 	}, nil
@@ -59,19 +58,13 @@ func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, er
 	scanner := NewScanner()
 	tokens, errors := scanner.gatherTokens(bytes.NewReader(data))
 	if len(errors) > 0 {
-		for _, err := range errors {
-			fmt.Printf("Lexing error: %v\n", err)
-		}
-		return nil, fmt.Errorf("gochart: parsing input file")
+		return nil, NewFrontendErrorContainer(bytes.NewReader(data), errors)
 	}
 
 	parser := NewParser(glf.options)
 	root, errors := parser.Parse(tokens)
 	if len(errors) > 0 {
-		for _, err := range errors {
-			fmt.Printf("Parsing error: %v\n", err)
-		}
-		return nil, fmt.Errorf("gochart: parsing input file")
+		return nil, NewFrontendErrorContainer(bytes.NewReader(data), errors)
 	}
 
 	if len(root.statecharts) != 1 {
