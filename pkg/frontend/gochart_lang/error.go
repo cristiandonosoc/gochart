@@ -60,6 +60,12 @@ func (fe *frontendError) Render(lines []string) string {
 		}
 	}
 
+	// Trim the spaces.
+	for i := 0; i < len(errorLines); i++ {
+		errorLines[i] = strings.TrimRight(errorLines[i], " \r\n\t")
+	}
+
+
 	return strings.Join(errorLines, "\n")
 }
 

@@ -1,8 +1,10 @@
-// ERROR BEGIN
-//
-//
-//
-// ERROR END
+// --- ERROR BEGIN
+//   1:
+//   2: statechart @asda {
+//                 ^---> unrecognized rune '@'
+//   3:
+//   4: }
+// --- ERROR END
 
 statechart @asda {
 
