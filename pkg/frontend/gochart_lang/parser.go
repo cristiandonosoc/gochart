@@ -112,7 +112,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, p.Errorf("expect name after \"statechart\" token")
+		return nil, p.Errorf("expected name after \"statechart\" token")
 	}
 
 	// Debug tracking.
@@ -238,7 +238,7 @@ func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, err
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, p.Errorf("expect name after \"trigger\" token")
+		return nil, p.Errorf("expected name after \"trigger\" token")
 	}
 
 	// First paren.
@@ -300,7 +300,7 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, p.Errorf("expect name after 'state' keyword")
+		return nil, p.Errorf("expected name after 'state' keyword")
 	}
 
 	// Debug tracking.
@@ -429,7 +429,7 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, p.Errorf("expect name after \"trigger\" token")
+		return nil, p.Errorf("expected name after \"trigger\" token")
 	}
 
 	// See if there is an optional value.
@@ -602,7 +602,7 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 		return nil, p.Errorf("unexpected token: expected 'transition', got: %q", stmtToken)
 	}
 
-	// Check if it's a null transition. If not, we expect an identifier.
+	// Check if it's a null transition. If not, we expected an identifier.
 	var triggerName string
 	if _, ok := p.match(Token_KeywordNull); !ok {
 		triggerToken, err := p.consumeToken(Token_Identifier)
@@ -617,10 +617,10 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 		return nil, p.Errorf("after transition trigger identifier: %w", err)
 	}
 
-	// We now expect the trigger identifier.
+	// We now expected the trigger identifier.
 	stateToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
-		return nil, p.Errorf("expect identifier after >: %w", err)
+		return nil, p.Errorf("expected identifier after >: %w", err)
 	}
 
 	transition := &ASTNodeStateTransition{

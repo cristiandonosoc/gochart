@@ -212,14 +212,14 @@ NEXT_TOKEN_LOOP:
 			break NEXT_TOKEN_LOOP
 		}
 
-		return nil, s.Errorf("unrecognized rune %q", r)
+		return nil, s.Errorf("unrecognized character %q", r)
 
 	}
 
 	// Verify that the given tokens were correct.
 	for _, token := range tokens {
 		if token == nil || token.id == Token_Invalid {
-			return nil, s.Errorf("invalid token parsing. Likely a bug")
+			return nil, s.InternalErrorf("invalid token parsing")
 		}
 	}
 
@@ -262,7 +262,7 @@ func (s *Scanner) newLineFound() error {
 	if r, err := s.pop(); err != nil {
 		return s.Errorf("popping rune: %w", err)
 	} else if r != '\n' {
-		return s.Errorf("new line handling expected a '\n' first rune, got %q", r)
+		return s.Errorf("new line handling expected a '\n' first character, got %q", r)
 	}
 
 	s.line++
@@ -478,12 +478,12 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 		// Special case for now. Because it is annoying, we don't allow weird whitespace characters in
 		// the trigger arguments. This could change in the future if there is a need for it.
 		if r == '\r' || r == '\t' {
-			return nil, s.Errorf("unallowed rune %q in trigger arguments. This is a concious decision of the parser. If you feel this is correct, please file a bug", r)
+			return nil, s.Errorf("unallowed rune %q in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug", r)
 		}
 
 		// We also do this for new lines.
 		if r == '\n' {
-			return nil, s.Errorf("unallowed newline in trigger arguments. This is a concious decision of the parser. If you feel this is correct, please file a bug")
+			return nil, s.Errorf("unallowed newline in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug")
 		}
 
 		// Normal case, we just glob the literal.
@@ -519,7 +519,7 @@ func (s *Scanner) handleString() (*Token, error) {
 	if r, err := s.pop(); err != nil {
 		return nil, s.Errorf("popping rune: %w", err)
 	} else if r != '"' {
-		return nil, s.Errorf("string handling expected a '\"' first rune, got %q", r)
+		return nil, s.Errorf("string handling expected a '\"' first character, got %q", r)
 	}
 
 	// We consume until we find another '"' token.
@@ -644,7 +644,7 @@ func (s *Scanner) handleComment() error {
 	if r, err := s.pop(); err != nil {
 		return s.Errorf("popping rune: %w", err)
 	} else if r != '/' {
-		return s.Errorf("comment handling expected a '/' first rune, got %q", r)
+		return s.Errorf("comment handling expected a '/' first character, got %q", r)
 	}
 
 	if isSlash, err := s.match('/'); err != nil {
@@ -683,7 +683,7 @@ func (s *Scanner) eatWhitespace() error {
 		// Ignore any whitespace. We simply consume.
 		if isRuneWhitespace(peek) {
 			if _, err := s.pop(); err != nil {
-				return s.Errorf("popping rune: %w", err)
+				return fmt.Errorf("popping rune: %w", err)
 			}
 
 			continue
@@ -697,6 +697,12 @@ func (s *Scanner) eatWhitespace() error {
 
 func (s *Scanner) Errorf(format string, args ...interface{}) error {
 	return newFrontendError(fmt.Errorf(format, args...), s.line, s.currentRuneCountInLine)
+}
+
+func (s *Scanner) InternalErrorf(format string, args ...interface{}) error {
+	originalText := fmt.Sprintf(format, args...)
+	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug, hopefully with a repro. ***", originalText)
+	return s.Errorf(finalText)
 }
 
 func isRuneWhitespace(r rune) bool {

@@ -2,6 +2,7 @@ package gochart_lang
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -38,6 +39,8 @@ func (fe *frontendError) Render(lines []string) string {
 	begin := fe.Line - FrontendErrorContextSize
 	end := fe.Line + FrontendErrorContextSize
 
+	unwrappedError, errorCount := unwrapError(fe.InternalError)
+
 	for i := begin; i <= end; i++ {
 		// NOTE: Line as 1-based.
 		arrayIndex := i - 1
@@ -54,10 +57,16 @@ func (fe *frontendError) Render(lines []string) string {
 		// We print the line.
 		errorLines = append(errorLines, fmt.Sprintf("%4d: %s", i, line))
 
-		// if this is the error line, we also add a caret on the error.
+		// if this is the error line, we also add a caret on the location and the actual error.
 		if i == fe.Line {
-			errorLines = append(errorLines, fmt.Sprintf("%*c---> %s", 6+fe.Char, '^', fe.InternalError.Error()))
+			errorLines = append(errorLines, fmt.Sprintf("%*c---> %s", 6+fe.Char, '^', unwrappedError.Error()))
 		}
+	}
+
+	// Add the full context if there was more than one wrapped error.
+	if errorCount > 1 {
+		errorLines = append(errorLines, "")
+		errorLines = append(errorLines, fmt.Sprintf("Full context: %s", fe.InternalError.Error()))
 	}
 
 	// Trim the spaces.
@@ -104,4 +113,21 @@ func (fec *FrontendErrorContainer) Error() string {
 	}
 
 	return strings.Join(errorStrings, "\n")
+}
+
+// unwrapError returns the last wrapped error in an error chain and also returns the count of errors
+// within the chain.
+func unwrapError(err error) (error, int) {
+	count := 1
+	for {
+		if unwrapped := errors.Unwrap(err); unwrapped != nil {
+			err = unwrapped
+			count++
+			continue
+		}
+
+		break
+	}
+
+	return err, count
 }

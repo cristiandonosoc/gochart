@@ -1,9 +1,11 @@
 // --- ERROR BEGIN
-//    1:
-//    2: statechart {
-//                  ^---> parsing statechart node: expect name after "statechart" token
-//    3:
-//    4: }
+//   1:
+//   2: statechart {
+//                 ^---> expected name after "statechart" token
+//   3:
+//   4: }
+//
+//Full context: parsing statechart node: expected name after "statechart" token
 // --- ERROR END
 
 statechart {

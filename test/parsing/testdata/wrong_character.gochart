@@ -1,9 +1,9 @@
 // --- ERROR BEGIN
-//    1:
-//    2: statechart @asda {
-//                  ^---> unrecognized rune '@'
-//    3:
-//    4: }
+//   1:
+//   2: statechart @asda {
+//                 ^---> unrecognized character '@'
+//   3:
+//   4: }
 // --- ERROR END
 
 statechart @asda {

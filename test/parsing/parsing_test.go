@@ -79,9 +79,9 @@ func extractError(t *testing.T, r io.Reader) (_normalLines, _errorLines string, 
 		// If we're collecting the error, we add it to our array of error lines.
 		// Otherwise, we add it to the normal lines.
 		if collectingError {
-			require.True(t, strings.HasPrefix(line, "// "))
+			require.True(t, strings.HasPrefix(line, "//"))
 
-			line = strings.TrimPrefix(line, "// ")
+			line = strings.TrimPrefix(line, "//")
 			errorLines = append(errorLines, strings.TrimRight(line, " \r\t\n"))
 		} else {
 			normalLines = append(normalLines, line)
