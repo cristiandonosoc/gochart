@@ -239,7 +239,7 @@ func (s *Scanner) newToken(id TokenIdentifier, literal string) *Token {
 func (s *Scanner) pop() (rune, error) {
 	r, err := s.peek()
 	if err != nil {
-		return utf8.RuneError, s.Errorf("peeking: %w", err)
+		return utf8.RuneError, fmt.Errorf("peeking: %w", err)
 	}
 
 	// Update the indices.
@@ -260,9 +260,9 @@ func (s *Scanner) advance(r rune) {
 func (s *Scanner) newLineFound() error {
 	// We assume the caller called us with a '\n' peek.
 	if r, err := s.pop(); err != nil {
-		return s.Errorf("popping rune: %w", err)
+		return fmt.Errorf("popping rune: %w", err)
 	} else if r != '\n' {
-		return s.Errorf("new line handling expected a '\n' first character, got %q", r)
+		return fmt.Errorf("new line handling expected a '\n' first character, got %q", r)
 	}
 
 	s.line++
@@ -273,13 +273,13 @@ func (s *Scanner) newLineFound() error {
 // peek looks at the current rune pointed by the scanner.
 func (s *Scanner) peek() (rune, error) {
 	if s.atEnd() {
-		return utf8.RuneError, s.Errorf("already at input's end")
+		return utf8.RuneError, fmt.Errorf("already at input's end")
 	}
 
 	// We decode the rune to where we're current pointing in the string byte array.
 	r, _ := utf8.DecodeRuneInString(s.source[s.currentByteCount:])
 	if r == utf8.RuneError {
-		return utf8.RuneError, s.Errorf("invalid rune")
+		return utf8.RuneError, fmt.Errorf("invalid rune")
 	}
 
 	return r, nil
@@ -290,7 +290,7 @@ func (s *Scanner) peek() (rune, error) {
 func (s *Scanner) match(expected rune) (bool, error) {
 	r, err := s.peek()
 	if err != nil {
-		return false, s.Errorf("peeking: %w", err)
+		return false, fmt.Errorf("peeking: %w", err)
 	}
 
 	if r != expected {
@@ -326,7 +326,7 @@ func (s *Scanner) longMatch(want string) (bool, error) {
 	// Now that we matched all the runes, we need to advance out stream.
 	for i := 0; i < runeCount; i++ {
 		if _, err := s.pop(); err != nil {
-			return false, s.Errorf("popping rune: %w", err)
+			return false, fmt.Errorf("popping rune: %w", err)
 		}
 	}
 
@@ -344,9 +344,9 @@ func (s *Scanner) handleIdentifier() ([]*Token, error) {
 
 	// We assume the caller called us with a unicode letter.
 	if r, err := s.pop(); err != nil {
-		return nil, s.Errorf("popping rune: %w", err)
+		return nil, fmt.Errorf("popping rune: %w", err)
 	} else if !unicode.IsLetter(r) {
-		return nil, s.Errorf("comment handling expected a unicode first rune, got %q", r)
+		return nil, fmt.Errorf("comment handling expected a unicode first rune, got %q", r)
 	} else {
 		runes = append(runes, r)
 	}
@@ -361,7 +361,7 @@ func (s *Scanner) handleIdentifier() ([]*Token, error) {
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
-			return nil, s.Errorf("peeking: %w", err)
+			return nil, fmt.Errorf("peeking: %w", err)
 		}
 
 		// If it's alphanumerical or _, we consider it part of an identifier. Otherwise, we consider
@@ -374,7 +374,7 @@ func (s *Scanner) handleIdentifier() ([]*Token, error) {
 		// We pop the peeked character and add it to the current identifier.
 		popped, err := s.pop()
 		if err != nil {
-			return nil, s.Errorf("popping: %w", err)
+			return nil, fmt.Errorf("popping: %w", err)
 		}
 		runes = append(runes, popped)
 	}
@@ -399,7 +399,7 @@ func (s *Scanner) handleIdentifier() ([]*Token, error) {
 	if token.id == Token_KeywordTrigger {
 		triggerTokens, err := s.handleTriggerIdentifier()
 		if err != nil {
-			return nil, s.Errorf("handling trigger identifier: %w", err)
+			return nil, fmt.Errorf("handling trigger identifier: %w", err)
 		}
 		tokens = append(tokens, triggerTokens...)
 	}
@@ -411,34 +411,34 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 	var tokens []*Token
 
 	if err := s.eatWhitespace(); err != nil {
-		return nil, s.Errorf("eating whitespace: %w", err)
+		return nil, fmt.Errorf("eating whitespace: %w", err)
 	}
 
 	// We expect an identifier after the "trigger" keyword.
 	ids, err := s.handleIdentifier()
 	if err != nil {
-		return nil, s.Errorf("getting trigger name identifier: %w", err)
+		return nil, fmt.Errorf("getting trigger name identifier: %w", err)
 	} else if len(ids) != 1 {
-		return nil, s.Errorf("expected one identifier token after \"trigger\", got %v", ids)
+		return nil, fmt.Errorf("expected one identifier token after \"trigger\", got %v", ids)
 	}
 	triggerNameToken := ids[0]
 	if triggerNameToken.id != Token_Identifier {
-		return nil, s.Errorf("expected trigger name token to be Token_Identifier, was %q", triggerNameToken.id)
+		return nil, fmt.Errorf("expected trigger name token to be Token_Identifier, was %q", triggerNameToken.id)
 	}
 	tokens = append(tokens, triggerNameToken)
 
 	if err := s.eatWhitespace(); err != nil {
-		return nil, s.Errorf("eating whitespace: %w", err)
+		return nil, fmt.Errorf("eating whitespace: %w", err)
 	}
 
 	// Now we need an left paren.
 	r, err := s.pop()
 	if err != nil {
-		return nil, s.Errorf("popping rune: %w", err)
+		return nil, fmt.Errorf("popping rune: %w", err)
 	}
 
 	if r != '(' {
-		return nil, s.Errorf("expected ( after \"update\" keyword, got %q", r)
+		return nil, fmt.Errorf("expected ( after \"update\" keyword, got %q", r)
 	}
 	tokens = append(tokens, s.newToken(Token_LeftParen, string(r)))
 
@@ -452,7 +452,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 	for !s.atEnd() {
 		r, err := s.pop()
 		if err != nil {
-			return nil, s.Errorf("popping rune: %w", err)
+			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 
 		// If we find a '(', we have to count.
@@ -478,12 +478,12 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 		// Special case for now. Because it is annoying, we don't allow weird whitespace characters in
 		// the trigger arguments. This could change in the future if there is a need for it.
 		if r == '\r' || r == '\t' {
-			return nil, s.Errorf("unallowed rune %q in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug", r)
+			return nil, fmt.Errorf("unallowed rune %q in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug", r)
 		}
 
 		// We also do this for new lines.
 		if r == '\n' {
-			return nil, s.Errorf("unallowed newline in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug")
+			return nil, fmt.Errorf("unallowed newline in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug")
 		}
 
 		// Normal case, we just glob the literal.
@@ -492,7 +492,7 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 
 	// If we are out of the loop and didn't match the parenthesis, we have a syntax error.
 	if !matched {
-		return nil, s.Errorf("unmatched trigger arguments parenthesis")
+		return nil, fmt.Errorf("unmatched trigger arguments parenthesis")
 	}
 
 	// We create the tokens.
@@ -517,9 +517,9 @@ func (s *Scanner) handleString() (*Token, error) {
 
 	// We assume the caller called us with a '"' rune.
 	if r, err := s.pop(); err != nil {
-		return nil, s.Errorf("popping rune: %w", err)
+		return nil, fmt.Errorf("popping rune: %w", err)
 	} else if r != '"' {
-		return nil, s.Errorf("string handling expected a '\"' first character, got %q", r)
+		return nil, fmt.Errorf("string handling expected a '\"' first character, got %q", r)
 	}
 
 	// We consume until we find another '"' token.
@@ -528,7 +528,7 @@ func (s *Scanner) handleString() (*Token, error) {
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
-			return nil, s.Errorf("peeking rune: %w", err)
+			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
 
 		// If we found the the other '"' character, we stop searching.
@@ -536,7 +536,7 @@ func (s *Scanner) handleString() (*Token, error) {
 			matched = true
 			// Consume the rune.
 			if _, err := s.pop(); err != nil {
-				return nil, s.Errorf("popping rune: %w", err)
+				return nil, fmt.Errorf("popping rune: %w", err)
 			}
 			break
 		}
@@ -552,12 +552,12 @@ func (s *Scanner) handleString() (*Token, error) {
 
 		// Otherwise we just pop this rune.
 		if _, err := s.pop(); err != nil {
-			return nil, s.Errorf("popping rune: %w", err)
+			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 	}
 
 	if !matched {
-		return nil, s.Errorf("unterminated string literal")
+		return nil, fmt.Errorf("unterminated string literal")
 	}
 
 	return &Token{
@@ -570,13 +570,13 @@ func (s *Scanner) handleString() (*Token, error) {
 
 func (s *Scanner) handleBoolean() (*Token, bool, error) {
 	if ok, err := s.longMatch("true"); err != nil {
-		return nil, false, s.Errorf("long matching \"true\": %w", err)
+		return nil, false, fmt.Errorf("long matching \"true\": %w", err)
 	} else if ok {
 		return s.newToken(Token_Boolean, "true"), true, nil
 	}
 
 	if ok, err := s.longMatch("false"); err != nil {
-		return nil, false, s.Errorf("long matching \"false\": %w", err)
+		return nil, false, fmt.Errorf("long matching \"false\": %w", err)
 	} else if ok {
 		return s.newToken(Token_Boolean, "false"), true, nil
 	}
@@ -595,7 +595,7 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
-			return nil, false, s.Errorf("peeking rune: %w", err)
+			return nil, false, fmt.Errorf("peeking rune: %w", err)
 		}
 
 		// We stop iterating if we found a number.
@@ -606,7 +606,7 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 		// Otherwise we advance and continue scanning.
 		r, err := s.pop()
 		if err != nil {
-			return nil, false, s.Errorf("popping rune: %w", err)
+			return nil, false, fmt.Errorf("popping rune: %w", err)
 		}
 		runes = append(runes, r)
 	}
@@ -619,7 +619,7 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 	// We must be careful, as numbers should be separated by a certain amount of characters only.
 	peek, err := s.peek()
 	if err != nil {
-		return nil, false, s.Errorf("peeking rune: %w", err)
+		return nil, false, fmt.Errorf("peeking rune: %w", err)
 	}
 
 	acceptable := []rune{' ', '\n', ',', ')'}
@@ -628,7 +628,7 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 		for _, r := range acceptable {
 			printable = append(printable, fmt.Sprintf("'%s'", string(r)))
 		}
-		return nil, false, s.Errorf("numbers must be separated by %v, got %q", printable, peek)
+		return nil, false, fmt.Errorf("numbers must be separated by %v, got %q", printable, peek)
 	}
 
 	return &Token{
@@ -642,19 +642,19 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 func (s *Scanner) handleComment() error {
 	// We assume the caller called us with a '/' peek.
 	if r, err := s.pop(); err != nil {
-		return s.Errorf("popping rune: %w", err)
+		return fmt.Errorf("popping rune: %w", err)
 	} else if r != '/' {
-		return s.Errorf("comment handling expected a '/' first character, got %q", r)
+		return fmt.Errorf("comment handling expected a '/' first character, got %q", r)
 	}
 
 	if isSlash, err := s.match('/'); err != nil {
-		return s.Errorf("matching '/': %w", err)
+		return fmt.Errorf("matching '/': %w", err)
 	} else if isSlash {
 		// We found a comment! It goes until the end of line.
 		for !s.atEnd() {
 			peek, err := s.peek()
 			if err != nil {
-				return s.Errorf("peeking: %w", err)
+				return fmt.Errorf("peeking: %w", err)
 			}
 
 			if peek != '\n' && !s.atEnd() {
@@ -666,7 +666,7 @@ func (s *Scanner) handleComment() error {
 		}
 	} else {
 		// Single slash doesn't mean anything in our language.
-		return s.Errorf("single '/' token found")
+		return fmt.Errorf("single '/' token found")
 	}
 
 	return nil
@@ -677,7 +677,7 @@ func (s *Scanner) eatWhitespace() error {
 	for !s.atEnd() {
 		peek, err := s.peek()
 		if err != nil {
-			return s.Errorf("peeking rune: %w", err)
+			return fmt.Errorf("peeking rune: %w", err)
 		}
 
 		// Ignore any whitespace. We simply consume.
@@ -702,7 +702,7 @@ func (s *Scanner) Errorf(format string, args ...interface{}) error {
 func (s *Scanner) InternalErrorf(format string, args ...interface{}) error {
 	originalText := fmt.Sprintf(format, args...)
 	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug, hopefully with a repro. ***", originalText)
-	return s.Errorf(finalText)
+	return fmt.Errorf(finalText)
 }
 
 func isRuneWhitespace(r rune) bool {

@@ -1,0 +1,14 @@
+// --- ERROR BEGIN
+//   1: statechart mumu {
+//   2: 	state {
+//             ^---> expected name after "state" keyword
+//   3:
+//   4: 	}
+//
+//Full context: parsing statechart node: parsing statechart body statement: parsing root state: expected name after "state" keyword
+// --- ERROR END
+statechart mumu {
+	state {
+
+	}
+}

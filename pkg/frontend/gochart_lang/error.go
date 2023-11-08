@@ -122,6 +122,7 @@ func unwrapError(err error) (error, int) {
 	for {
 		if unwrapped := errors.Unwrap(err); unwrapped != nil {
 			err = unwrapped
+			fmt.Println("ERROR:", count, err)
 			count++
 			continue
 		}
