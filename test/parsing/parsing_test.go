@@ -27,9 +27,6 @@ func TestParsing(t *testing.T) {
 	for _, rf := range runfiles {
 
 		t.Run(filepath.Base(rf), func(t *testing.T) {
-			// Read the file.
-			t.Log("READING:", rf)
-
 			data, err := os.ReadFile(rf)
 			require.NoError(t, err)
 
@@ -38,14 +35,17 @@ func TestParsing(t *testing.T) {
 
 			_, gotErr := gf.Process(strings.NewReader(normalText))
 
-			t.Log("WANT ERROR:", wantErrorText)
-
 			if wantErrorText == "" {
 				require.NoError(t, gotErr)
 				return
 			}
 
-			assert.Equal(t, wantErrorText, gotErr.Error())
+			if wantErrorText != gotErr.Error() {
+				t.Log("WANT:\n", wantErrorText)
+				t.Log("---------------------------")
+				t.Log("GOT:\n", gotErr.Error())
+				assert.Equal(t, wantErrorText, gotErr.Error())
+			}
 		})
 	}
 }
@@ -79,9 +79,9 @@ func extractError(t *testing.T, r io.Reader) (_normalLines, _errorLines string, 
 		// If we're collecting the error, we add it to our array of error lines.
 		// Otherwise, we add it to the normal lines.
 		if collectingError {
-			require.True(t, strings.HasPrefix(line, "//"))
+			require.True(t, strings.HasPrefix(line, "// "))
 
-			line = strings.TrimPrefix(line, "//")
+			line = strings.TrimPrefix(line, "// ")
 			errorLines = append(errorLines, strings.TrimRight(line, " \r\t\n"))
 		} else {
 			normalLines = append(normalLines, line)

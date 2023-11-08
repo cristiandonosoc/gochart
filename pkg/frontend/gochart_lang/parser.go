@@ -62,7 +62,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 
 	sc, err := p.parseStatechart()
 	if err != nil {
-		errors = append(errors, fmt.Errorf("parsing statechart node: %w", err))
+		errors = append(errors, p.Errorf("parsing statechart node: %w", err))
 		return nil, errors
 	}
 	statecharts = append(statecharts, sc)
@@ -72,7 +72,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 		if p.peek().id == Token_KeywordStatechart {
 			sc, err := p.parseStatechart()
 			if err != nil {
-				errors = append(errors, fmt.Errorf("parsing statechart node: %w", err))
+				errors = append(errors, p.Errorf("parsing statechart node: %w", err))
 				return nil, errors
 			}
 			statecharts = append(statecharts, sc)
@@ -82,7 +82,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	}
 
 	if !p.atEnd() {
-		errors = append(errors, fmt.Errorf("expected \"statechart\" expression, got %q", p.peek()))
+		errors = append(errors, p.Errorf("expected \"statechart\" expression, got %q", p.peek()))
 	}
 
 	root.statecharts = statecharts
@@ -112,7 +112,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect name after \"statechart\" token")
+		return nil, p.Errorf("expect name after \"statechart\" token")
 	}
 
 	// Debug tracking.
@@ -150,7 +150,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		for !p.atEnd() {
 			ok, err := p.parseStatechartBodyStmt(sc)
 			if err != nil {
-				return nil, fmt.Errorf("statechart %q: parsing statechart body statement: %w", sc.Name, err)
+				return nil, p.Errorf("statechart %q: parsing statechart body statement: %w", sc.Name, err)
 			}
 
 			if ok {
@@ -163,7 +163,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}
 
 		if bodyStmtsFound == 0 {
-			return nil, fmt.Errorf("statechart %q: empty statechart found, need at least one statement", sc.Name)
+			return nil, p.Errorf("statechart %q: empty statechart found, need at least one statement", sc.Name)
 		}
 
 		if _, err := p.consumeToken(Token_RightBrace); err != nil {
@@ -197,7 +197,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 	case Token_KeywordTrigger:
 		trigger, err := p.parseTrigger(stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing trigger: %w", err)
+			return false, p.Errorf("parsing trigger: %w", err)
 		}
 		sc.Triggers = append(sc.Triggers, trigger)
 		return true, nil
@@ -206,14 +206,14 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 		p.debuglog("parsing root state")
 		state, err := p.parseState(nil, stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing root state: %w", err)
+			return false, p.Errorf("parsing root state: %w", err)
 		}
 		sc.States = append(sc.States, state)
 		return true, nil
 	}
 
 	// TODO(cdc): Mark this is parser internal error.
-	return false, fmt.Errorf("expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
+	return false, p.Errorf("expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
 }
 
 // Trigger -----------------------------------------------------------------------------------------
@@ -232,13 +232,13 @@ func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, err
 
 	if stmtTokenId != Token_KeywordTrigger {
 		// TODO(cdc): Mark this is parser internal error.
-		return nil, fmt.Errorf("expected 'trigger' keyword, got: %q", stmtTokenId)
+		return nil, p.Errorf("expected 'trigger' keyword, got: %q", stmtTokenId)
 	}
 
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect name after \"trigger\" token")
+		return nil, p.Errorf("expect name after \"trigger\" token")
 	}
 
 	// First paren.
@@ -251,7 +251,7 @@ func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, err
 	if p.peek().id == Token_TriggerArgs {
 		argsStr, err := p.consumeTokenLiteral(Token_TriggerArgs)
 		if err != nil {
-			return nil, fmt.Errorf("consuming args token: %w", err)
+			return nil, p.Errorf("consuming args token: %w", err)
 		}
 		args = argsStr
 	}
@@ -294,13 +294,13 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 
 	if stmtTokenId != Token_KeywordState {
 		// TODO(cdc): Mark this is parser internal error.
-		return nil, fmt.Errorf("expected 'state' keyword, got: %q", stmtTokenId)
+		return nil, p.Errorf("expected 'state' keyword, got: %q", stmtTokenId)
 	}
 
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect name after 'state' keyword")
+		return nil, p.Errorf("expect name after 'state' keyword")
 	}
 
 	// Debug tracking.
@@ -315,7 +315,7 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 	// The options.
 	var options []*ASTNodeStateOption
 	if opts, ok, err := p.parseStateOptions(); err != nil {
-		return nil, fmt.Errorf("state %q: parsing options: %w", name, err)
+		return nil, p.Errorf("state %q: parsing options: %w", name, err)
 	} else if ok {
 		options = opts
 	}
@@ -336,7 +336,7 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 	{
 		// The body opening '{'
 		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
-			return nil, fmt.Errorf("state %q: parsing state body: %w", name, err)
+			return nil, p.Errorf("state %q: parsing state body: %w", name, err)
 		}
 
 		bodyStmtsFound := 0
@@ -344,7 +344,7 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 		for !p.atEnd() {
 			ok, err := p.parseStateBodyStmt(state)
 			if err != nil {
-				return nil, fmt.Errorf("state %q: parsing state body statement: %w", state.Name, err)
+				return nil, p.Errorf("state %q: parsing state body statement: %w", state.Name, err)
 			}
 
 			if ok {
@@ -356,12 +356,12 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 		}
 
 		if bodyStmtsFound == 0 {
-			return nil, fmt.Errorf("state %q: empty state found, need at least one statement", state.Name)
+			return nil, p.Errorf("state %q: empty state found, need at least one statement", state.Name)
 		}
 
 		// The body closing '}'
 		if _, err := p.consumeToken(Token_RightBrace); err != nil {
-			return nil, fmt.Errorf("state %q: closing state body: %w", name, err)
+			return nil, p.Errorf("state %q: closing state body: %w", name, err)
 		}
 	}
 
@@ -386,7 +386,7 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 	// Parse the first option.
 	option, err := p.parseStateOption()
 	if err != nil {
-		return nil, false, fmt.Errorf("parsing first option: %w", err)
+		return nil, false, p.Errorf("parsing first option: %w", err)
 	}
 	options = append(options, option)
 
@@ -400,14 +400,14 @@ func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
 		// Parse the next option.
 		option, err := p.parseStateOption()
 		if err != nil {
-			return nil, false, fmt.Errorf("parsing option: %w", err)
+			return nil, false, p.Errorf("parsing option: %w", err)
 		}
 		options = append(options, option)
 	}
 
 	// Close the options ')'
 	if _, err := p.consumeToken(Token_RightParen); err != nil {
-		return nil, false, fmt.Errorf("unclosed state options parenthesis: %w", err)
+		return nil, false, p.Errorf("unclosed state options parenthesis: %w", err)
 	}
 
 	return options, true, nil
@@ -429,7 +429,7 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 	// The name.
 	name, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect name after \"trigger\" token")
+		return nil, p.Errorf("expect name after \"trigger\" token")
 	}
 
 	// See if there is an optional value.
@@ -445,19 +445,19 @@ func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
 		} else if token, ok := p.match(Token_Integer); ok {
 			_, err := strconv.Atoi(token.literal)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
+				return nil, p.Errorf("could not parse option value %q to int: %w", token.literal, err)
 			}
 			valueKind = output.StateOptionValueKind_Integer
 			value = token.literal
 		} else if token, ok := p.match(Token_Boolean); ok {
 			_, err := strconv.ParseBool(token.literal)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
+				return nil, p.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
 			}
 			valueKind = output.StateOptionValueKind_Boolean
 			value = token.literal
 		} else {
-			return nil, fmt.Errorf("unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
+			return nil, p.Errorf("unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
 		}
 	}
 
@@ -501,7 +501,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		p.debuglog("parsing state enter reaction node")
 		reaction, err := p.parseStateReaction(stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing enter reaction: %w", err)
+			return false, p.Errorf("parsing enter reaction: %w", err)
 		}
 		state.EnterReactions = append(state.EnterReactions, reaction)
 		return true, nil
@@ -509,14 +509,14 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		p.debuglog("parsing state exit reaction node")
 		reaction, err := p.parseStateReaction(stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing exit reaction: %w", err)
+			return false, p.Errorf("parsing exit reaction: %w", err)
 		}
 		state.ExitReactions = append(state.ExitReactions, reaction)
 		return true, nil
 	case Token_KeywordTransition:
 		transition, err := p.parseStateTransition(stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing transition: %w", err)
+			return false, p.Errorf("parsing transition: %w", err)
 		}
 		state.Transitions = append(state.Transitions, transition)
 		return true, nil
@@ -524,7 +524,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		p.debuglog("parsing state capture reaction")
 		capture, err := p.parseStateCapture(stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing capture: %w", err)
+			return false, p.Errorf("parsing capture: %w", err)
 		}
 		state.Captures = append(state.Captures, capture)
 		return true, nil
@@ -532,14 +532,14 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		p.debuglog("parsing child state node")
 		child, err := p.parseState(state, stmtToken.id)
 		if err != nil {
-			return false, fmt.Errorf("parsing child state: %w", err)
+			return false, p.Errorf("parsing child state: %w", err)
 		}
 		state.Children = append(state.Children, child)
 		return true, nil
 	}
 
 	// TODO(cdc): Mark this is parser internal error.
-	return false, fmt.Errorf("expected token to be in %v, got %q", expectedStateBodyStmtKeywords, stmtToken.id)
+	return false, p.Errorf("expected token to be in %v, got %q", expectedStateBodyStmtKeywords, stmtToken.id)
 }
 
 // StateReaction -----------------------------------------------------------------------------------
@@ -558,7 +558,7 @@ func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeSta
 
 	if keywordTokenId != Token_KeywordEnter && keywordTokenId != Token_KeywordExit {
 		// TODO(cdc): Mark this is parser internal error.
-		return nil, fmt.Errorf("unexpected reaction token, expected 'enter', 'exit', got: %q", keywordTokenId)
+		return nil, p.Errorf("unexpected reaction token, expected 'enter', 'exit', got: %q", keywordTokenId)
 	}
 
 	// We check to see if the user indicated a trigger associated with the reaction.
@@ -566,12 +566,12 @@ func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeSta
 	if _, ok := p.match(Token_LeftParen); ok {
 		name, err := p.consumeTokenLiteral(Token_Identifier)
 		if err != nil {
-			return nil, fmt.Errorf("expected identifier after reaction (: %w", err)
+			return nil, p.Errorf("expected identifier after reaction (: %w", err)
 		}
 		triggerName = name
 
 		if _, err := p.consumeToken(Token_RightParen); err != nil {
-			return nil, fmt.Errorf("expected closing paren after reaction identifier: %w", err)
+			return nil, p.Errorf("expected closing paren after reaction identifier: %w", err)
 		}
 	}
 
@@ -599,7 +599,7 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 
 	if stmtToken != Token_KeywordTransition {
 		// TODO(cdc): Mark this is parser internal error.
-		return nil, fmt.Errorf("unexpected token: expected 'transition', got: %q", stmtToken)
+		return nil, p.Errorf("unexpected token: expected 'transition', got: %q", stmtToken)
 	}
 
 	// Check if it's a null transition. If not, we expect an identifier.
@@ -607,20 +607,20 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 	if _, ok := p.match(Token_KeywordNull); !ok {
 		triggerToken, err := p.consumeToken(Token_Identifier)
 		if err != nil {
-			return nil, fmt.Errorf("expected null or identifier token: %w", err)
+			return nil, p.Errorf("expected null or identifier token: %w", err)
 		}
 		triggerName = triggerToken.literal
 	}
 
 	// The right angle bracket.
 	if _, err := p.consumeToken(Token_RightAngleBracket); err != nil {
-		return nil, fmt.Errorf("after transition trigger identifier: %w", err)
+		return nil, p.Errorf("after transition trigger identifier: %w", err)
 	}
 
 	// We now expect the trigger identifier.
 	stateToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expect identifier after >: %w", err)
+		return nil, p.Errorf("expect identifier after >: %w", err)
 	}
 
 	transition := &ASTNodeStateTransition{
@@ -647,7 +647,7 @@ func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapt
 
 	if stmtToken != Token_KeywordCapture {
 		// TODO(cdc): Mark this as a parser internal error
-		return nil, fmt.Errorf("unexpected token: expected 'capture', got: %q", stmtToken)
+		return nil, p.Errorf("unexpected token: expected 'capture', got: %q", stmtToken)
 	}
 
 	// The left paren.
@@ -658,7 +658,7 @@ func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapt
 	// The trigger name.
 	triggerName, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expected idenfier after (: %w", err)
+		return nil, p.Errorf("expected idenfier after (: %w", err)
 	}
 
 	// Right paren.
@@ -684,7 +684,7 @@ func (p *Parser) consumeTokens(ids ...TokenIdentifier) ([]*Token, error) {
 
 	for _, id := range ids {
 		if !p.peekToken(id) {
-			return nil, fmt.Errorf("expected %q, but got %q", id, p.peek().id)
+			return nil, p.Errorf("expected %q, but got %q", id, p.peek().id)
 		}
 		tokens = append(tokens, p.advance())
 	}
@@ -700,7 +700,7 @@ func (p *Parser) consumeToken(id TokenIdentifier) (*Token, error) {
 	}
 
 	if len(tokens) != 1 {
-		return nil, fmt.Errorf("expecting to consume %q to return only one token, got %v", id, tokens)
+		return nil, p.Errorf("expecting to consume %q to return only one token, got %v", id, tokens)
 	}
 
 	return tokens[0], nil
@@ -790,6 +790,22 @@ func (p *Parser) atEnd() bool {
 		return p.tokens[p.current].id == Token_EOF
 	}
 	return p.current >= len(p.tokens)
+}
+
+func (p *Parser) currentToken() *Token {
+	if p.current >= len(p.tokens) {
+		token := NewToken(Token_EOF)
+		return &token
+	}
+
+	return p.tokens[p.current]
+}
+
+// Error -------------------------------------------------------------------------------------------
+
+func (p *Parser) Errorf(format string, args ...interface{}) error {
+	token := p.currentToken()
+	return newFrontendError(fmt.Errorf(format, args...), token.line, token.char)
 }
 
 // Debug -------------------------------------------------------------------------------------------

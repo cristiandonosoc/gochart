@@ -65,7 +65,6 @@ func (fe *frontendError) Render(lines []string) string {
 		errorLines[i] = strings.TrimRight(errorLines[i], " \r\n\t")
 	}
 
-
 	return strings.Join(errorLines, "\n")
 }
 

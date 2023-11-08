@@ -1,11 +1,11 @@
 // --- ERROR BEGIN
-//   1:
-//   2: statechart @asda {
-//                 ^---> unrecognized rune '@'
-//   3:
-//   4: }
+//    1:
+//    2: statechart {
+//                  ^---> parsing statechart node: expect name after "statechart" token
+//    3:
+//    4: }
 // --- ERROR END
 
-statechart @asda {
+statechart {
 
 }
