@@ -3,7 +3,7 @@
 //Parser error:
 //   1: statechart mumu {
 //   2: 	statechart mumu2 {
-//                  ^---> expected token to be in [Token_KeywordTrigger Token_KeywordState], got "Token_KeywordStatechart"
+//      	^---> expected token to be in [Token_KeywordTrigger Token_KeywordState], got "Token_KeywordStatechart"
 //   3:
 //   4: 	}
 // --- ERROR END

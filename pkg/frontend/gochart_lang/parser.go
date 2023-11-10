@@ -203,7 +203,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 	stmtToken := p.advance()
 
 	if !slices.Contains(expectedStatechartBodyStmtKeywords, stmtToken.id) {
-		return false, p.pushErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
+		return false, p.pushErrorf(-1, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
 	}
 
 	switch stmtToken.id {

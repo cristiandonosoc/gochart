@@ -23,17 +23,17 @@ type frontendError struct {
 	Kind          string
 	InternalError error
 	Line          int
-	Char          int
+	RuneCount     int
 }
 
 var _ error = (*frontendError)(nil)
 
-func newFrontendError(kind string, err error, line, char int) *frontendError {
+func newFrontendError(kind string, err error, line, runeCount int) *frontendError {
 	return &frontendError{
 		Kind:          kind,
 		InternalError: err,
 		Line:          line,
-		Char:          char,
+		RuneCount:     runeCount,
 	}
 }
 
@@ -74,7 +74,25 @@ func (fe *frontendError) Render(lines []string) string {
 
 		// if this is the error line, we also add a caret on the location and the actual error.
 		if i == fe.Line {
-			errorLines = append(errorLines, fmt.Sprintf("%*c---> %s", 6+fe.Char, '^', unwrappedError.Error()))
+			// We need to create the padding taking into account tabs! Fucking tabs!
+			padding := make([]rune, 0, fe.RuneCount)
+			for _, runeValue := range line {
+				if len(padding) >= fe.RuneCount-1 {
+					break
+				}
+
+				// if it is a tab, we want to add it as is into the padding.
+				// Otherwise we just add a space (we assume all other characters are 1 char wide.
+				if runeValue == '\t' {
+					padding = append(padding, '\t')
+					continue
+				}
+
+				padding = append(padding, ' ')
+			}
+
+			// We merge the padding with the known padding we added to account for line numbers.
+			errorLines = append(errorLines, fmt.Sprintf("%*s%s^---> %s", 6, " ", string(padding), unwrappedError.Error()))
 			printedError = true
 		}
 	}
