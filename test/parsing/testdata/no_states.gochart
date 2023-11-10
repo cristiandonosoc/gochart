@@ -1,10 +1,10 @@
 // --- ERROR BEGIN
+//
+//Parser error:
 //   2: statechart mumu {
 //   3:
 //   4: }
 //      ^---> empty statechart found, need at least one statement
-//
-//Full context: parsing statechart node: empty statechart found, need at least one statement
 // --- ERROR END
 
 statechart mumu {

@@ -1,11 +1,11 @@
 // --- ERROR BEGIN
+//
+//Parser error:
 //   1:
 //   2: statechart {
-//                 ^---> expected name after "statechart" token
+//                 ^---> after "statechart" keyword: expected "Token_Identifier", but got "Token_LeftBrace"
 //   3:
 //   4: }
-//
-//Full context: parsing statechart node: expected name after "statechart" token
 // --- ERROR END
 
 statechart {

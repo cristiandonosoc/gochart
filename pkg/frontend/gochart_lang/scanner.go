@@ -83,7 +83,7 @@ func (s *Scanner) gatherTokens(r io.Reader) ([]*Token, []error) {
 	for !s.atEnd() {
 		nextTokens, err := s.nextTokens()
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, s.newFrontendError(err))
 			continue
 		}
 
@@ -112,23 +112,23 @@ NEXT_TOKEN_LOOP:
 
 		// We ignore any whitespace that might come.
 		if err := s.eatWhitespace(); err != nil {
-			return nil, s.Errorf("eating whitespace: %w", err)
+			return nil, fmt.Errorf("eating whitespace: %w", err)
 		}
 
 		peek, err := s.peek()
 		if err != nil {
-			return nil, s.Errorf("peeking rune: %w", err)
+			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
 
 		if token, ok, err := s.handleBoolean(); err != nil {
-			return nil, s.Errorf("handling boolean: %w", err)
+			return nil, fmt.Errorf("handling boolean: %w", err)
 		} else if ok {
 			tokens = append(tokens, token)
 			break NEXT_TOKEN_LOOP
 		}
 
 		if token, ok, err := s.handleInteger(); err != nil {
-			return nil, s.Errorf("handling integer: %w", err)
+			return nil, fmt.Errorf("handling integer: %w", err)
 		} else if ok {
 			tokens = append(tokens, token)
 			break NEXT_TOKEN_LOOP
@@ -139,7 +139,7 @@ NEXT_TOKEN_LOOP:
 		// token as if we had never found the comment.
 		if peek == '/' {
 			if err := s.handleComment(); err != nil {
-				return nil, s.Errorf("handling comment: %w", err)
+				return nil, fmt.Errorf("handling comment: %w", err)
 			}
 			// Comment consumed. We go to scan for the next token.
 			continue NEXT_TOKEN_LOOP
@@ -148,7 +148,7 @@ NEXT_TOKEN_LOOP:
 		// New lines add to our current line. Also restart our current character counter.
 		if peek == '\n' {
 			if err := s.newLineFound(); err != nil {
-				return nil, s.Errorf("new line handling: %w", err)
+				return nil, fmt.Errorf("new line handling: %w", err)
 			}
 			continue NEXT_TOKEN_LOOP
 		}
@@ -156,7 +156,7 @@ NEXT_TOKEN_LOOP:
 		// Identifier start with a letter, and could be keywords.
 		if unicode.IsLetter(peek) {
 			if tks, err := s.handleIdentifier(); err != nil {
-				return nil, s.Errorf("handling identifier: %w", err)
+				return nil, fmt.Errorf("handling identifier: %w", err)
 			} else {
 				tokens = tks
 			}
@@ -166,7 +166,7 @@ NEXT_TOKEN_LOOP:
 		// String literals are between '"' characters.
 		if peek == '"' {
 			if tk, err := s.handleString(); err != nil {
-				return nil, s.Errorf("handling string: %w", err)
+				return nil, fmt.Errorf("handling string: %w", err)
 			} else {
 				tokens = append(tokens, tk)
 			}
@@ -176,7 +176,7 @@ NEXT_TOKEN_LOOP:
 		// Single rune tokens. They get translated directly.
 		r, err := s.pop()
 		if err != nil {
-			return nil, s.Errorf("popping rune: %w", err)
+			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 
 		switch r {
@@ -212,14 +212,14 @@ NEXT_TOKEN_LOOP:
 			break NEXT_TOKEN_LOOP
 		}
 
-		return nil, s.Errorf("unrecognized character %q", r)
+		return nil, fmt.Errorf("unrecognized character %q", r)
 
 	}
 
 	// Verify that the given tokens were correct.
 	for _, token := range tokens {
 		if token == nil || token.id == Token_Invalid {
-			return nil, s.InternalErrorf("invalid token parsing")
+			return nil, internalErrorf("invalid token parsing")
 		}
 	}
 
@@ -695,16 +695,10 @@ func (s *Scanner) eatWhitespace() error {
 	return nil
 }
 
-func (s *Scanner) Errorf(format string, args ...interface{}) error {
-	return newFrontendError(fmt.Errorf(format, args...), s.line, s.currentRuneCountInLine)
-}
-
-func (s *Scanner) InternalErrorf(format string, args ...interface{}) error {
-	originalText := fmt.Sprintf(format, args...)
-	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug, hopefully with a repro. ***", originalText)
-	return fmt.Errorf(finalText)
-}
-
 func isRuneWhitespace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r'
+}
+
+func (s *Scanner) newFrontendError(err error) error {
+	return newFrontendError("Scanner", err, s.line, s.currentRuneCountInLine)
 }

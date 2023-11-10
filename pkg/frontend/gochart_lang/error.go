@@ -12,7 +12,15 @@ const (
 	FrontendErrorContextSize = 2
 )
 
+func internalErrorf(format string, args ...interface{}) error {
+	originalText := fmt.Sprintf(format, args...)
+	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug with a repro. ***", originalText)
+
+	return fmt.Errorf(finalText)
+}
+
 type frontendError struct {
+	Kind          string
 	InternalError error
 	Line          int
 	Char          int
@@ -20,8 +28,9 @@ type frontendError struct {
 
 var _ error = (*frontendError)(nil)
 
-func newFrontendError(err error, line, char int) *frontendError {
+func newFrontendError(kind string, err error, line, char int) *frontendError {
 	return &frontendError{
+		Kind:          kind,
 		InternalError: err,
 		Line:          line,
 		Char:          char,
@@ -35,11 +44,17 @@ func (fe *frontendError) Error() string {
 func (fe *frontendError) Render(lines []string) string {
 	var errorLines []string
 
+	// Start with an empty line.
+	errorLines = append(errorLines, "", fmt.Sprintf("%s error:", fe.Kind))
+
 	// Show a couple lines of context.
 	begin := fe.Line - FrontendErrorContextSize
 	end := fe.Line + FrontendErrorContextSize
 
 	unwrappedError, errorCount := unwrapError(fe.InternalError)
+
+	// Just in case the line handling doesn't get to print the error line.
+	printedError := false
 
 	for i := begin; i <= end; i++ {
 		// NOTE: Line as 1-based.
@@ -60,7 +75,12 @@ func (fe *frontendError) Render(lines []string) string {
 		// if this is the error line, we also add a caret on the location and the actual error.
 		if i == fe.Line {
 			errorLines = append(errorLines, fmt.Sprintf("%*c---> %s", 6+fe.Char, '^', unwrappedError.Error()))
+			printedError = true
 		}
+	}
+
+	if !printedError {
+		errorLines = append(errorLines, fe.InternalError.Error())
 	}
 
 	// Add the full context if there was more than one wrapped error.

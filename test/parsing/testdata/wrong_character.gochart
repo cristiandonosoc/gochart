@@ -1,11 +1,34 @@
 // --- ERROR BEGIN
+//
+//Scanner error:
 //   1:
-//   2: statechart @asda {
+//   2: statechart @asda@@@ {
 //                 ^---> unrecognized character '@'
+//   3:
+//   4: }
+//
+//Scanner error:
+//   1:
+//   2: statechart @asda@@@ {
+//                      ^---> unrecognized character '@'
+//   3:
+//   4: }
+//
+//Scanner error:
+//   1:
+//   2: statechart @asda@@@ {
+//                       ^---> unrecognized character '@'
+//   3:
+//   4: }
+//
+//Scanner error:
+//   1:
+//   2: statechart @asda@@@ {
+//                        ^---> unrecognized character '@'
 //   3:
 //   4: }
 // --- ERROR END
 
-statechart @asda {
+statechart @asda@@@ {
 
 }

@@ -1,11 +1,11 @@
 // --- ERROR BEGIN
+//
+//Parser error:
 //   1: statechart mumu {
 //   2: 	state {
-//             ^---> expected name after "state" keyword
+//             ^---> after "state" keyword: expected "Token_Identifier", but got "Token_LeftBrace"
 //   3:
 //   4: 	}
-//
-//Full context: parsing statechart node: parsing statechart body statement: parsing root state: expected name after "state" keyword
 // --- ERROR END
 statechart mumu {
 	state {
