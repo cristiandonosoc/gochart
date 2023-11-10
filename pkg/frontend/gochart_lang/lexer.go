@@ -4,9 +4,34 @@ import (
 	"fmt"
 )
 
+// Token represents a single token that the scanner outputs to the parser, which holds associated
+// information such as the associated string literal and line/char information.
+type Token struct {
+	// Id is what kind of token this is.
+	id TokenIdentifier
+
+	line int
+	char int
+
+	literal string
+}
+
+func (t *Token) String() string {
+	return fmt.Sprintf("%s %q (%d:%d)", t.id, t.literal, t.line, t.char)
+}
+
+func NewToken(id TokenIdentifier) Token {
+	return Token{
+		id: id,
+	}
+}
+
+func (t *Token) IsValid() bool {
+	return t.id != Token_Invalid
+}
+
 // TokenIdentifier represents a single token of our parser.
-//
-//go:generate stringer -type=TokenIdentifier
+// IMPORTANT: If you add another token, remember to add it to the String() function at the end
 type TokenIdentifier int
 
 const (
@@ -48,28 +73,60 @@ const (
 	Token_EOF
 )
 
-// Token represents a single token that the scanner outputs to the parser, which holds associated
-// information such as the associated string literal and line/char information.
-type Token struct {
-	// Id is what kind of token this is.
-	id TokenIdentifier
-
-	line int
-	char int
-
-	literal string
-}
-
-func (t *Token) String() string {
-	return fmt.Sprintf("%s %q (%d:%d)", t.id, t.literal, t.line, t.char)
-}
-
-func NewToken(id TokenIdentifier) Token {
-	return Token{
-		id: id,
+func (t TokenIdentifier) String() string {
+	switch id := t; id {
+	case Token_Invalid:
+		return "<invalid>"
+	case Token_LeftParen:
+		return "("
+	case Token_RightParen:
+		return ")"
+	case Token_LeftBrace:
+		return "{"
+	case Token_RightBrace:
+		return "}"
+	case Token_LeftBracket:
+		return "["
+	case Token_RightBracket:
+		return "]"
+	case Token_LeftAngleBracket:
+		return "<"
+	case Token_RightAngleBracket:
+		return ">"
+	case Token_Equal:
+		return "="
+	case Token_Comma:
+		return ","
+	case Token_Boolean:
+		return "<boolean>"
+	case Token_String:
+		return "<string>"
+	case Token_Integer:
+		return "<integer>"
+	case Token_KeywordStatechart:
+		return "statechart"
+	case Token_KeywordState:
+		return "state"
+	case Token_KeywordEnter:
+		return "enter"
+	case Token_KeywordExit:
+		return "exit"
+	case Token_KeywordTransition:
+		return "transition"
+	case Token_KeywordTrigger:
+		return "trigger"
+	case Token_KeywordCapture:
+		return "capture"
+	case Token_KeywordNull:
+		return "null"
+	case Token_TriggerArgs:
+		return "<args>"
+	case Token_Identifier:
+		return "<identifier>"
+	case Token_EOF:
+		return "<EOF>"
+	default:
+		panic(fmt.Sprintf("Unsupported token id %q. Most likely someone forgot to update the switch when adding a new token."))
 	}
-}
 
-func (t *Token) IsValid() bool {
-	return t.id != Token_Invalid
 }

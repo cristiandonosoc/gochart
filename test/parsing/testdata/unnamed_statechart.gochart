@@ -3,7 +3,7 @@
 //Parser error:
 //   1:
 //   2: statechart {
-//                 ^---> after "statechart" keyword: expected "Token_Identifier", but got "Token_LeftBrace"
+//                 ^---> after "statechart" keyword: expected "<identifier>", but got "{"
 //   3:
 //   4: }
 // --- ERROR END

@@ -3,7 +3,7 @@
 //Parser error:
 //   1: statechart mumu {
 //   2: 	state {
-//      	      ^---> after "state" keyword: expected "Token_Identifier", but got "Token_LeftBrace"
+//      	      ^---> after "state" keyword: expected "<identifier>", but got "{"
 //   3:
 //   4: 	}
 // --- ERROR END

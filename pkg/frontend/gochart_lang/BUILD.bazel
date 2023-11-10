@@ -8,7 +8,6 @@ go_library(
         "lexer.go",
         "parser.go",
         "scanner.go",
-        "tokenidentifier_string.go",
         "translation.go",
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang",
