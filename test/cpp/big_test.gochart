@@ -1,0 +1,92 @@
+statechart Elevator {
+
+	trigger MoveElevator
+
+	trigger ActivateDoorActuator(bool active)
+	trigger ToggleDoor(bool open)
+	trigger DoorMovingDone(bool opened)
+
+	state Root(concurrent)
+	{
+		error if MoveElevator
+
+		state Elevator
+		{
+			state ElevatorIdle
+			{
+				transition MoveElevator > ElevatorWaitingForDoor
+			}
+
+			state ElevatorWaitingForDoor
+			{
+				enter do { Flow->TriggerToggleDoor(true); }
+
+				transition DoorMovingDone > ElevatorIdle if {
+
+				}
+			}
+
+			state ElevatorMoving
+			{
+				transition ElevatorMovingDone > ElevatorIdle
+			}
+		}
+
+		state Door
+		{
+			state DoorInactive
+			{
+				transition ActivateDoorActuator > DoorActive if (active)
+			}
+
+			state DoorActive
+			{
+				transition ActivateDoorActuator > DoorInactive if (!active) do {
+
+				}
+
+				state DoorOpen
+				{
+					transition ToggleDoor > DoorMoving if { !open }
+				}
+
+				state DoorMoving
+				{
+					enter ToggleDoor
+
+					transition DoorMovingDone > DoorClosed if { !opened }
+					transition DoorMovingDone > DoorOpened if { opened }
+				}
+
+				state DoorClosed
+				{
+					transition ToggleDoor > DoorMoving if { open }
+				}
+			}
+		}
+	}
+
+
+
+
+	state StateA(default) {
+		enter
+		enter(Trigger1)
+
+		exit(Trigger1)
+		exit
+
+		capture(Trigger1)
+
+		state StateB {
+			exit(Trigger1)
+
+			transition Trigger1 > StateC
+		}
+
+		state StateC {
+			enter
+			enter(Trigger1)
+		}
+	}
+}

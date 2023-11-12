@@ -1,0 +1,26 @@
+load("//:defs.bzl", "generate_gochart_cpp")
+
+cc_test(
+    name = "integration_test",
+    size = "small",
+    srcs = ["integration_test.cpp"],
+    deps = [
+			"@com_google_googletest//:gtest_main",
+			":gochart",
+		],
+)
+
+cc_library(
+    name = "gochart",
+    srcs = ["statechart.generated.cpp"],
+    hdrs = ["statechart.generated.h"],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart"],
+)
+
+generate_gochart_cpp(
+    name = "gen_gochart",
+    src = "test.gochart",
+    cpp_out = "statechart.generated.cpp",
+    header_out = "statechart.generated.h",
+)

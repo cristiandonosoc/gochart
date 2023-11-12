@@ -1,0 +1,36 @@
+statechart Door {
+	trigger ActivateDoorActuator(bool active)
+	trigger ToggleDoor(bool open)
+	trigger DoorMovingDone(bool opened)
+
+	state Door
+	{
+		state DoorInactive
+		{
+			transition ActivateDoorActuator > DoorActive
+		}
+
+		state DoorActive
+		{
+			transition ActivateDoorActuator > DoorInactive
+
+			state DoorOpened
+			{
+				transition ToggleDoor > DoorMoving
+			}
+
+			state DoorMoving
+			{
+				enter(ToggleDoor)
+
+				transition DoorMovingDone > DoorClosed
+				//transition DoorMovingDone > DoorOpened
+			}
+
+			state DoorClosed
+			{
+				transition ToggleDoor > DoorMoving
+			}
+		}
+	}
+}
