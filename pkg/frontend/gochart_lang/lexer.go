@@ -56,6 +56,8 @@ const (
 	Token_Integer // 123456
 
 	// Keywords
+	Token_KeywordIf         // 'if'
+	Token_KeywordDo         // 'do'
 	Token_KeywordStatechart // 'statechart'
 	Token_KeywordState      // 'state'
 	Token_KeywordEnter      // 'enter'
@@ -103,6 +105,10 @@ func (t TokenIdentifier) String() string {
 		return "<string>"
 	case Token_Integer:
 		return "<integer>"
+	case Token_KeywordIf:
+		return "if"
+	case Token_KeywordDo:
+		return "do"
 	case Token_KeywordStatechart:
 		return "statechart"
 	case Token_KeywordState:
@@ -126,7 +132,7 @@ func (t TokenIdentifier) String() string {
 	case Token_EOF:
 		return "<EOF>"
 	default:
-		panic(fmt.Sprintf("Unsupported token id %q. Most likely someone forgot to update the switch when adding a new token."))
+		panic(fmt.Sprintf("Unsupported token id \"%v\". Most likely someone forgot to update the switch when adding a new token.", id))
 	}
 
 }

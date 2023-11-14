@@ -23,7 +23,7 @@ func TestGatherTokens(t *testing.T) {
 123456789 22
 333, 4444)
 enter exit
-capture capture
+capture capture if do if
 `
 
 	r := strings.NewReader(input)
@@ -87,6 +87,9 @@ capture capture
 
 		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 1},
 		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 9},
+		{id: Token_KeywordIf, literal: "if", line: 14, char: 17},
+		{id: Token_KeywordDo, literal: "do", line: 14, char: 20},
+		{id: Token_KeywordIf, literal: "if", line: 14, char: 23},
 
 		{id: Token_EOF, line: 15, char: 0},
 	}

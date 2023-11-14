@@ -46,6 +46,8 @@ type Scanner struct {
 func NewScanner() *Scanner {
 	return &Scanner{
 		keywords: map[string]TokenIdentifier{
+			"if":         Token_KeywordIf,
+			"do":         Token_KeywordDo,
 			"statechart": Token_KeywordStatechart,
 			"state":      Token_KeywordState,
 			"enter":      Token_KeywordEnter,
