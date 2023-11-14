@@ -70,6 +70,10 @@ const (
 	// Represents the argument string of a trigger.
 	Token_TriggerArgs
 
+	// Represents abstract code to be executed.
+	// Normally part of a conditional (if) or executive (do) clauses.
+	Token_Code
+
 	Token_Identifier // Any string that is not quoted.
 
 	Token_EOF
@@ -126,7 +130,9 @@ func (t TokenIdentifier) String() string {
 	case Token_KeywordNull:
 		return "null"
 	case Token_TriggerArgs:
-		return "<args>"
+		return "<trigger_args>"
+	case Token_Code:
+		return "<code>"
 	case Token_Identifier:
 		return "<identifier>"
 	case Token_EOF:

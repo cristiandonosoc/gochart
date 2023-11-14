@@ -23,7 +23,11 @@ func TestGatherTokens(t *testing.T) {
 123456789 22
 333, 4444)
 enter exit
-capture capture if do if
+capture capture if {
+	if (nested) {
+		do whatever
+	}
+} do
 `
 
 	r := strings.NewReader(input)
@@ -61,7 +65,7 @@ capture capture if do if
 
 		{id: Token_KeywordTrigger, literal: "trigger", line: 9, char: 2},
 		{id: Token_Identifier, literal: "SomeTrigger", line: 9, char: 10},
-		{id: Token_LeftParen, literal: "(", line: 9, char: 21},
+		{id: Token_LeftParen, literal: "(", line: 9, char: 20},
 		{id: Token_TriggerArgs, literal: "std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>", line: 9, char: 21},
 		{id: Token_RightParen, literal: ")", line: 9, char: 79},
 		{id: Token_Comma, literal: ",", line: 9, char: 80},
@@ -87,11 +91,22 @@ capture capture if do if
 
 		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 1},
 		{id: Token_KeywordCapture, literal: "capture", line: 14, char: 9},
-		{id: Token_KeywordIf, literal: "if", line: 14, char: 17},
-		{id: Token_KeywordDo, literal: "do", line: 14, char: 20},
-		{id: Token_KeywordIf, literal: "if", line: 14, char: 23},
+		{id: Token_KeywordIf, literal: "if", line: 14, char: 18},
+		{id: Token_LeftBrace, literal: "{", line: 14, char: 19},
+		{
+			id: Token_Code,
+			literal: `
+	if (nested) {
+		do whatever
+	}
+`,
+			line: 14,
+			char: 20,
+		},
+		{id: Token_RightBrace, literal: "}", line: 18, char: 1},
+		{id: Token_KeywordDo, literal: "do", line: 18, char: 3},
 
-		{id: Token_EOF, line: 15, char: 0},
+		{id: Token_EOF, line: 19, char: 0},
 	}
 
 	s := NewScanner()

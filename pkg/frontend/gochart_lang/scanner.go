@@ -117,11 +117,6 @@ NEXT_TOKEN_LOOP:
 			return nil, fmt.Errorf("eating whitespace: %w", err)
 		}
 
-		peek, err := s.peek()
-		if err != nil {
-			return nil, fmt.Errorf("peeking rune: %w", err)
-		}
-
 		if token, ok, err := s.handleBoolean(); err != nil {
 			return nil, fmt.Errorf("handling boolean: %w", err)
 		} else if ok {
@@ -134,6 +129,18 @@ NEXT_TOKEN_LOOP:
 		} else if ok {
 			tokens = append(tokens, token)
 			break NEXT_TOKEN_LOOP
+		}
+
+		if conditionalTokens, ok, err := s.handleConditional(); err != nil {
+			return nil, fmt.Errorf("handling conditional: %w", err)
+		} else if ok {
+			tokens = append(tokens, conditionalTokens...)
+			break NEXT_TOKEN_LOOP
+		}
+
+		peek, err := s.peek()
+		if err != nil {
+			return nil, fmt.Errorf("peeking rune: %w", err)
 		}
 
 		// We check for comments. Comments are one lines with //.
@@ -149,7 +156,7 @@ NEXT_TOKEN_LOOP:
 
 		// New lines add to our current line. Also restart our current character counter.
 		if peek == '\n' {
-			if err := s.newLineFound(); err != nil {
+			if err := s.newLineFound(true); err != nil {
 				return nil, fmt.Errorf("new line handling: %w", err)
 			}
 			continue NEXT_TOKEN_LOOP
@@ -259,12 +266,14 @@ func (s *Scanner) advance(r rune) {
 }
 
 // newLineFound updates the scanner to correctly account for new lines being found.
-func (s *Scanner) newLineFound() error {
-	// We assume the caller called us with a '\n' peek.
-	if r, err := s.pop(); err != nil {
-		return fmt.Errorf("popping rune: %w", err)
-	} else if r != '\n' {
-		return fmt.Errorf("new line handling expected a '\n' first character, got %q", r)
+func (s *Scanner) newLineFound(advance bool) error {
+	if advance {
+		// We assume the caller called us with a '\n' peek.
+		if r, err := s.pop(); err != nil {
+			return fmt.Errorf("popping rune: %w", err)
+		} else if r != '\n' {
+			return fmt.Errorf("new line handling expected a '\n' first character, got %q", r)
+		}
 	}
 
 	s.line++
@@ -434,78 +443,45 @@ func (s *Scanner) handleTriggerIdentifier() ([]*Token, error) {
 	}
 
 	// Now we need an left paren.
-	r, err := s.pop()
-	if err != nil {
-		return nil, fmt.Errorf("popping rune: %w", err)
-	}
-
-	if r != '(' {
-		return nil, fmt.Errorf("expected ( after \"update\" keyword, got %q", r)
-	}
-	tokens = append(tokens, s.newToken(Token_LeftParen, string(r)))
-
-	// Now we can start globbing all strings until we find the matching right paren.
-	// We have to be careful to account for any interior parenthesis though.
-	startLine := s.line
-	startChar := s.currentRuneCountInLine
-	matched := false
-	openParenCount := 0
-	var runes []rune
-	for !s.atEnd() {
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
 		r, err := s.pop()
 		if err != nil {
 			return nil, fmt.Errorf("popping rune: %w", err)
 		}
 
-		// If we find a '(', we have to count.
-		if r == '(' {
-			openParenCount++
-			runes = append(runes, r)
-			continue
+		if r != '(' {
+			return nil, fmt.Errorf("expected ( after \"update\" keyword, got %q", r)
 		}
-
-		// If we find a ')', we either decrease the count or we're done.
-		if r == ')' {
-			if openParenCount > 0 {
-				openParenCount--
-				runes = append(runes, r)
-				continue
-			}
-
-			// Here we found the end of the trigger parenthesis.
-			matched = true
-			break
-		}
-
-		// Special case for now. Because it is annoying, we don't allow weird whitespace characters in
-		// the trigger arguments. This could change in the future if there is a need for it.
-		if r == '\r' || r == '\t' {
-			return nil, fmt.Errorf("unallowed rune %q in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug", r)
-		}
-
-		// We also do this for new lines.
-		if r == '\n' {
-			return nil, fmt.Errorf("unallowed newline in trigger arguments. This is a conscious decision of the parser. If you feel this is correct, please file a bug")
-		}
-
-		// Normal case, we just glob the literal.
-		runes = append(runes, r)
+		tokens = append(tokens, &Token{
+			id:      Token_LeftParen,
+			literal: string(r),
+			line:    startLine,
+			char:    startChar,
+		})
 	}
 
-	// If we are out of the loop and didn't match the parenthesis, we have a syntax error.
-	if !matched {
-		return nil, fmt.Errorf("unmatched trigger arguments parenthesis")
+	// We glob the characters between the trigger arugments.
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
+
+		runes, err := s.globRunes('(', ')', true, true, false)
+		if err != nil {
+			return nil, fmt.Errorf("globbing characters for trigger arguments: %w", err)
+		}
+
+		// We create the tokens.
+		tokens = append(tokens, &Token{
+			id:      Token_TriggerArgs,
+			literal: string(runes),
+			line:    startLine,
+			char:    startChar,
+		})
+
+		tokens = append(tokens, s.newToken(Token_RightParen, ")"))
 	}
-
-	// We create the tokens.
-	tokens = append(tokens, &Token{
-		id:      Token_TriggerArgs,
-		literal: string(runes),
-		line:    startLine,
-		char:    startChar,
-	})
-
-	tokens = append(tokens, s.newToken(Token_RightParen, ")"))
 
 	return tokens, nil
 }
@@ -548,7 +524,7 @@ func (s *Scanner) handleString() (*Token, error) {
 
 		// Special case: if we find a new line, we need to update the current line tracking.
 		if peek == '\n' {
-			s.newLineFound()
+			s.newLineFound(true)
 			continue
 		}
 
@@ -639,6 +615,135 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 		line:    startLine,
 		char:    startChar,
 	}, true, nil
+}
+
+func (s *Scanner) handleConditional() ([]*Token, bool, error) {
+	tokens := make([]*Token, 0, 4)
+
+	ok, err := s.longMatch("if")
+	if err != nil {
+		return nil, false, fmt.Errorf("long matching \"if\": %w", err)
+	} else if !ok {
+		// If we didn't find the keyword, we just return.
+		return nil, false, nil
+	}
+	tokens = append(tokens, s.newToken(Token_KeywordIf, "if"))
+
+	if err := s.eatWhitespace(); err != nil {
+		return nil, false, fmt.Errorf("eating whitespace: %w", err)
+	}
+
+	// We expect a { after if.
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
+		r, err := s.pop()
+		if err != nil {
+			return nil, false, fmt.Errorf("popping rune: %w", err)
+		}
+		if r != '{' {
+			return nil, false, fmt.Errorf("expected \"{\" after \"if\", got %q", r)
+		}
+		tokens = append(tokens, &Token{
+			id:      Token_LeftBrace,
+			literal: string(r),
+			line:    startLine,
+			char:    startChar,
+		})
+	}
+
+	// We can start globbing tokens until we find a closing right brace.
+	// We count how many braces we have found, so that people can write if statements.
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
+
+		runes, err := s.globRunes('{', '}', true, true, true)
+		if err != nil {
+			return nil, false, fmt.Errorf("globbing characters for conditional: %w", err)
+		}
+
+		tokens = append(tokens, &Token{
+			id:      Token_Code,
+			literal: string(runes),
+			line:    startLine,
+			char:    startChar,
+		})
+		tokens = append(tokens, s.newToken(Token_RightBrace, "}"))
+	}
+
+	return tokens, true, nil
+}
+
+// globRunes starts eating up characters, normally to bundle them into an opaque token, like trigger
+// arguments or a code block. It needs the open and close rune that delimit the range of globbed
+// runes. It also requires some configuration on things to allow:
+// |allowNested| is whether we allow nested delimiters (like nested { }).
+// |allowTabs| is whether tabs are allowed in the glob.
+// |allowNewLine| is whether new lines are acceptable in the glob.
+func (s *Scanner) globRunes(openRune rune, closeRune rune, allowNested bool, allowTabs bool, allowNewLine bool) ([]rune, error) {
+	matched := false
+	openCount := 0
+	var runes []rune
+	for !s.atEnd() {
+		r, err := s.pop()
+		if err != nil {
+			return nil, fmt.Errorf("popping rune: %w", err)
+		}
+
+		// If we find a '(', we have to count.
+		if r == openRune {
+			if !allowNested {
+				return nil, fmt.Errorf("unallowed nested %v", openRune)
+			}
+			openCount++
+			runes = append(runes, r)
+			continue
+		}
+
+		// If we find a ')', we either decrease the count or we're done.
+		if r == closeRune {
+			if openCount > 0 {
+				openCount--
+				runes = append(runes, r)
+				continue
+			}
+
+			// Here we found the end of the trigger parenthesis.
+			matched = true
+			break
+		}
+
+		// Check if we allow tabs.
+		if !allowTabs {
+			if r == '\r' || r == '\t' {
+				return nil, fmt.Errorf("unallowed rune %q. This is a conscious decision of the parser. If you feel this is correct, please file a bug", r)
+			}
+		}
+
+		// Check if we allow new lines.
+		if r == '\n' {
+			if !allowNewLine {
+				return nil, fmt.Errorf("unallowed newline. This is a conscious decision of the parser. If you feel this is correct, please file a bug")
+			} else {
+				if err := s.newLineFound(false); err != nil {
+					return nil, fmt.Errorf("advancing new line: %w", err)
+				}
+				runes = append(runes, '\n')
+				continue
+			}
+		}
+
+		// Normal case, we just glob the literal.
+		runes = append(runes, r)
+	}
+
+	// If we are out of the loop and didn't match the parenthesis, we have a syntax error.
+	if !matched {
+		return nil, fmt.Errorf("unmatched %v %v pairs", openRune, closeRune)
+	}
+
+	return runes, nil
 }
 
 func (s *Scanner) handleComment() error {
