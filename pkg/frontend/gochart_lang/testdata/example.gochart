@@ -12,6 +12,8 @@ statechart Example {
 
 		transition null > Third
 		transition Execute > Second
+
+		capture(Update) if { owner->SomeCondition }
 	}
 
 	state Second(Option1) {

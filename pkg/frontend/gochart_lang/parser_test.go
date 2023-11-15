@@ -70,6 +70,12 @@ func TestReadSimple(t *testing.T) {
 								TargetState: "Second",
 							},
 						},
+						Captures: []*ASTNodeStateCapture{
+							{
+								Trigger:   "Update",
+								Condition: " owner->SomeCondition ",
+							},
+						},
 					},
 					{
 						Name: "Second",
@@ -321,6 +327,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.Captures[i]
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Capture %d", ctxStr, i)
+			assert.Equal(t, want.Condition, got.Condition, "%s, Capture %d", ctxStr, i)
 		}
 	}
 
