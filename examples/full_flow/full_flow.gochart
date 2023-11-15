@@ -4,22 +4,22 @@ statechart Simple {
 
 	state StateA(default) {
 		enter
-		enter(Trigger1)
+		enter Trigger1
 
-		exit(Trigger1)
+		exit Trigger1
 		exit
 
-		capture(Trigger1)
+		capture Trigger1
 
 		state StateB {
-			exit(Trigger1)
+			exit Trigger1
 
 			transition Trigger1 > StateC
 		}
 
 		state StateC {
 			enter
-			enter(Trigger1)
+			enter Trigger1
 		}
 	}
 }

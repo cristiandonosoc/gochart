@@ -21,7 +21,7 @@ statechart Door {
 
 			state DoorMoving
 			{
-				enter(ToggleDoor)
+				enter ToggleDoor
 
 				transition DoorMovingDone > DoorClosed
 				//transition DoorMovingDone > DoorOpened

@@ -5,15 +5,15 @@ statechart Example {
 
 	state First {
 		enter
-		enter(Execute)
+		enter Execute
 
-		exit(Execute)
+		exit Execute
 		exit
 
 		transition null > Third
 		transition Execute > Second
 
-		capture(Update) if { owner->SomeCondition }
+		capture Update if { owner->SomeCondition }
 	}
 
 	state Second(Option1) {
@@ -28,9 +28,9 @@ statechart Example {
 				transition Execute > Second
 
 				enter
-				exit(Update)
+				exit Update
 
-				capture(Execute)
+				capture Execute
 			}
 		}
 

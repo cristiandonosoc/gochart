@@ -554,8 +554,8 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 
 // StateReaction -----------------------------------------------------------------------------------
 //
-// StateReaction -> 'enter' ( '(' IDENTIFIER ')' )?
-//               ->  'exit' ( '(' IDENTIFIER ')' )?
+// StateReaction -> 'enter' ( IDENTIFIER )?
+//               ->  'exit' ( IDENTIFIER )?
 
 type ASTNodeStateReaction struct {
 	Trigger string
@@ -572,16 +572,8 @@ func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeSta
 
 	// We check to see if the user indicated a trigger associated with the reaction.
 	var triggerName string
-	if _, ok := p.match(Token_LeftParen); ok {
-		name, err := p.consumeTokenLiteral(Token_Identifier)
-		if err != nil {
-			return nil, fmt.Errorf("expected identifier after reaction (: %w", err)
-		}
-		triggerName = name
-
-		if _, err := p.consumeToken(Token_RightParen); err != nil {
-			return nil, fmt.Errorf("expected closing paren after reaction identifier: %w", err)
-		}
+	if nameToken, ok := p.match(Token_Identifier); ok {
+		triggerName = nameToken.literal
 	}
 
 	reaction := &ASTNodeStateReaction{
@@ -642,7 +634,7 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 
 // StateCapture ------------------------------------------------------------------------------------
 //
-// StateCapture -> 'capture' ( IDENTIFIER )
+// StateCapture -> 'capture' IDENTIFIER ( 'if' '{' CODE '}' )?
 
 type ASTNodeStateCapture struct {
 	Trigger   string
@@ -658,20 +650,10 @@ func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapt
 		return nil, p.pushInternalErrorf(0, "unexpected token: expected \"capture\", got: %q", stmtToken)
 	}
 
-	// The left paren.
-	if _, err := p.consumeToken(Token_LeftParen); err != nil {
-		return nil, p.pushErrorf(0, err.Error())
-	}
-
 	// The trigger name.
 	triggerName, err := p.consumeTokenLiteral(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expected idenfier after (: %w", err)
-	}
-
-	// Right paren.
-	if _, err := p.consumeToken(Token_RightParen); err != nil {
-		return nil, p.pushErrorf(0, err.Error())
+		return nil, p.pushErrorf(0, "expected identifier after (: %w", err)
 	}
 
 	// Check if there is a condition.
