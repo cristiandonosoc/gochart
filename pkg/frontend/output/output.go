@@ -38,7 +38,8 @@ type StateData struct {
 }
 
 type CaptureData struct {
-	Trigger string
+	Trigger   string
+	Condition string
 }
 
 //go:generate stringer -type=StateOptionValueKind

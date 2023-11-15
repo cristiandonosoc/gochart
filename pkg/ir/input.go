@@ -259,7 +259,8 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) 
 		}
 
 		captures = append(captures, &StateCapture{
-			Trigger: trigger,
+			Trigger:   trigger,
+			Condition: fc.Condition,
 		})
 	}
 

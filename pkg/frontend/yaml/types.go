@@ -18,9 +18,14 @@ type YamlState struct {
 
 	Options []*YamlStateOption `yaml:"options"`
 
-	EnterReactions []string `yaml:"enter_reactions"`
-	ExitReactions  []string `yaml:"exit_reactions"`
-	Captures       []string `yaml:"captures"`
+	EnterReactions []string       `yaml:"enter_reactions"`
+	ExitReactions  []string       `yaml:"exit_reactions"`
+	Captures       []*YamlCapture `yaml:"captures"`
+}
+
+type YamlCapture struct {
+	Trigger   string `yaml:"trigger"`
+	Condition string `yaml:"condition"`
 }
 
 type YamlStateOption struct {

@@ -14,8 +14,9 @@ states:
       - "Trigger1"
       - ""
     captures:
-      - "Trigger1"
-      - "Trigger2"
+      - trigger: "Trigger1"
+        condition: "foo > 5"
+      - trigger: "Trigger2"
   - name: StateB
     default: true
     parent: StateA
@@ -27,7 +28,7 @@ states:
       - "Trigger1"
       - ""
     captures:
-      - "Trigger1"
+      - trigger: "Trigger1"
 transitions:
   - from: StateB
     to: StateC

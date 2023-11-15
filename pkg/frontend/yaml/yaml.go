@@ -107,7 +107,8 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 
 	for _, c := range ys.Captures {
 		state.Captures = append(state.Captures, &output.CaptureData{
-			Trigger: c,
+			Trigger:   c.Trigger,
+			Condition: c.Condition,
 		})
 	}
 

@@ -267,11 +267,16 @@ func (sr *StateReaction) String() string {
 // STATE CAPTURE -----------------------------------------------------------------------------------
 
 type StateCapture struct {
-	Trigger *Trigger
+	Trigger   *Trigger
+	Condition string
 }
 
 func (sc *StateCapture) String() string {
 	return fmt.Sprintf("capture(%s)", sc.Trigger.SafeName())
+}
+
+func (sc *StateCapture) HasCondition() bool {
+	return sc.Condition != ""
 }
 
 // TRANSITION --------------------------------------------------------------------------------------

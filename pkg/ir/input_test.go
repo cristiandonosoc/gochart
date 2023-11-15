@@ -61,8 +61,8 @@ func TestReadSimpleYaml(t *testing.T) {
 	ith.setEnterReaction(t, "StateA", "")
 	ith.setExitReaction(t, "StateA", "Trigger1")
 	ith.setExitReaction(t, "StateA", "")
-	ith.setCapture(t, "StateA", "Trigger1")
-	ith.setCapture(t, "StateA", "Trigger2")
+	ith.setCapture(t, "StateA", "Trigger1", "foo > 5")
+	ith.setCapture(t, "StateA", "Trigger2", "")
 	ith.setParenthood(t, "StateA", "StateB")
 	ith.setParenthood(t, "StateA", "StateC")
 	// StateB
@@ -71,7 +71,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	// StateC
 	ith.setEnterReaction(t, "StateC", "Trigger1")
 	ith.setEnterReaction(t, "StateC", "")
-	ith.setCapture(t, "StateC", "Trigger1")
+	ith.setCapture(t, "StateC", "Trigger1", "")
 
 	yf, err := yaml.NewYamlFrontend()
 	require.NoError(t, err)
@@ -212,6 +212,7 @@ func compareCaptures(t *testing.T, state *State, want, got []*StateCapture) {
 
 			assert.NotNil(t, got.Trigger, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
 			assert.Equal(t, want.Trigger.Name, got.Trigger.Name, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
+			assert.Equal(t, want.Condition, got.Condition, "%s:\n- %s\n- %s", state.Name, want.Condition, got.Condition)
 		}
 	}
 }
@@ -286,11 +287,11 @@ func (ith *inputTestHelper) setExitReaction(t *testing.T, stateName, triggerName
 	state.ExitReactions = ith.appendReaction(t, state.ExitReactions, state, trigger, StateReactionKind_Exit)
 }
 
-func (ith *inputTestHelper) setCapture(t *testing.T, stateName, triggerName string) {
+func (ith *inputTestHelper) setCapture(t *testing.T, stateName, triggerName, condition string) {
 	state := ith.findState(t, stateName)
 	trigger := ith.findTrigger(t, triggerName)
 
-	state.Captures = ith.appendCapture(t, state.Captures, state, trigger)
+	state.Captures = ith.appendCapture(t, state.Captures, state, trigger, condition)
 }
 
 func (ith *inputTestHelper) appendReaction(t *testing.T, reactions []*StateReaction, state *State, trigger *Trigger, kind StateReactionKind) []*StateReaction {
@@ -311,9 +312,10 @@ func (ith *inputTestHelper) appendReaction(t *testing.T, reactions []*StateReact
 	return reactions
 }
 
-func (ith *inputTestHelper) appendCapture(t *testing.T, captures []*StateCapture, state *State, trigger *Trigger) []*StateCapture {
+func (ith *inputTestHelper) appendCapture(t *testing.T, captures []*StateCapture, state *State, trigger *Trigger, condition string) []*StateCapture {
 	captures = append(captures, &StateCapture{
-		Trigger: trigger,
+		Trigger:   trigger,
+		Condition: condition,
 	})
 
 	// Validate that the captures are unique.
