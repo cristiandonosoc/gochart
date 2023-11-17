@@ -571,7 +571,6 @@ template <typename T>
 void {{$impl}}<T>::CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data)
 {
 		assert(state != EState::Invalid);
-		assert(state == CurrentState);
 
 		CallCaptureReaction(*this, state, trigger, trigger_data);
 }
@@ -605,6 +604,7 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}<T>* impl, const TriggerEntry& 
                 // Get the trigger data.
                 const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
 								impl->CaptureTrigger(EState::{{$state.Name}}, ETrigger::{{$trigger.Name}}, &data);
+								return true;
 						}
             {{- else }}
             // State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.

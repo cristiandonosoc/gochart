@@ -1,13 +1,20 @@
 statechart Door {
+	trigger Update()
+
+
 	trigger ActivateDoorActuator(bool active)
 	trigger ToggleDoor(bool open)
 	trigger DoorMovingDone(bool opened)
 
 	state Door
 	{
+		capture Update
+
 		state DoorInactive
 		{
 			transition ActivateDoorActuator > DoorActive
+
+			capture Update
 		}
 
 		state DoorActive
@@ -17,6 +24,8 @@ statechart Door {
 			state DoorOpened
 			{
 				transition ToggleDoor > DoorMoving
+
+				capture Update
 			}
 
 			state DoorMoving
@@ -24,7 +33,6 @@ statechart Door {
 				enter ToggleDoor
 
 				transition DoorMovingDone > DoorClosed
-				//transition DoorMovingDone > DoorOpened
 			}
 
 			state DoorClosed
