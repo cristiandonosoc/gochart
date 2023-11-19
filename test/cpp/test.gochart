@@ -1,9 +1,9 @@
 statechart Door {
-	trigger Update()
+	trigger Update(bool tick)
 
 
 	trigger ActivateDoorActuator(bool active)
-	trigger ToggleDoor(bool open)
+	trigger ToggleDoor(bool open, bool fast)
 	trigger DoorMovingDone(bool opened)
 
 	state Door
@@ -25,7 +25,7 @@ statechart Door {
 			{
 				transition ToggleDoor > DoorMoving
 
-				capture Update
+				capture Update if { tick }
 			}
 
 			state DoorMoving

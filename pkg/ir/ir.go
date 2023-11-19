@@ -143,10 +143,10 @@ func (s *State) IsParentOf(other *State) bool {
 }
 
 func (s *State) HasTransitionFor(trigger *Trigger) bool {
-	return s.GetTransitionFor(trigger) != nil
+	return s.GetTransition(trigger) != nil
 }
 
-func (s *State) GetTransitionFor(trigger *Trigger) *Transition {
+func (s *State) GetTransition(trigger *Trigger) *Transition {
 	for _, transition := range s.Transitions {
 		if transition.Trigger == trigger {
 			return transition
@@ -219,13 +219,17 @@ func (s *State) HasExitReaction(trigger *Trigger) bool {
 }
 
 func (s *State) HasCapture(trigger *Trigger) bool {
+	return s.GetCapture(trigger) != nil
+}
+
+func (s *State) GetCapture(trigger *Trigger) *StateCapture {
 	for _, capture := range s.Captures {
 		if capture.Trigger == trigger {
-			return true
+			return capture
 		}
 	}
 
-	return false
+	return nil
 }
 
 // STATE OPTIONS -----------------------------------------------------------------------------------

@@ -48,10 +48,19 @@ func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
 	}, nil
 }
 
+func collectTemplateHelperFunctions() template.FuncMap {
+	return map[string]any{
+		"TriggerCallArgs": TemplateHelper_TriggerCallArgs,
+	}
+}
+
 func readTemplate(ep embedPath) (*template.Template, error) {
 	// Load sprig functions.
 	epstr := string(ep)
-	tmpl, err := template.New(epstr).Funcs(sprig.FuncMap()).ParseFS(embeddedFS, epstr)
+	tmpl, err := template.New(epstr).
+		Funcs(sprig.FuncMap()).
+		Funcs(collectTemplateHelperFunctions()).
+		ParseFS(embeddedFS, epstr)
 	if err != nil {
 		return nil, fmt.Errorf("reading embedded template %q: %w", epstr, err)
 	}
@@ -101,4 +110,16 @@ func newTemplateContext(sc *ir.Statechart, options *Options) *templateContext {
 	}
 
 	return tc
+}
+
+// TEMPLATE HELPER FUNCTIONS -----------------------------------------------------------------------
+
+func TemplateHelper_TriggerCallArgs(trigger *ir.Trigger, prefix string) []string {
+	argsStrings := make([]string, 0, len(trigger.Args))
+
+	for _, arg := range trigger.Args {
+		argsStrings = append(argsStrings, fmt.Sprintf("%s%s", prefix, arg.Name))
+	}
+
+	return argsStrings
 }

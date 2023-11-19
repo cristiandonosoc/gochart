@@ -32,10 +32,10 @@ class Delegate
 public:
     // Statechart begin.
 
-    void StateDoor_CaptureUpdate() { COUNT_CALL(); }
-    void StateDoorInactive_CaptureUpdate() { COUNT_CALL(); }
-    void StateDoorOpened_CaptureUpdate() { COUNT_CALL(); }
-    void StateDoorMoving_EnterToggleDoor(bool open) { COUNT_CALL(); }
+    void StateDoor_CaptureUpdate(bool tick) { COUNT_CALL(); }
+    void StateDoorInactive_CaptureUpdate(bool tick) { COUNT_CALL(); }
+    void StateDoorOpened_CaptureUpdate(bool tick) { COUNT_CALL(); }
+    void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { COUNT_CALL(); }
     // Statechart end.
 
     int GetCallCount(const char* function_name) const
@@ -57,7 +57,7 @@ TEST(HelloTest, BasicAssertions)
     auto statechart = gochart::StatechartDoor<Delegate>::Create(&delegate);
     statechart->Activate();
     statechart->TriggerActivateDoorActuator(true);
-    statechart->TriggerToggleDoor(true);
+    statechart->TriggerToggleDoor(true, false);
     statechart->Deactivate();
 
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
@@ -71,41 +71,54 @@ TEST(HelloTest, Captures)
     statechart->Activate();
     EXPECT_EQ(delegate.GetTotalCalls(), 0);
 
-    statechart->TriggerUpdate();
+    statechart->TriggerUpdate(true);
     EXPECT_EQ(delegate.GetTotalCalls(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
     statechart->TriggerActivateDoorActuator(true);
     EXPECT_EQ(delegate.GetTotalCalls(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerUpdate();
+    statechart->TriggerUpdate(true);
     EXPECT_EQ(delegate.GetTotalCalls(), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerToggleDoor(true);
+    statechart->TriggerUpdate(false);
     EXPECT_EQ(delegate.GetTotalCalls(), 3);
-    EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
+    EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerUpdate();
+    statechart->TriggerToggleDoor(true, false);
     EXPECT_EQ(delegate.GetTotalCalls(), 4);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 
-    statechart->TriggerToggleDoor(true);
-    EXPECT_EQ(delegate.GetTotalCalls(), 4);
-    EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
+    statechart->TriggerUpdate(true);
+    EXPECT_EQ(delegate.GetTotalCalls(), 5);
+    EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
+
+    statechart->TriggerToggleDoor(true, false);
+    EXPECT_EQ(delegate.GetTotalCalls(), 5);
+    EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 
     statechart->Deactivate();
 }
