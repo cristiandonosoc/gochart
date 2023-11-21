@@ -14,6 +14,34 @@ type StatechartData struct {
 	Transitions []*TransitionData
 }
 
+type OptionValueKind int
+
+const (
+	OptionValueKind_Boolean OptionValueKind = iota
+	OptionValueKind_String
+	OptionValueKind_Integer
+)
+
+func (ovk OptionValueKind) String() string {
+	switch ovk {
+	case OptionValueKind_Boolean:
+		return "boolean"
+	case OptionValueKind_String:
+		return "string"
+	case OptionValueKind_Integer:
+		return "int"
+	default:
+		panic(fmt.Sprintf("unknown OptionValueKind %v", int(ovk)))
+	}
+
+}
+
+type OptionData struct {
+	Name  string
+	Kind  OptionValueKind
+	Value string
+}
+
 type TriggerData struct {
 	Name       string
 	ArgsString string
@@ -26,7 +54,7 @@ type StateData struct {
 	Name   string
 	Parent string
 
-	Options []*StateOptionData
+	Options []*OptionData
 
 	EnterReactions []string
 	ExitReactions  []string
@@ -40,22 +68,6 @@ type StateData struct {
 type CaptureData struct {
 	Trigger   string
 	Condition string
-}
-
-//go:generate stringer -type=StateOptionValueKind
-type StateOptionValueKind int
-
-const (
-	StateOptionValueKind_None StateOptionValueKind = iota
-	StateOptionValueKind_String
-	StateOptionValueKind_Integer
-	StateOptionValueKind_Boolean
-)
-
-type StateOptionData struct {
-	Name      string
-	ValueKind StateOptionValueKind
-	Value     string
 }
 
 type TransitionData struct {

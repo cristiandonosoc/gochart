@@ -181,6 +181,111 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	return sc, nil
 }
 
+// Options ------------------------------------------------------------------------------------
+//
+// Options -> ( '(' Option ( ',' Option )* ')' )?
+
+func (p *Parser) parseOptions() ([]*ASTNodeOption, bool, error) {
+	p.debuglog("parsing state options node")
+
+	// If we have no left paren, then there is no options.
+	if _, ok := p.match(Token_LeftParen); !ok {
+		p.debuglog("-> -> no options %q found. Skipping.", Token_LeftParen)
+		return nil, false, nil
+	}
+
+	var options []*ASTNodeOption
+
+	// Parse the first option.
+	option, err := p.parseOption()
+	if err != nil {
+		return nil, false, fmt.Errorf("parsing first option: %w", err)
+	}
+	options = append(options, option)
+
+	// See if we have more options.
+	for !p.atEnd() {
+		// A ',' indicates that we are going to have another option.
+		if _, ok := p.match(Token_Comma); !ok {
+			break
+		}
+
+		// Parse the next option.
+		option, err := p.parseOption()
+		if err != nil {
+			return nil, false, fmt.Errorf("parsing option: %w", err)
+		}
+		options = append(options, option)
+	}
+
+	// Close the options ')'
+	if _, err := p.consumeToken(Token_RightParen); err != nil {
+		return nil, false, fmt.Errorf("unclosed state options parenthesis: %w", err)
+	}
+
+	return options, true, nil
+}
+
+// Option -> NAME ( '=' ( IDENTIFIER | STRING | NUMBER | true | false ) )?
+
+type ASTNodeOption struct {
+	Name      string
+	ValueKind output.OptionValueKind
+	Value     string
+}
+
+var _ ASTNode = (*ASTNodeOption)(nil)
+
+func (p *Parser) parseOption() (*ASTNodeOption, error) {
+	p.debuglog("-> parsing state option")
+
+	// The name.
+	name, err := p.consumeTokenLiteral(Token_Identifier)
+	if err != nil {
+		return nil, p.pushErrorf(0, "after \"trigger\" keyword")
+	}
+
+	// See if there is an optional value.
+	// If not, by default this is a "true" boolean option.
+	valueKind := output.OptionValueKind_Boolean
+	value := "true"
+	if _, ok := p.match(Token_Equal); ok {
+		if token, ok := p.match(Token_Identifier); ok {
+			valueKind = output.OptionValueKind_String
+			value = token.literal
+		} else if token, ok := p.match(Token_String); ok {
+			valueKind = output.OptionValueKind_String
+			value = token.literal
+		} else if token, ok := p.match(Token_Integer); ok {
+			_, err := strconv.Atoi(token.literal)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
+			}
+			valueKind = output.OptionValueKind_Integer
+			value = token.literal
+		} else if token, ok := p.match(Token_Boolean); ok {
+			_, err := strconv.ParseBool(token.literal)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
+			}
+			valueKind = output.OptionValueKind_Boolean
+			value = token.literal
+		} else {
+			return nil, p.pushErrorf(0, "unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
+		}
+	}
+
+	option := &ASTNodeOption{
+		Name:      name,
+		ValueKind: valueKind,
+		Value:     value,
+	}
+
+	p.debuglog("-> -> parsed option: %+v", option)
+
+	return option, nil
+}
+
 // StatechartBodyStmt ------------------------------------------------------------------------------
 //
 // StatechartBodyStmt -> Trigger
@@ -285,13 +390,13 @@ func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, err
 
 // State -------------------------------------------------------------------------------------------
 //
-// State -> 'state' NAME ( '(' ( StateOption ( ',' StateOption )* ')' ) '{' StateBody+'}'
+// State -> 'state' NAME ( '(' ( Option ( ',' Option )* ')' ) '{' StateBody+'}'
 
 type ASTNodeState struct {
 	Name           string
 	ParentName     string
 	Default        bool
-	Options        []*ASTNodeStateOption
+	Options        []*ASTNodeOption
 	EnterReactions []*ASTNodeStateReaction
 	ExitReactions  []*ASTNodeStateReaction
 	Transitions    []*ASTNodeStateTransition
@@ -324,8 +429,8 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 	}
 
 	// The options.
-	var options []*ASTNodeStateOption
-	if opts, ok, err := p.parseStateOptions(); err != nil {
+	var options []*ASTNodeOption
+	if opts, ok, err := p.parseOptions(); err != nil {
 		return nil, fmt.Errorf("state %q: parsing options: %w", name, err)
 	} else if ok {
 		options = opts
@@ -377,110 +482,6 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 	}
 
 	return state, nil
-}
-
-// StateOptions ------------------------------------------------------------------------------------
-//
-// StateOptions -> ( '(' StateOption ( ',' StateOption )* ')' )?
-
-func (p *Parser) parseStateOptions() ([]*ASTNodeStateOption, bool, error) {
-	p.debuglog("parsing state options node")
-
-	// If we have no left paren, then there is no options.
-	if _, ok := p.match(Token_LeftParen); !ok {
-		p.debuglog("-> -> no options %q found. Skipping.", Token_LeftParen)
-		return nil, false, nil
-	}
-
-	var options []*ASTNodeStateOption
-
-	// Parse the first option.
-	option, err := p.parseStateOption()
-	if err != nil {
-		return nil, false, fmt.Errorf("parsing first option: %w", err)
-	}
-	options = append(options, option)
-
-	// See if we have more options.
-	for !p.atEnd() {
-		// A ',' indicates that we are going to have another option.
-		if _, ok := p.match(Token_Comma); !ok {
-			break
-		}
-
-		// Parse the next option.
-		option, err := p.parseStateOption()
-		if err != nil {
-			return nil, false, fmt.Errorf("parsing option: %w", err)
-		}
-		options = append(options, option)
-	}
-
-	// Close the options ')'
-	if _, err := p.consumeToken(Token_RightParen); err != nil {
-		return nil, false, fmt.Errorf("unclosed state options parenthesis: %w", err)
-	}
-
-	return options, true, nil
-}
-
-// StateOption -> NAME ( '=' ( IDENTIFIER | STRING | NUMBER | true | false ) )?
-
-type ASTNodeStateOption struct {
-	Name      string
-	ValueKind output.StateOptionValueKind
-	Value     string
-}
-
-var _ ASTNode = (*ASTNodeStateOption)(nil)
-
-func (p *Parser) parseStateOption() (*ASTNodeStateOption, error) {
-	p.debuglog("-> parsing state option")
-
-	// The name.
-	name, err := p.consumeTokenLiteral(Token_Identifier)
-	if err != nil {
-		return nil, p.pushErrorf(0, "after \"trigger\" keyword")
-	}
-
-	// See if there is an optional value.
-	valueKind := output.StateOptionValueKind_None
-	var value string
-	if _, ok := p.match(Token_Equal); ok {
-		if token, ok := p.match(Token_Identifier); ok {
-			valueKind = output.StateOptionValueKind_String
-			value = token.literal
-		} else if token, ok := p.match(Token_String); ok {
-			valueKind = output.StateOptionValueKind_String
-			value = token.literal
-		} else if token, ok := p.match(Token_Integer); ok {
-			_, err := strconv.Atoi(token.literal)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
-			}
-			valueKind = output.StateOptionValueKind_Integer
-			value = token.literal
-		} else if token, ok := p.match(Token_Boolean); ok {
-			_, err := strconv.ParseBool(token.literal)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
-			}
-			valueKind = output.StateOptionValueKind_Boolean
-			value = token.literal
-		} else {
-			return nil, p.pushErrorf(0, "unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())
-		}
-	}
-
-	option := &ASTNodeStateOption{
-		Name:      name,
-		ValueKind: valueKind,
-		Value:     value,
-	}
-
-	p.debuglog("-> -> parsed option: %+v", option)
-
-	return option, nil
 }
 
 // StateBody ---------------------------------------------------------------------------------------

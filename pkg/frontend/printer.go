@@ -3,8 +3,8 @@ package frontend
 import (
 	"io"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/internal/printer"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 type frontendPrinter struct {
@@ -52,7 +52,7 @@ func (fp *frontendPrinter) printState(state *output.StateData) {
 	{
 		fp.p.WriteLine("Options:")
 		fp.p.PushIndent()
-		fp.printStateOptions(state.Options)
+		fp.printOptions(state.Options)
 		fp.p.PopIndent()
 	}
 
@@ -86,14 +86,14 @@ func (fp *frontendPrinter) printState(state *output.StateData) {
 
 }
 
-func (fp *frontendPrinter) printStateOptions(options []*output.StateOptionData) {
+func (fp *frontendPrinter) printOptions(options []*output.OptionData) {
 	if len(options) == 0 {
 		fp.p.WriteLine("No options")
 		return
 	}
 
 	for _, option := range options {
-		fp.p.WriteLine("Option %s (Kind: %s, Value: %q)", option.Name, option.ValueKind, option.Value)
+		fp.p.WriteLine("Option %s (Kind: %s, Value: %q)", option.Name, option.Kind, option.Value)
 	}
 }
 

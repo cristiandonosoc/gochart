@@ -94,7 +94,7 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 	}
 
 	for _, opt := range ys.Options {
-		state.Options = append(state.Options, ft.translateStateOption(opt))
+		state.Options = append(state.Options, ft.translateOption(opt))
 	}
 
 	for _, er := range ys.EnterReactions {
@@ -115,20 +115,21 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 	return state
 }
 
-func (ft *frontendTranslator) translateStateOption(yso *YamlStateOption) *output.StateOptionData {
-	option := &output.StateOptionData{
-		Name:      yso.Name,
-		ValueKind: output.StateOptionValueKind_None,
+func (ft *frontendTranslator) translateOption(yso *YamlOption) *output.OptionData {
+	option := &output.OptionData{
+		Name:  yso.Name,
+		Kind:  output.OptionValueKind_Boolean,
+		Value: "true",
 	}
 
 	if yso.IntValue != "" {
-		option.ValueKind = output.StateOptionValueKind_Integer
+		option.Kind = output.OptionValueKind_Integer
 		option.Value = yso.IntValue
 	} else if yso.StringValue != "" {
-		option.ValueKind = output.StateOptionValueKind_String
+		option.Kind = output.OptionValueKind_String
 		option.Value = yso.IntValue
 	} else if yso.BoolValue != "" {
-		option.ValueKind = output.StateOptionValueKind_Boolean
+		option.Kind = output.OptionValueKind_Boolean
 		option.Value = yso.IntValue
 	}
 

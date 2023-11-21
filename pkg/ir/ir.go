@@ -93,6 +93,8 @@ type State struct {
 	Name    string
 	Default bool
 
+	Options []*Option
+
 	// States represents the substates that this state has.
 	Children    []*State
 	Transitions []*Transition

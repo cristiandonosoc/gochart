@@ -5,9 +5,9 @@ cc_test(
     size = "small",
     srcs = ["integration_test.cpp"],
     deps = [
-			"@com_google_googletest//:gtest_main",
-			":gochart",
-		],
+        ":gochart",
+        "@com_google_googletest//:gtest_main",
+    ],
 )
 
 cc_library(

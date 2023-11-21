@@ -141,8 +141,7 @@ func (ih *inputHandler) collectStates() error {
 	// Collect extra data from the states.
 	for name, state := range stateMap {
 		// Parse the options for this state.
-		op := newOptionParser(state)
-		if err := op.parseOptions(state.frontendData.Options); err != nil {
+		if err := parseStateOptions(state, state.frontendData.Options); err != nil {
 			return fmt.Errorf("state %q: parsing options: %w", state.Name, err)
 		}
 

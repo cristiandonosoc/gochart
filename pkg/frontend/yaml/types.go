@@ -7,6 +7,14 @@ type YamlStatechart struct {
 	Transitions []*YamlTransition `yaml:"transitions"`
 }
 
+type YamlOption struct {
+	Name string `yaml:"name"`
+
+	IntValue    string `yaml:"int_value"`
+	StringValue string `yaml:"string_value"`
+	BoolValue   string `yaml:"bool_value"`
+}
+
 type YamlTrigger struct {
 	Name       string `yaml:"name"`
 	ArgsString string `yaml:"arguments_string"`
@@ -16,7 +24,7 @@ type YamlState struct {
 	Name   string `yaml:"name"`
 	Parent string `yaml:"parent"`
 
-	Options []*YamlStateOption `yaml:"options"`
+	Options []*YamlOption `yaml:"options"`
 
 	EnterReactions []string       `yaml:"enter_reactions"`
 	ExitReactions  []string       `yaml:"exit_reactions"`
@@ -26,14 +34,6 @@ type YamlState struct {
 type YamlCapture struct {
 	Trigger   string `yaml:"trigger"`
 	Condition string `yaml:"condition"`
-}
-
-type YamlStateOption struct {
-	Name string `yaml:"name"`
-
-	IntValue    string `yaml:"int_value"`
-	StringValue string `yaml:"string_value"`
-	BoolValue   string `yaml:"bool_value"`
 }
 
 type YamlTransition struct {

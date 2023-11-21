@@ -61,6 +61,7 @@ Header "Go tests"
 # --------------------------------------------------------------------------------------------------
 
 go test -v ./...
+bazelisk test //...
 
 if  [ $? -ne 0 ]; then
 	ExitWithError "Go tests failed!"
@@ -70,7 +71,8 @@ Header "Running gofmt"
 # --------------------------------------------------------------------------------------------------
 
 has_formatting_error=0
-staged_files=$(git diff --cached --name-only)
+# Only get the stages files that are Added Copied Modified Renamed
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
 for file in $staged_files
 do
 	# If they are a go file, we check for gofmt.

@@ -79,10 +79,11 @@ func TestReadSimple(t *testing.T) {
 					},
 					{
 						Name: "Second",
-						Options: []*ASTNodeStateOption{
+						Options: []*ASTNodeOption{
 							{
 								Name:      "Option1",
-								ValueKind: output.StateOptionValueKind_None,
+								ValueKind: output.OptionValueKind_Boolean,
+								Value:     "true",
 							},
 						},
 						Transitions: []*ASTNodeStateTransition{
@@ -94,43 +95,45 @@ func TestReadSimple(t *testing.T) {
 					},
 					{
 						Name: "Third",
-						Options: []*ASTNodeStateOption{
+						Options: []*ASTNodeOption{
 							{
 								Name:      "Opt1",
-								ValueKind: output.StateOptionValueKind_None,
+								ValueKind: output.OptionValueKind_Boolean,
+								Value:     "true",
 							},
 							{
 								Name:      "Opt2",
-								ValueKind: output.StateOptionValueKind_None,
+								ValueKind: output.OptionValueKind_Boolean,
+								Value:     "true",
 							},
 							{
 								Name:      "Opt3",
-								ValueKind: output.StateOptionValueKind_String,
+								ValueKind: output.OptionValueKind_String,
 								Value:     "Identifier",
 							},
 							{
 								Name:      "Opt4",
-								ValueKind: output.StateOptionValueKind_String,
+								ValueKind: output.OptionValueKind_String,
 								Value:     "String",
 							},
 							{
 								Name:      "Opt5",
-								ValueKind: output.StateOptionValueKind_Integer,
+								ValueKind: output.OptionValueKind_Integer,
 								Value:     "2123",
 							},
 							{
 								Name:      "Opt6",
-								ValueKind: output.StateOptionValueKind_Boolean,
+								ValueKind: output.OptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt7",
-								ValueKind: output.StateOptionValueKind_Boolean,
+								ValueKind: output.OptionValueKind_Boolean,
 								Value:     "false",
 							},
 							{
 								Name:      "Opt8",
-								ValueKind: output.StateOptionValueKind_Integer,
+								ValueKind: output.OptionValueKind_Integer,
 								Value:     "22",
 							},
 						},
@@ -144,13 +147,15 @@ func TestReadSimple(t *testing.T) {
 							{
 								Name:       "ThirdChild1",
 								ParentName: "Third",
-								Options: []*ASTNodeStateOption{
+								Options: []*ASTNodeOption{
 									{
-										Name: "OptChild1",
+										Name:      "OptChild1",
+										ValueKind: output.OptionValueKind_Boolean,
+										Value:     "true",
 									},
 									{
 										Name:      "OptChild2",
-										ValueKind: output.StateOptionValueKind_String,
+										ValueKind: output.OptionValueKind_String,
 										Value:     "IdentifierChild",
 									},
 								},
@@ -158,10 +163,10 @@ func TestReadSimple(t *testing.T) {
 									{
 										Name:       "ThirdGrandChild",
 										ParentName: "ThirdChild1",
-										Options: []*ASTNodeStateOption{
+										Options: []*ASTNodeOption{
 											{
 												Name:      "OptGrandChild",
-												ValueKind: output.StateOptionValueKind_Boolean,
+												ValueKind: output.OptionValueKind_Boolean,
 												Value:     "false",
 											},
 										},
