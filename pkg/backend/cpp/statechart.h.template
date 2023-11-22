@@ -473,6 +473,32 @@ bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const 
 {{- end }}{{/* range $sc.Triggers */}}
 {{- end }}{{/* range $sc.States */}}
 
+// Transition Actions ------------------------------------------------------------------------------
+
+{{- range $sc.States }}
+{{- $state := . }}
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+
+{{- if $state.HasTransition $trigger }}
+{{- $transition := $state.GetTransition $trigger }}
+
+{{- if $transition.HasAction }}
+
+{{- $args := $trigger.ArgsStringList | join ", " }}
+
+template <typename T>
+void State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(T& owner, {{$args}})
+{
+		{{$transition.Action}};
+}
+
+{{- end }}{{/* $transition.HasAction */}}
+{{- end }}{{/* $state.HasTransition */}}
+
+{{- end }}{{/* range $sc.Triggers */}}
+{{- end }}{{/* range $sc.States */}}
+
 // Capture Conditions ------------------------------------------------------------------------------
 
 {{- range $sc.States }}
@@ -650,6 +676,11 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}<T>* impl, const TriggerEntry& 
 								{
 										return false;
 								}
+								{{- end }}
+
+								{{- if $transition.HasAction }}
+								{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+								State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(*impl->GetOwner(), {{$callArgs}});
 								{{- end }}
 
                 impl->ProcessTransition(EState::{{$transition.From.Name}},

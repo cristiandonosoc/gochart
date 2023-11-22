@@ -36,9 +36,11 @@ transitions:
   - from: StateC
     to: StateB
     trigger: ""
+    action: "StateC->Action();"
   - from: StateB
     to: StateA
     trigger: Trigger2
     condition: "return owner->SomeCondition();"
+    action: "owner->SomeAction();"
 
 

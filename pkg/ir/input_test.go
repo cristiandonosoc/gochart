@@ -67,12 +67,12 @@ func TestReadSimpleYaml(t *testing.T) {
 	ith.setParenthood(t, "StateA", "StateC")
 	// StateB
 	ith.setExitReaction(t, "StateB", "Trigger1")
-	ith.setTransition(t, "StateB", "StateC", "Trigger1", "")
-	ith.setTransition(t, "StateB", "StateA", "Trigger2", "return owner->SomeCondition();")
+	ith.setTransition(t, "StateB", "StateC", "Trigger1", "", "")
+	ith.setTransition(t, "StateB", "StateA", "Trigger2", "return owner->SomeCondition();", "owner->SomeAction();")
 	// StateC
 	ith.setEnterReaction(t, "StateC", "Trigger1")
 	ith.setEnterReaction(t, "StateC", "")
-	ith.setTransition(t, "StateC", "StateB", "", "")
+	ith.setTransition(t, "StateC", "StateB", "", "", "StateC->Action();")
 	ith.setCapture(t, "StateC", "Trigger1", "")
 
 	yf, err := yaml.NewYamlFrontend()
@@ -229,6 +229,7 @@ func compareTransition(t *testing.T, want, got *Transition) {
 		}
 	}
 	assert.Equal(t, want.Condition, got.Condition)
+	assert.Equal(t, want.Action, got.Action)
 }
 
 // HELPER FUNCTIONS --------------------------------------------------------------------------------
@@ -259,7 +260,7 @@ func (ith *inputTestHelper) setParenthood(t *testing.T, parentName, childName st
 	parent.Children = append(parent.Children, state)
 }
 
-func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName, condition string) {
+func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName, condition, action string) {
 	from := ith.findState(t, fromName)
 	to := ith.findState(t, toName)
 	trigger := ith.findTrigger(t, triggerName)
@@ -269,6 +270,7 @@ func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, trigge
 		To:        to,
 		Trigger:   trigger,
 		Condition: condition,
+		Action:    action,
 	}
 	from.Transitions = append(from.Transitions, transition)
 }

@@ -293,6 +293,7 @@ type Transition struct {
 	To        *State
 	Trigger   *Trigger
 	Condition string
+	Action    string
 
 	frontendData *output.TransitionData
 }
@@ -303,4 +304,8 @@ func (t *Transition) IsNullTransition() bool {
 
 func (t *Transition) HasCondition() bool {
 	return t.Condition != ""
+}
+
+func (t *Transition) HasAction() bool {
+	return t.Action != ""
 }
