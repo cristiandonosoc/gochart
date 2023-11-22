@@ -141,9 +141,10 @@ func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.Tr
 	ft.transitionIndex++
 
 	return &output.TransitionData{
-		From:    yt.From,
-		To:      yt.To,
-		Trigger: yt.Trigger,
-		Index:   index,
+		From:      yt.From,
+		To:        yt.To,
+		Trigger:   yt.Trigger,
+		Condition: yt.Condition,
+		Index:     index,
 	}
 }

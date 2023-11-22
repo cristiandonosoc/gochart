@@ -447,6 +447,32 @@ void {{$impl}}<T>::Trigger{{$trigger.Name}}({{$args}})
 
 {{- end }}
 
+// Transition Conditions ---------------------------------------------------------------------------
+
+{{- range $sc.States }}
+{{- $state := . }}
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+
+{{- if $state.HasTransition $trigger }}
+{{- $transition := $state.GetTransition $trigger }}
+
+{{- if $transition.HasCondition }}
+
+{{- $args := $trigger.ArgsStringList | join ", " }}
+
+template <typename T>
+bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const T& owner, {{$args}})
+{
+    return {{$transition.Condition}};
+}
+
+{{- end }}{{/* $transition.HasCondition */}}
+{{- end }}{{/* $state.HasTransition */}}
+
+{{- end }}{{/* range $sc.Triggers */}}
+{{- end }}{{/* range $sc.States */}}
+
 // Capture Conditions ------------------------------------------------------------------------------
 
 {{- range $sc.States }}
@@ -612,11 +638,20 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}<T>* impl, const TriggerEntry& 
         {{- range $sc.Triggers }}
         {{- $trigger := . }}
         case ETrigger::{{$trigger.Name}}:
-            {{- if $state.HasTransitionFor $trigger }}
-            {{- $transition := $state.GetTransition $trigger }}
+            {{- if $state.HasTransition $trigger }}
             {
                 // Get the trigger data.
                 const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
+
+								{{- $transition := $state.GetTransition $trigger }}
+								{{- if $transition.HasCondition }}
+								{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+								if (!State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(*impl->GetOwner(), {{$callArgs}}))
+								{
+										return false;
+								}
+								{{- end }}
+
                 impl->ProcessTransition(EState::{{$transition.From.Name}},
                                         EState::{{$transition.To.Name}},
                                         ETrigger::{{$transition.Trigger.Name}},
@@ -633,7 +668,7 @@ bool State{{$state.Name}}_HandleTrigger({{$impl}}<T>* impl, const TriggerEntry& 
                 {{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
                 if (!State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(*impl->GetOwner(), {{$callArgs}}))
                 {
-                  return false;
+										return false;
                 }
                 {{- end }}
 

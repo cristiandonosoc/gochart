@@ -66,11 +66,13 @@ func TestReadSimpleYaml(t *testing.T) {
 	ith.setParenthood(t, "StateA", "StateB")
 	ith.setParenthood(t, "StateA", "StateC")
 	// StateB
-	ith.setTransition(t, "StateB", "StateC", "Trigger1")
 	ith.setExitReaction(t, "StateB", "Trigger1")
+	ith.setTransition(t, "StateB", "StateC", "Trigger1", "")
+	ith.setTransition(t, "StateB", "StateA", "Trigger2", "return owner->SomeCondition();")
 	// StateC
 	ith.setEnterReaction(t, "StateC", "Trigger1")
 	ith.setEnterReaction(t, "StateC", "")
+	ith.setTransition(t, "StateC", "StateB", "", "")
 	ith.setCapture(t, "StateC", "Trigger1", "")
 
 	yf, err := yaml.NewYamlFrontend()
@@ -221,7 +223,12 @@ func compareTransition(t *testing.T, want, got *Transition) {
 	// We only compare names to avoid over checking.
 	assert.Equal(t, want.From.Name, got.From.Name)
 	assert.Equal(t, want.To.Name, got.To.Name)
-	assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+	if assert.Equal(t, want.Trigger != nil, got.Trigger != nil) {
+		if want.Trigger != nil {
+			assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
+		}
+	}
+	assert.Equal(t, want.Condition, got.Condition)
 }
 
 // HELPER FUNCTIONS --------------------------------------------------------------------------------
@@ -238,7 +245,9 @@ func (ith *inputTestHelper) findTrigger(t *testing.T, name string) *Trigger {
 	i := slices.IndexFunc(ith.triggers, func(t *Trigger) bool {
 		return t.Name == name
 	})
-	require.NotEqual(t, i, -1)
+	if i == -1 {
+		return nil
+	}
 	return ith.triggers[i]
 }
 
@@ -250,15 +259,16 @@ func (ith *inputTestHelper) setParenthood(t *testing.T, parentName, childName st
 	parent.Children = append(parent.Children, state)
 }
 
-func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName string) {
+func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName, condition string) {
 	from := ith.findState(t, fromName)
 	to := ith.findState(t, toName)
 	trigger := ith.findTrigger(t, triggerName)
 
 	transition := &Transition{
-		From:    from,
-		To:      to,
-		Trigger: trigger,
+		From:      from,
+		To:        to,
+		Trigger:   trigger,
+		Condition: condition,
 	}
 	from.Transitions = append(from.Transitions, transition)
 }
@@ -270,6 +280,7 @@ func (ith *inputTestHelper) setEnterReaction(t *testing.T, stateName, triggerNam
 	var trigger *Trigger
 	if triggerName != "" {
 		trigger = ith.findTrigger(t, triggerName)
+		require.NotNil(t, trigger)
 	}
 
 	state.EnterReactions = ith.appendReaction(t, state.EnterReactions, state, trigger, StateReactionKind_Enter)
@@ -282,6 +293,7 @@ func (ith *inputTestHelper) setExitReaction(t *testing.T, stateName, triggerName
 	var trigger *Trigger
 	if triggerName != "" {
 		trigger = ith.findTrigger(t, triggerName)
+		require.NotNil(t, trigger)
 	}
 
 	state.ExitReactions = ith.appendReaction(t, state.ExitReactions, state, trigger, StateReactionKind_Exit)

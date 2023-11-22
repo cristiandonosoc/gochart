@@ -76,10 +76,11 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 		index := ft.transitionIndex
 		ft.transitionIndex++
 		transition := &output.TransitionData{
-			From:    ns.Name,
-			To:      t.TargetState,
-			Trigger: t.Trigger,
-			Index:   index,
+			From:      ns.Name,
+			To:        t.TargetState,
+			Trigger:   t.Trigger,
+			Condition: t.Condition,
+			Index:     index,
 		}
 		transitions = append(transitions, transition)
 	}

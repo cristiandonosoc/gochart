@@ -90,6 +90,7 @@ func TestReadSimple(t *testing.T) {
 							{
 								Trigger:     "Execute",
 								TargetState: "First",
+								Condition:   " return owner->SomeCondition(); ",
 							},
 						},
 					},

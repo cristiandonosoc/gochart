@@ -37,7 +37,8 @@ type YamlCapture struct {
 }
 
 type YamlTransition struct {
-	From    string `yaml:"from"`
-	To      string `yaml:"to"`
-	Trigger string `yaml:"trigger"`
+	From      string `yaml:"from"`
+	To        string `yaml:"to"`
+	Trigger   string `yaml:"trigger"`
+	Condition string `yaml:"condition"`
 }

@@ -12,14 +12,14 @@ statechart Door {
 
 		state DoorInactive
 		{
-			transition ActivateDoorActuator > DoorActive
+			transition ActivateDoorActuator > DoorActive if { active }
 
 			capture Update
 		}
 
 		state DoorActive
 		{
-			transition ActivateDoorActuator > DoorInactive
+			transition ActivateDoorActuator > DoorInactive if { !active }
 
 			state DoorOpened
 			{

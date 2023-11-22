@@ -306,6 +306,7 @@ func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transit
 		From:         from,
 		To:           to,
 		Trigger:      trigger,
+		Condition:    tdata.Condition,
 		frontendData: tdata,
 	}
 

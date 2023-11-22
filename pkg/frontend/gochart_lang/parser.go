@@ -592,6 +592,7 @@ func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeSta
 type ASTNodeStateTransition struct {
 	Trigger     string
 	TargetState string
+	Condition   string
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -624,9 +625,29 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 		return nil, fmt.Errorf("expected identifier after >: %w", err)
 	}
 
+	// Check if there is a condition.
+	var condition string
+	if _, ok := p.match(Token_KeywordIf); ok {
+		// We should get a right brace.
+		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
+			return nil, p.pushErrorf(0, "after \"if\": %w", err)
+		}
+		// After we should get a code token.
+		if token, err := p.consumeToken(Token_Code); err != nil {
+			return nil, p.pushErrorf(0, "expected a code token: %w", err)
+		} else {
+			condition = token.literal
+		}
+		// We need a right brace.
+		if _, err := p.consumeToken(Token_RightBrace); err != nil {
+			return nil, p.pushErrorf(0, "expected closing brace: %w", err)
+		}
+	}
+
 	transition := &ASTNodeStateTransition{
 		Trigger:     triggerName,
 		TargetState: stateToken.literal,
+		Condition:   condition,
 	}
 
 	p.debuglog("-> parsed transition: %+v", transition)

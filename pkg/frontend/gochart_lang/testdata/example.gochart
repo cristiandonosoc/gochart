@@ -17,7 +17,7 @@ statechart Example {
 	}
 
 	state Second(Option1) {
-		transition Execute > First
+		transition Execute > First if { return owner->SomeCondition(); }
 	}
 
 	state Third(Opt1, Opt2, Opt3 = Identifier, Opt4 = "String", Opt5 = 2123, Opt6 = true, Opt7 = false, Opt8=22) {

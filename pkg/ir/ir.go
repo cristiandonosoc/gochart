@@ -144,7 +144,7 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
-func (s *State) HasTransitionFor(trigger *Trigger) bool {
+func (s *State) HasTransition(trigger *Trigger) bool {
 	return s.GetTransition(trigger) != nil
 }
 
@@ -289,13 +289,18 @@ func (sc *StateCapture) HasCondition() bool {
 
 // Transition represents a transition from one state to another given a particular trigger.
 type Transition struct {
-	From    *State
-	To      *State
-	Trigger *Trigger
+	From      *State
+	To        *State
+	Trigger   *Trigger
+	Condition string
 
 	frontendData *output.TransitionData
 }
 
 func (t *Transition) IsNullTransition() bool {
 	return t.Trigger == nil
+}
+
+func (t *Transition) HasCondition() bool {
+	return t.Condition != ""
 }

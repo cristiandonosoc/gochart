@@ -71,9 +71,10 @@ type CaptureData struct {
 }
 
 type TransitionData struct {
-	From    string
-	To      string
-	Trigger string
+	From      string
+	To        string
+	Trigger   string
+	Condition string
 
 	// Index represents in what order it was found.
 	Index int
