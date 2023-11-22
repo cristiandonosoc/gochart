@@ -464,7 +464,7 @@ void {{$impl}}<T>::Trigger{{$trigger.Name}}({{$args}})
 template <typename T>
 bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const T& owner, {{$args}})
 {
-    return {{$transition.Condition}};
+    {{$transition.Condition}};
 }
 
 {{- end }}{{/* $transition.HasCondition */}}
@@ -490,7 +490,7 @@ bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const 
 template <typename T>
 bool State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(const T& owner, {{$args}})
 {
-    return {{$capture.Condition}};
+    {{$capture.Condition}};
 }
 
 {{- end }}{{/* $capture.HasCondition */}}
