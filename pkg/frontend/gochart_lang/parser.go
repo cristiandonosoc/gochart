@@ -593,6 +593,7 @@ type ASTNodeStateTransition struct {
 	Trigger     string
 	TargetState string
 	Condition   string
+	Action      string
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -644,10 +645,30 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 		}
 	}
 
+	// Check if there is an action.
+	var action string
+	if _, ok := p.match(Token_KeywordDo); ok {
+		// We should get a right brace.
+		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
+			return nil, p.pushErrorf(0, "after \"if\": %w", err)
+		}
+		// After we should get a code token.
+		if token, err := p.consumeToken(Token_Code); err != nil {
+			return nil, p.pushErrorf(0, "expected a code token: %w", err)
+		} else {
+			action = token.literal
+		}
+		// We need a right brace.
+		if _, err := p.consumeToken(Token_RightBrace); err != nil {
+			return nil, p.pushErrorf(0, "expected closing brace: %w", err)
+		}
+	}
+
 	transition := &ASTNodeStateTransition{
 		Trigger:     triggerName,
 		TargetState: stateToken.literal,
 		Condition:   condition,
+		Action:      action,
 	}
 
 	p.debuglog("-> parsed transition: %+v", transition)

@@ -138,6 +138,13 @@ NEXT_TOKEN_LOOP:
 			break NEXT_TOKEN_LOOP
 		}
 
+		if actionTokens, ok, err := s.handleAction(); err != nil {
+			return nil, fmt.Errorf("handling action: %w", err)
+		} else if ok {
+			tokens = append(tokens, actionTokens...)
+			break NEXT_TOKEN_LOOP
+		}
+
 		peek, err := s.peek()
 		if err != nil {
 			return nil, fmt.Errorf("peeking rune: %w", err)
@@ -643,6 +650,64 @@ func (s *Scanner) handleConditional() ([]*Token, bool, error) {
 		}
 		if r != '{' {
 			return nil, false, fmt.Errorf("expected \"{\" after \"if\", got %q", r)
+		}
+		tokens = append(tokens, &Token{
+			id:      Token_LeftBrace,
+			literal: string(r),
+			line:    startLine,
+			char:    startChar,
+		})
+	}
+
+	// We can start globbing tokens until we find a closing right brace.
+	// We count how many braces we have found, so that people can write if statements.
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
+
+		runes, err := s.globRunes('{', '}', true, true, true)
+		if err != nil {
+			return nil, false, fmt.Errorf("globbing characters for conditional: %w", err)
+		}
+
+		tokens = append(tokens, &Token{
+			id:      Token_Code,
+			literal: string(runes),
+			line:    startLine,
+			char:    startChar,
+		})
+		tokens = append(tokens, s.newToken(Token_RightBrace, "}"))
+	}
+
+	return tokens, true, nil
+}
+
+func (s *Scanner) handleAction() ([]*Token, bool, error) {
+	tokens := make([]*Token, 0, 4)
+
+	ok, err := s.longMatch("do")
+	if err != nil {
+		return nil, false, fmt.Errorf("long matching \"do\": %w", err)
+	} else if !ok {
+		// If we didn't find the keyword, we just return.
+		return nil, false, nil
+	}
+	tokens = append(tokens, s.newToken(Token_KeywordDo, "do"))
+
+	if err := s.eatWhitespace(); err != nil {
+		return nil, false, fmt.Errorf("eating whitespace: %w", err)
+	}
+
+	// We expect a { after if.
+	{
+		startLine := s.line
+		startChar := s.currentRuneCountInLine
+		r, err := s.pop()
+		if err != nil {
+			return nil, false, fmt.Errorf("popping rune: %w", err)
+		}
+		if r != '{' {
+			return nil, false, fmt.Errorf("expected \"{\" after \"do\", got %q", r)
 		}
 		tokens = append(tokens, &Token{
 			id:      Token_LeftBrace,

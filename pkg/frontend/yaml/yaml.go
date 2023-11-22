@@ -145,6 +145,7 @@ func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.Tr
 		To:        yt.To,
 		Trigger:   yt.Trigger,
 		Condition: yt.Condition,
+		Action:    yt.Action,
 		Index:     index,
 	}
 }

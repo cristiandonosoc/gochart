@@ -25,9 +25,11 @@ func TestGatherTokens(t *testing.T) {
 enter exit
 capture capture if {
 	if (nested) {
-		do whatever
+		if something
 	}
-} do
+} do {
+	do whatever
+}
 `
 
 	r := strings.NewReader(input)
@@ -97,16 +99,27 @@ capture capture if {
 			id: Token_Code,
 			literal: `
 	if (nested) {
-		do whatever
+		if something
 	}
 `,
 			line: 14,
 			char: 20,
 		},
 		{id: Token_RightBrace, literal: "}", line: 18, char: 1},
-		{id: Token_KeywordDo, literal: "do", line: 18, char: 3},
 
-		{id: Token_EOF, line: 19, char: 0},
+		{id: Token_KeywordDo, literal: "do", line: 18, char: 4},
+		{id: Token_LeftBrace, literal: "{", line: 18, char: 5},
+		{
+			id: Token_Code,
+			literal: `
+	do whatever
+`,
+			line: 18,
+			char: 6,
+		},
+		{id: Token_RightBrace, literal: "}", line: 20, char: 1},
+
+		{id: Token_EOF, line: 21, char: 0},
 	}
 
 	s := NewScanner()

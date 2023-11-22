@@ -75,6 +75,7 @@ type TransitionData struct {
 	To        string
 	Trigger   string
 	Condition string
+	Action    string
 
 	// Index represents in what order it was found.
 	Index int

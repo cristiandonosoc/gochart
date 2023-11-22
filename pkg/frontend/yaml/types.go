@@ -41,4 +41,5 @@ type YamlTransition struct {
 	To        string `yaml:"to"`
 	Trigger   string `yaml:"trigger"`
 	Condition string `yaml:"condition"`
+	Action    string `yaml:"action"`
 }

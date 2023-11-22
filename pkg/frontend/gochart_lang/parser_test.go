@@ -64,6 +64,7 @@ func TestReadSimple(t *testing.T) {
 							{
 								Trigger:     "",
 								TargetState: "Third",
+								Action:      " owner->SomeNullAction(); ",
 							},
 							{
 								Trigger:     "Execute",
@@ -90,7 +91,8 @@ func TestReadSimple(t *testing.T) {
 							{
 								Trigger:     "Execute",
 								TargetState: "First",
-								Condition:   " return owner->SomeCondition(); ",
+								Condition:   "\r\n\t\t\treturn owner->SomeCondition();\r\n\t\t",
+								Action:      "\r\n\t\t\towner->ExecuteSomeAction();\r\n\t\t",
 							},
 						},
 					},
@@ -323,6 +325,8 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, want.Condition, got.Condition, "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, want.Action, got.Action, "%s, Transition %d", ctxStr, i)
 		}
 	}
 
