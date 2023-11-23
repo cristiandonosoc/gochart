@@ -53,6 +53,25 @@ const char* ToString({{$namespace}}::EState state)
 	return "<invalid>";
 }
 
+// State Metadata ----------------------------------------------------------------------------------
+
+namespace {{$namespace}}
+{
+
+{{- range $sc.States }}
+{{ $state := . }}
+{{- if gt (len $state.Children) 0 }}
+std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Name}}ChildrenArray = {
+	{{- range $state.Children }}
+	{{- $childState := . }}
+	EState::{{$childState.Name}},
+	{{- end }}{{/* range $state.Children */}}
+};
+{{- end }}
+{{- end }}{{/* range $sc.States */}}
+
+} // namespace {{$namespace}}
+
 // Reaction ----------------------------------------------------------------------------------------
 
 namespace {{$namespace}}
