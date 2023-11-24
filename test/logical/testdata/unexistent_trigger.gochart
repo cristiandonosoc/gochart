@@ -1,0 +1,10 @@
+// --- ERROR BEGIN
+//collecting states: state "Root": collecting captures: cannot find trigger "NonExistent"
+// --- ERROR END
+
+statechart Mumu {
+	state Root {
+		capture NonExistent
+	}
+}
+

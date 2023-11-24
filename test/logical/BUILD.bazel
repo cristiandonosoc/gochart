@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "logical_test",
+    srcs = ["logical_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        "//internal/test_support",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/ir",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
