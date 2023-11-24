@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"container/list"
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
@@ -325,23 +326,37 @@ func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transit
 	return transition, from, nil
 }
 
+// calculateConcurrentness traverse the statechart tree in BFS order and calcualte the concurrent
+// groups.
 func (ih *inputHandler) calculateConcurrentness(state *State) error {
-	// If we're not a concurrent state, we pass our current concurrent group to our children.
-	// Otherwise, we create a new concurrent group for each child.
+	// Create a queue with states to calculate.
+	queue := list.New()
 	for _, child := range state.Children {
-		group := state.ConcurrentGroup
-		if state.Concurrent {
+		queue.PushBack(child)
+	}
+
+	for queue.Len() > 0 {
+		current, ok := queue.Remove(queue.Front()).(*State)
+		if !ok {
+			panic("error casting state to State")
+		}
+		parent := current.Parent
+		if parent == nil {
+			return fmt.Errorf("state %q has a nil parent", current.Name)
+		}
+
+		// If we're not a concurrent state, we pass use the parent concurrent Group.
+		// Otherwise, we create a new concurrent group for each child.
+		group := parent.ConcurrentGroup
+		if parent.Concurrent {
 			ih.nextConcurrentGroup++
 			group = ih.nextConcurrentGroup
 		}
-		child.ConcurrentGroup = group
-	}
+		current.ConcurrentGroup = group
 
-	// Now that we have calculated the groups for the children, we calculate recursively the rest of
-	// the statechart tree.
-	for _, child := range state.Children {
-		if err := ih.calculateConcurrentness(child); err != nil {
-			return fmt.Errorf("calculating correctness for state %q: %w", child.Name, err)
+		// Push the children of this state into the queue.
+		for _, child := range current.Children {
+			queue.PushBack(child)
 		}
 	}
 
