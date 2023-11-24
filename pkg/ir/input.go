@@ -14,6 +14,8 @@ type inputHandler struct {
 	rootStates []*State
 	states     []*State
 
+	nextConcurrentGroup int
+
 	triggerMap map[string]*Trigger
 	stateMap   map[string]*State
 }
@@ -183,6 +185,15 @@ func (ih *inputHandler) collectStates() error {
 		}
 	}
 
+	// Calculate concurrent-ness.
+	// This is better if calculated top down.
+	for _, rootState := range roots {
+		rootState.ConcurrentGroup = ih.nextConcurrentGroup
+		if err := ih.calculateConcurrentness(rootState); err != nil {
+			return fmt.Errorf("calculating concurrentness for root state %q: %w", rootState.Name, err)
+		}
+	}
+
 	ih.rootStates = roots
 	ih.states = states
 	ih.stateMap = stateMap
@@ -312,4 +323,27 @@ func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transit
 	}
 
 	return transition, from, nil
+}
+
+func (ih *inputHandler) calculateConcurrentness(state *State) error {
+	// If we're not a concurrent state, we pass our current concurrent group to our children.
+	// Otherwise, we create a new concurrent group for each child.
+	for _, child := range state.Children {
+		group := state.ConcurrentGroup
+		if state.Concurrent {
+			ih.nextConcurrentGroup++
+			group = ih.nextConcurrentGroup
+		}
+		child.ConcurrentGroup = group
+	}
+
+	// Now that we have calculated the groups for the children, we calculate recursively the rest of
+	// the statechart tree.
+	for _, child := range state.Children {
+		if err := ih.calculateConcurrentness(child); err != nil {
+			return fmt.Errorf("calculating correctness for state %q: %w", child.Name, err)
+		}
+	}
+
+	return nil
 }

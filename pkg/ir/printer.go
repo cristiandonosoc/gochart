@@ -55,7 +55,7 @@ func (ip *irPrinter) printState(state *State) {
 		ip.p.PopIndent()
 	}
 
-	{
+	if len(state.Transitions) > 0 {
 		// Print all the transitions for this state.
 		ip.p.WriteLine("Transitions:")
 		ip.p.PushIndent()
@@ -63,17 +63,24 @@ func (ip *irPrinter) printState(state *State) {
 		ip.p.PopIndent()
 	}
 
-	{
+	if len(state.EnterReactions) > 0 {
 		ip.p.WriteLine("Enter Reactions:")
 		ip.p.PushIndent()
 		ip.printReactions("Enter", state.EnterReactions)
 		ip.p.PopIndent()
 	}
 
-	{
+	if len(state.ExitReactions) > 0 {
 		ip.p.WriteLine("Exit Reactions:")
 		ip.p.PushIndent()
 		ip.printReactions("Exit", state.ExitReactions)
+		ip.p.PopIndent()
+	}
+
+	if len(state.Captures) > 0 {
+		ip.p.WriteLine("Captures:")
+		ip.p.PushIndent()
+		ip.printCaptures(state.Captures)
 		ip.p.PopIndent()
 	}
 
@@ -86,26 +93,23 @@ func (ip *irPrinter) printState(state *State) {
 
 func (ip *irPrinter) printStateOptions(state *State) {
 	ip.p.WriteLine("Default: %v", state.Default)
+	ip.p.WriteLine("Concurrent: %t, ConcurrentGroup: %d", state.Concurrent, state.ConcurrentGroup)
 }
 
 func (ip *irPrinter) printTransitions(transitions []*Transition) {
-	if len(transitions) == 0 {
-		ip.p.WriteLine("No transitions")
-		return
-	}
-
 	for _, transition := range transitions {
 		ip.p.WriteLine("Transition %s > %s", transition.Trigger.SafeName(), transition.To.Name)
 	}
 }
 
 func (ip *irPrinter) printReactions(kind string, reactions []*StateReaction) {
-	if len(reactions) == 0 {
-		ip.p.WriteLine("No %s reactions", kind)
-		return
-	}
-
 	for _, reaction := range reactions {
 		ip.p.WriteLine("%s(%s)", kind, reaction.Trigger.SafeName())
+	}
+}
+
+func (ip *irPrinter) printCaptures(captures []*StateCapture) {
+	for _, capture := range captures {
+		ip.p.WriteLine("Trigger: %s", capture.Trigger.SafeName())
 	}
 }

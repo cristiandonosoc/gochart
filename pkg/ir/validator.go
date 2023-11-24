@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+// validate is called once the complete statechart has been parsed and collected.
+// This means that all options have already been calculated and are certain that the statechart
+// description is not going to change anymore.
 func validate(ih *inputHandler) error {
 	// Validate top level statechart.
 	if err := validateTopLevelStatechart(ih); err != nil {

@@ -2,11 +2,13 @@ package ir
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"slices"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
 	"github.com/stretchr/testify/assert"
@@ -103,10 +105,158 @@ func TestReadSimpleYaml(t *testing.T) {
 		}
 	}
 
-	if assert.Equal(t, len(wantStates), len(sc.States), "Different amount of states") {
-		for i := 0; i < len(wantStates); i++ {
-			want := wantStates[i]
-			got := sc.States[i]
+	wantRootStates := []*State{
+		ith.findState(t, "StateA"),
+	}
+
+	if assert.Equal(t, len(wantRootStates), len(sc.Roots), "Different amount of root states") {
+		for i := 0; i < len(wantRootStates); i++ {
+			want := wantRootStates[i]
+			got := sc.Roots[i]
+
+			compareState(t, want, got)
+		}
+	}
+}
+
+func TestConcurrentGroups(t *testing.T) {
+	wantTriggers := []*Trigger{
+		{
+			Name: "SomeTrigger",
+		},
+	}
+
+	wantStates := []*State{
+		{
+			Name:            "A",
+			ConcurrentGroup: 0,
+		},
+		{
+			Name:            "B",
+			Default:         true,
+			ConcurrentGroup: 0,
+		},
+		{
+			Name:            "C",
+			Concurrent:      true,
+			ConcurrentGroup: 0,
+		},
+		{
+			Name:            "D",
+			Default:         true,
+			Concurrent:      true,
+			ConcurrentGroup: 0,
+		},
+		{
+			Name:            "E",
+			ConcurrentGroup: 3,
+		},
+		{
+			Name:            "F",
+			Concurrent:      true,
+			ConcurrentGroup: 4,
+		},
+		{
+			Name:            "G",
+			ConcurrentGroup: 5,
+		},
+		{
+			Name:            "H",
+			Default:         true,
+			ConcurrentGroup: 1,
+		},
+		{
+			Name:            "I",
+			ConcurrentGroup: 2,
+		},
+		{
+			Name:            "J",
+			Default:         true,
+			ConcurrentGroup: 3,
+		},
+		{
+			Name:            "K",
+			ConcurrentGroup: 3,
+		},
+		{
+			Name:            "L",
+			Default:         true,
+			ConcurrentGroup: 6,
+		},
+		{
+			Name:            "M",
+			ConcurrentGroup: 7,
+		},
+		{
+			Name:            "N",
+			Default:         true,
+			ConcurrentGroup: 5,
+		},
+		{
+			Name:            "O",
+			ConcurrentGroup: 5,
+		},
+	}
+
+	ith := &inputTestHelper{
+		triggers: wantTriggers,
+		states:   wantStates,
+	}
+
+	ith.setParenthood(t, "A", "B", "C")
+	ith.setParenthood(t, "B", "D")
+	ith.setParenthood(t, "C", "E", "F", "G")
+	ith.setParenthood(t, "D", "H", "I")
+	ith.setParenthood(t, "E", "J", "K")
+	ith.setParenthood(t, "F", "L", "M")
+	ith.setParenthood(t, "G", "N", "O")
+
+	ith.setCapture(t, "H", "SomeTrigger", "")
+	ith.setCapture(t, "I", "SomeTrigger", "")
+	ith.setCapture(t, "J", "SomeTrigger", "")
+	ith.setCapture(t, "K", "SomeTrigger", "")
+	ith.setCapture(t, "L", "SomeTrigger", "")
+	ith.setCapture(t, "M", "SomeTrigger", "")
+	ith.setCapture(t, "N", "SomeTrigger", "")
+	ith.setCapture(t, "O", "SomeTrigger", "")
+
+	yf, err := gochart_lang.NewGochartLangFrontend()
+	require.NoError(t, err)
+
+	path, err := test_support.RunfilePath("testdata/concurrent.gochart")
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	scdata, err := yf.Process(bytes.NewReader(data))
+	require.NoError(t, err)
+	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
+	require.Equal(t, len(wantStates), len(scdata.States))
+
+	sc, err := ProcessStatechartData(scdata)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Concurrent", sc.Name)
+
+	if assert.Equal(t, len(wantTriggers), len(sc.Triggers), "Different amount of triggers") {
+		for i := 0; i < len(wantTriggers); i++ {
+			want := wantTriggers[i]
+			got := sc.Triggers[i]
+
+			compareTrigger(t, want, got)
+		}
+	}
+
+	wantRootStates := []*State{
+		ith.findState(t, "A"),
+	}
+
+	if assert.Equal(t, len(wantRootStates), len(sc.Roots), "Different amount of root states") {
+		// Only compare the root states.
+		for i := 0; i < len(wantRootStates); i++ {
+			want := wantRootStates[i]
+			got := sc.Roots[i]
 
 			compareState(t, want, got)
 		}
@@ -129,7 +279,15 @@ func compareTrigger(t *testing.T, want, got *Trigger) {
 }
 
 func compareState(t *testing.T, want, got *State) {
-	assert.Equal(t, want.Name, got.Name)
+	if !assert.Equal(t, want.Name, got.Name, "Parent: %s", want.Parent.SafeName()) {
+		return
+	}
+
+	ctxStr := fmt.Sprintf("State: %s", want.Name)
+
+	// Compare concurrentness.
+	assert.Equal(t, want.Concurrent, got.Concurrent, ctxStr)
+	assert.Equal(t, want.ConcurrentGroup, got.ConcurrentGroup, ctxStr)
 
 	// Compare the enter reactions.
 	compareReactions(t, want, want.EnterReactions, got.EnterReactions)
@@ -143,7 +301,7 @@ func compareState(t *testing.T, want, got *State) {
 	// Compare that we have the same parent.
 	// We only compare name, as otherwise we have a recursive call.
 	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
-		assert.Equal(t, want.Parent.Name, got.Parent.Name)
+		assert.Equal(t, want.Parent.Name, got.Parent.Name, ctxStr)
 	}
 
 	// Compare that we have the same children.
@@ -252,12 +410,14 @@ func (ith *inputTestHelper) findTrigger(t *testing.T, name string) *Trigger {
 	return ith.triggers[i]
 }
 
-func (ith *inputTestHelper) setParenthood(t *testing.T, parentName, childName string) {
-	state := ith.findState(t, childName)
+func (ith *inputTestHelper) setParenthood(t *testing.T, parentName string, childNames ...string) {
 	parent := ith.findState(t, parentName)
 
-	state.Parent = parent
-	parent.Children = append(parent.Children, state)
+	for _, childName := range childNames {
+		state := ith.findState(t, childName)
+		state.Parent = parent
+		parent.Children = append(parent.Children, state)
+	}
 }
 
 func (ith *inputTestHelper) setTransition(t *testing.T, fromName, toName, triggerName, condition, action string) {

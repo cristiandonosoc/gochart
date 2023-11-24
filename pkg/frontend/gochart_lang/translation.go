@@ -50,9 +50,10 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	index := ft.stateIndex
 	ft.stateIndex++
 	state := &output.StateData{
-		Name:   ns.Name,
-		Parent: ns.ParentName,
-		Index:  index,
+		Name:    ns.Name,
+		Parent:  ns.ParentName,
+		Options: ft.translateOptions(ns.Options),
+		Index:   index,
 	}
 
 	for _, er := range ns.EnterReactions {
@@ -92,4 +93,17 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	}
 
 	return states, transitions
+}
+
+func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.OptionData {
+	options := make([]*output.OptionData, 0, len(nos))
+	for _, no := range nos {
+		options = append(options, &output.OptionData{
+			Name:  no.Name,
+			Kind:  no.ValueKind,
+			Value: no.Value,
+		})
+	}
+
+	return options
 }

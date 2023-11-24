@@ -1,0 +1,50 @@
+statechart Concurrent {
+
+	trigger SomeTrigger()
+
+	state A {
+		state B {
+			state D(concurrent) {
+				state H {
+					capture SomeTrigger
+				}
+
+				state I {
+					capture SomeTrigger
+				}
+			}
+		}
+
+		state C(concurrent) {
+			state E {
+				state J {
+					capture SomeTrigger
+				}
+
+				state K {
+					capture SomeTrigger
+				}
+			}
+
+			state F(concurrent) {
+				state L {
+					capture SomeTrigger
+				}
+
+				state M {
+					capture SomeTrigger
+				}
+			}
+
+			state G {
+				state N {
+					capture SomeTrigger
+				}
+
+				state O {
+					capture SomeTrigger
+				}
+			}
+		}
+	}
+}

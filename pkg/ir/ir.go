@@ -93,6 +93,9 @@ type State struct {
 	Name    string
 	Default bool
 
+	Concurrent      bool
+	ConcurrentGroup int
+
 	Options []*Option
 
 	// States represents the substates that this state has.

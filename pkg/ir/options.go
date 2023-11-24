@@ -24,6 +24,13 @@ var (
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),
 		},
+		"concurrent": {
+			Name:        "concurrent",
+			Scope:       "state",
+			Kind:        output.OptionValueKind_Boolean,
+			Description: "Whether this state is to be considered a concurrent one.",
+			Handler:     StateOptionHandler(parseStateOption_Concurrent),
+		},
 	}
 )
 
@@ -143,5 +150,10 @@ func parseStateOptions(state *State, frontendOptions []*output.OptionData) error
 
 func parseStateOption_Default(state *State, option *Option) error {
 	state.Default = option.BoolValue()
+	return nil
+}
+
+func parseStateOption_Concurrent(state *State, option *Option) error {
+	state.Concurrent = option.BoolValue()
 	return nil
 }
