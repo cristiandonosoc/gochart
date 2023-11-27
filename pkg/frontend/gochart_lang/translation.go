@@ -5,13 +5,13 @@ import (
 )
 
 type frontendTranslator struct {
-	triggerIndex    int
-	stateIndex      int
-	transitionIndex int
+	lf *output.LoadedFile
 }
 
-func newFrontendTranslator() *frontendTranslator {
-	return &frontendTranslator{}
+func newFrontendTranslator(lf *output.LoadedFile) *frontendTranslator {
+	return &frontendTranslator{
+		lf: lf,
+	}
 }
 
 func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *output.StatechartData {
@@ -29,31 +29,28 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *outpu
 	}
 
 	return &output.StatechartData{
-		Name:        nsc.Name,
-		Triggers:    triggers,
-		States:      states,
-		Transitions: transitions,
+		Name:             nsc.Name,
+		Triggers:         triggers,
+		States:           states,
+		Transitions:      transitions,
+		FrontendPosition: ft.tokenToPosition(nsc.token),
 	}
 }
 
 func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.TriggerData {
-	index := ft.triggerIndex
-	ft.triggerIndex += 1
 	return &output.TriggerData{
-		Name:       nt.Name,
-		ArgsString: nt.ArgsString,
-		Index:      index,
+		Name:             nt.Name,
+		ArgsString:       nt.ArgsString,
+		FrontendPosition: ft.tokenToPosition(nt.token),
 	}
 }
 
 func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.StateData, transitions []*output.TransitionData) ([]*output.StateData, []*output.TransitionData) {
-	index := ft.stateIndex
-	ft.stateIndex++
 	state := &output.StateData{
-		Name:    ns.Name,
-		Parent:  ns.ParentName,
-		Options: ft.translateOptions(ns.Options),
-		Index:   index,
+		Name:             ns.Name,
+		Parent:           ns.ParentName,
+		Options:          ft.translateOptions(ns.Options),
+		FrontendPosition: ft.tokenToPosition(ns.token),
 	}
 
 	for _, er := range ns.EnterReactions {
@@ -67,22 +64,21 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 
 	for _, c := range ns.Captures {
 		state.Captures = append(state.Captures, &output.CaptureData{
-			Trigger:   c.Trigger,
-			Condition: c.Condition,
+			Trigger:          c.Trigger,
+			Condition:        c.Condition,
+			FrontendPosition: ft.tokenToPosition(c.token),
 		})
 	}
 
 	// Collect the transitions.
 	for _, t := range ns.Transitions {
-		index := ft.transitionIndex
-		ft.transitionIndex++
 		transition := &output.TransitionData{
-			From:      ns.Name,
-			To:        t.TargetState,
-			Trigger:   t.Trigger,
-			Condition: t.Condition,
-			Action:    t.Action,
-			Index:     index,
+			From:             ns.Name,
+			To:               t.TargetState,
+			Trigger:          t.Trigger,
+			Condition:        t.Condition,
+			Action:           t.Action,
+			FrontendPosition: ft.tokenToPosition(t.token),
 		}
 		transitions = append(transitions, transition)
 	}
@@ -99,11 +95,24 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.O
 	options := make([]*output.OptionData, 0, len(nos))
 	for _, no := range nos {
 		options = append(options, &output.OptionData{
-			Name:  no.Name,
-			Kind:  no.ValueKind,
-			Value: no.Value,
+			Name:             no.Name,
+			Kind:             no.ValueKind,
+			Value:            no.Value,
+			FrontendPosition: ft.tokenToPosition(no.token),
 		})
 	}
 
 	return options
+}
+
+func (ft *frontendTranslator) tokenToPosition(token *Token) *output.LoadedFilePosition {
+	if token == nil {
+		return nil
+	}
+
+	return &output.LoadedFilePosition{
+		File: ft.lf,
+		Line: token.line,
+		Char: token.char,
+	}
 }

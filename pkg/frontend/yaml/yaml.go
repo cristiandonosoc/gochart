@@ -69,22 +69,18 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *output.S
 }
 
 func (ft *frontendTranslator) translateTrigger(yt *YamlTrigger) *output.TriggerData {
-	index := ft.triggerIndex
 	ft.triggerIndex += 1
 	return &output.TriggerData{
 		Name:       yt.Name,
 		ArgsString: yt.ArgsString,
-		Index:      index,
 	}
 }
 
 func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
-	index := ft.stateIndex
 	ft.stateIndex++
 	state := &output.StateData{
 		Name:   ys.Name,
 		Parent: ys.Parent,
-		Index:  index,
 	}
 
 	for _, opt := range ys.Options {
@@ -131,7 +127,6 @@ func (ft *frontendTranslator) translateOption(yso *YamlOption) *output.OptionDat
 }
 
 func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.TransitionData {
-	index := ft.transitionIndex
 	ft.transitionIndex++
 
 	return &output.TransitionData{
@@ -140,6 +135,5 @@ func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.Tr
 		Trigger:   yt.Trigger,
 		Condition: yt.Condition,
 		Action:    yt.Action,
-		Index:     index,
 	}
 }

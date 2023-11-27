@@ -64,7 +64,7 @@ func (glf *gochartLangFrontend) Process(lf *output.LoadedFile) (*output.Statecha
 		return nil, fmt.Errorf("For now only one statechart is supported per file")
 	}
 
-	ft := newFrontendTranslator()
+	ft := newFrontendTranslator(lf)
 	scdata := ft.translateStatechart(root.statecharts[0])
 
 	return scdata, nil

@@ -104,6 +104,8 @@ type ASTNodeStatechart struct {
 	Name     string
 	Triggers []*ASTNodeTrigger
 	States   []*ASTNodeState
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
@@ -112,7 +114,8 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	p.debuglog("parsing statechart node")
 
 	// statechart keyword.
-	if _, err := p.consumeToken(Token_KeywordStatechart); err != nil {
+	baseToken, err := p.consumeToken(Token_KeywordStatechart)
+	if err != nil {
 		return nil, p.pushErrorf(0, err.Error())
 	}
 
@@ -143,7 +146,8 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	sc := &ASTNodeStatechart{
-		Name: name,
+		Name:  name,
+		token: baseToken,
 	}
 
 	{
@@ -232,6 +236,8 @@ type ASTNodeOption struct {
 	Name      string
 	ValueKind output.OptionValueKind
 	Value     string
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeOption)(nil)
@@ -240,7 +246,7 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 	p.debuglog("-> parsing state option")
 
 	// The name.
-	name, err := p.consumeTokenLiteral(Token_Identifier)
+	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
 		return nil, p.pushErrorf(0, "after \"trigger\" keyword")
 	}
@@ -276,9 +282,10 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 	}
 
 	option := &ASTNodeOption{
-		Name:      name,
+		Name:      nameToken.literal,
 		ValueKind: valueKind,
 		Value:     value,
+		token:     nameToken,
 	}
 
 	p.debuglog("-> -> parsed option: %+v", option)
@@ -313,7 +320,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 
 	switch stmtToken.id {
 	case Token_KeywordTrigger:
-		trigger, err := p.parseTrigger(stmtToken.id)
+		trigger, err := p.parseTrigger(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
@@ -322,7 +329,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 
 	case Token_KeywordState:
 		p.debuglog("parsing root state")
-		state, err := p.parseState(nil, stmtToken.id)
+		state, err := p.parseState(nil, stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing root state: %w", err)
 		}
@@ -341,15 +348,17 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 type ASTNodeTrigger struct {
 	Name       string
 	ArgsString string
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
 
-func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, error) {
+func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 	p.debuglog("parsing trigger node")
 
-	if stmtTokenId != Token_KeywordTrigger {
-		return nil, p.pushInternalErrorf(0, "expected 'trigger' keyword, got: %q", stmtTokenId)
+	if baseToken.id != Token_KeywordTrigger {
+		return nil, p.pushInternalErrorf(0, "expected 'trigger' keyword, got: %q", baseToken.id)
 	}
 
 	// The name.
@@ -381,6 +390,7 @@ func (p *Parser) parseTrigger(stmtTokenId TokenIdentifier) (*ASTNodeTrigger, err
 	trigger := &ASTNodeTrigger{
 		Name:       name,
 		ArgsString: args,
+		token:      baseToken,
 	}
 
 	p.debuglog("-> parsed trigger: %+v", trigger)
@@ -402,15 +412,17 @@ type ASTNodeState struct {
 	Transitions    []*ASTNodeStateTransition
 	Captures       []*ASTNodeStateCapture
 	Children       []*ASTNodeState
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
 
-func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (*ASTNodeState, error) {
+func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeState, error) {
 	p.debuglog("parsing state node")
 
-	if stmtTokenId != Token_KeywordState {
-		return nil, p.pushInternalErrorf(0, "expected \"state\" keyword, got: %q", stmtTokenId)
+	if baseToken.id != Token_KeywordState {
+		return nil, p.pushInternalErrorf(0, "expected \"state\" keyword, got: %q", baseToken.id)
 	}
 
 	// The name.
@@ -446,6 +458,7 @@ func (p *Parser) parseState(parent *ASTNodeState, stmtTokenId TokenIdentifier) (
 		Name:       name,
 		Options:    options,
 		ParentName: parentName,
+		token:      baseToken,
 	}
 
 	// The body.
@@ -526,7 +539,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		state.ExitReactions = append(state.ExitReactions, reaction)
 		return true, nil
 	case Token_KeywordTransition:
-		transition, err := p.parseStateTransition(stmtToken.id)
+		transition, err := p.parseStateTransition(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing transition: %w", err)
 		}
@@ -534,7 +547,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		return true, nil
 	case Token_KeywordCapture:
 		p.debuglog("parsing state capture reaction")
-		capture, err := p.parseStateCapture(stmtToken.id)
+		capture, err := p.parseStateCapture(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing capture: %w", err)
 		}
@@ -542,7 +555,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		return true, nil
 	case Token_KeywordState:
 		p.debuglog("parsing child state node")
-		child, err := p.parseState(state, stmtToken.id)
+		child, err := p.parseState(state, stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing child state: %w", err)
 		}
@@ -594,15 +607,17 @@ type ASTNodeStateTransition struct {
 	TargetState string
 	Condition   string
 	Action      string
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
 
-func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateTransition, error) {
+func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition, error) {
 	p.debuglog("parsing state transition node")
 
-	if stmtToken != Token_KeywordTransition {
-		return nil, p.pushInternalErrorf(0, "unexpected token: expected \"transition\", got: %q", stmtToken)
+	if baseToken.id != Token_KeywordTransition {
+		return nil, p.pushInternalErrorf(0, "unexpected token: expected \"transition\", got: %q", baseToken.id)
 	}
 
 	// Check if it's a null transition. If not, we expected an identifier.
@@ -669,6 +684,7 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 		TargetState: stateToken.literal,
 		Condition:   condition,
 		Action:      action,
+		token:       baseToken,
 	}
 
 	p.debuglog("-> parsed transition: %+v", transition)
@@ -682,15 +698,17 @@ func (p *Parser) parseStateTransition(stmtToken TokenIdentifier) (*ASTNodeStateT
 type ASTNodeStateCapture struct {
 	Trigger   string
 	Condition string
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
 
-func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapture, error) {
+func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, error) {
 	p.debuglog("parsing state capture node")
 
-	if stmtToken != Token_KeywordCapture {
-		return nil, p.pushInternalErrorf(0, "unexpected token: expected \"capture\", got: %q", stmtToken)
+	if baseToken.id != Token_KeywordCapture {
+		return nil, p.pushInternalErrorf(0, "unexpected token: expected \"capture\", got: %q", baseToken.id)
 	}
 
 	// The trigger name.
@@ -721,6 +739,7 @@ func (p *Parser) parseStateCapture(stmtToken TokenIdentifier) (*ASTNodeStateCapt
 	capture := &ASTNodeStateCapture{
 		Trigger:   triggerName,
 		Condition: condition,
+		token:     baseToken,
 	}
 
 	p.debuglog("-> parsed capture: %+v", capture)

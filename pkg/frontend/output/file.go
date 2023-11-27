@@ -14,6 +14,13 @@ type LoadedFile struct {
 	Lines []string
 }
 
+// LoadedFilePosition represents a character position within a loaded file.
+type LoadedFilePosition struct {
+	File *LoadedFile
+	Line int
+	Char int
+}
+
 // LoadFileFromPath reads the contents of a file from path and caches it in convenient ways so that
 // the rest of the compiler can benefit from it.
 func LoadFileFromPath(path string) (*LoadedFile, error) {

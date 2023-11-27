@@ -12,6 +12,8 @@ type StatechartData struct {
 	Triggers    []*TriggerData
 	States      []*StateData
 	Transitions []*TransitionData
+
+	FrontendPosition *LoadedFilePosition
 }
 
 type OptionValueKind int
@@ -33,21 +35,21 @@ func (ovk OptionValueKind) String() string {
 	default:
 		panic(fmt.Sprintf("unknown OptionValueKind %v", int(ovk)))
 	}
-
 }
 
 type OptionData struct {
 	Name  string
 	Kind  OptionValueKind
 	Value string
+
+	FrontendPosition *LoadedFilePosition
 }
 
 type TriggerData struct {
 	Name       string
 	ArgsString string
 
-	// Index represents in what order it was found.
-	Index int
+	FrontendPosition *LoadedFilePosition
 }
 
 type StateData struct {
@@ -56,18 +58,20 @@ type StateData struct {
 
 	Options []*OptionData
 
+	// TODO(cdc): Reactions should be its own struct, so we can append position data.
 	EnterReactions []string
 	ExitReactions  []string
 
 	Captures []*CaptureData
 
-	// Index represents in what order it was found.
-	Index int
+	FrontendPosition *LoadedFilePosition
 }
 
 type CaptureData struct {
 	Trigger   string
 	Condition string
+
+	FrontendPosition *LoadedFilePosition
 }
 
 type TransitionData struct {
@@ -77,8 +81,7 @@ type TransitionData struct {
 	Condition string
 	Action    string
 
-	// Index represents in what order it was found.
-	Index int
+	FrontendPosition *LoadedFilePosition
 }
 
 func (tdata *TransitionData) String() string {
