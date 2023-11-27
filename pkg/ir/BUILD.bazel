@@ -29,6 +29,7 @@ go_test(
     deps = [
         "//internal/test_support",
         "//pkg/frontend/gochart_lang",
+        "//pkg/frontend/output",
         "//pkg/frontend/yaml",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

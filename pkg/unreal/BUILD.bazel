@@ -15,6 +15,7 @@ go_library(
         "//pkg/backend",
         "//pkg/backend/cpp",
         "//pkg/frontend",
+        "//pkg/frontend/output",
         "//pkg/ir",
         "@org_golang_x_sync//errgroup",
     ],

@@ -1,33 +1,38 @@
 // --- ERROR BEGIN
 //
 //Scanner error:
-//   1:
-//   2: statechart @asda@@@ {
+//  35:
+//  36:
+//  37: statechart @asda@@@ {
 //                 ^---> unrecognized character '@'
-//   3:
-//   4: }
+//  38:
+//  39: }
 //
 //Scanner error:
-//   1:
-//   2: statechart @asda@@@ {
+//  35:
+//  36:
+//  37: statechart @asda@@@ {
 //                      ^---> unrecognized character '@'
-//   3:
-//   4: }
+//  38:
+//  39: }
 //
 //Scanner error:
-//   1:
-//   2: statechart @asda@@@ {
+//  35:
+//  36:
+//  37: statechart @asda@@@ {
 //                       ^---> unrecognized character '@'
-//   3:
-//   4: }
+//  38:
+//  39: }
 //
 //Scanner error:
-//   1:
-//   2: statechart @asda@@@ {
+//  35:
+//  36:
+//  37: statechart @asda@@@ {
 //                        ^---> unrecognized character '@'
-//   3:
-//   4: }
+//  38:
+//  39: }
 // --- ERROR END
+
 
 statechart @asda@@@ {
 

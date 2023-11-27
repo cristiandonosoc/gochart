@@ -4,10 +4,11 @@ package gochart_lang
 
 import (
 	"fmt"
-	"io"
 	"slices"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 // ScanError is a custom error associated with scanning.
@@ -23,7 +24,7 @@ func (se *ScanError) Error() string {
 // Scanner is an object capable of taking in a reader and scanning over to create a valid
 // representation of our statechart grammar.
 type Scanner struct {
-	source string
+	lf *output.LoadedFile
 
 	// We count our characters in runes, which could be more than one byte, because we support utf8,
 	// mostly because we're cool.
@@ -67,17 +68,11 @@ func (s *Scanner) reset() {
 	s.line = 1
 }
 
-func (s *Scanner) gatherTokens(r io.Reader) ([]*Token, []error) {
+func (s *Scanner) gatherTokens(lf *output.LoadedFile) ([]*Token, []error) {
 	// Forget any previous state before scanning.
 	s.reset()
-
-	// Read all the input into the source string.
-	if b, err := io.ReadAll(r); err != nil {
-		return nil, []error{fmt.Errorf("reading input reader: %w", err)}
-	} else {
-		s.source = string(b)
-	}
-	s.totalRunes = utf8.RuneCountInString(s.source)
+	s.lf = lf
+	s.totalRunes = utf8.RuneCount(lf.Data)
 
 	var tokens []*Token
 	var errors []error
@@ -295,7 +290,7 @@ func (s *Scanner) peek() (rune, error) {
 	}
 
 	// We decode the rune to where we're current pointing in the string byte array.
-	r, _ := utf8.DecodeRuneInString(s.source[s.currentByteCount:])
+	r, _ := utf8.DecodeRune(s.lf.Data[s.currentByteCount:])
 	if r == utf8.RuneError {
 		return utf8.RuneError, fmt.Errorf("invalid rune")
 	}
@@ -332,7 +327,7 @@ func (s *Scanner) longMatch(want string) (bool, error) {
 
 	offset := s.currentByteCount
 	for _, wantRune := range want {
-		gotRune, _ := utf8.DecodeRuneInString(s.source[offset:])
+		gotRune, _ := utf8.DecodeRune(s.lf.Data[offset:])
 
 		if wantRune != gotRune {
 			return false, nil

@@ -1,12 +1,14 @@
 // --- ERROR BEGIN
 //
 //Parser error:
-//   1: statechart mumu {
-//   2: 	statechart mumu2 {
+//  11:
+//  12: statechart mumu {
+//  13: 	statechart mumu2 {
 //      	^---> expected token to be in [trigger state], got "statechart"
-//   3:
-//   4: 	}
+//  14:
+//  15: 	}
 // --- ERROR END
+
 statechart mumu {
 	statechart mumu2 {
 

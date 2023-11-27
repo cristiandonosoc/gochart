@@ -4,7 +4,6 @@ package frontend
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -21,7 +20,7 @@ import (
 type GochartFrontend interface {
 	// Process takes the content describing input for this frontend and is meant to return frontend
 	// data that can then be consumed by others parts of the program, mostly the |ir| package.
-	Process(r io.Reader) (*output.StatechartData, error)
+	Process(lf *output.LoadedFile) (*output.StatechartData, error)
 }
 
 type frontendFactory func(*cli.Context) (GochartFrontend, error)

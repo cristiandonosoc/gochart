@@ -1,11 +1,11 @@
 package gochart_lang
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
+
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 const (
@@ -116,27 +116,16 @@ func (fe *frontendError) Render(lines []string) string {
 }
 
 type FrontendErrorContainer struct {
-	Lines  []string
 	Errors []error
+	lf     *output.LoadedFile
 }
 
 var _ error = (*FrontendErrorContainer)(nil)
 
-func NewFrontendErrorContainer(r io.Reader, errors []error) *FrontendErrorContainer {
-	var lines []string
-	scanner := bufio.NewScanner(r)
-
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	if scanner.Err() != nil {
-		panic(scanner.Err())
-	}
-
+func NewFrontendErrorContainer(lf *output.LoadedFile, errors []error) *FrontendErrorContainer {
 	return &FrontendErrorContainer{
-		Lines:  lines,
 		Errors: errors,
+		lf:     lf,
 	}
 }
 
@@ -144,7 +133,7 @@ func (fec *FrontendErrorContainer) Error() string {
 	errorStrings := make([]string, 0, len(fec.Errors))
 	for _, err := range fec.Errors {
 		if fe, ok := err.(*frontendError); ok {
-			errorStrings = append(errorStrings, fe.Render(fec.Lines))
+			errorStrings = append(errorStrings, fe.Render(fec.lf.Lines))
 		} else {
 			errorStrings = append(errorStrings, err.Error())
 		}

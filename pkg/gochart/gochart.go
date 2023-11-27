@@ -3,14 +3,13 @@
 package gochart
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -27,12 +26,12 @@ func NewGochartCompiler(gf frontend.GochartFrontend, gb backend.GochartBackend) 
 }
 
 func (gc *GochartCompiler) PrintFrontend(path string, w io.Writer) error {
-	data, err := os.ReadFile(path)
+	lf, err := output.LoadFileFromPath(path)
 	if err != nil {
-		return fmt.Errorf("reading file %q: %w", path, err)
+		return fmt.Errorf("loading file: %w", err)
 	}
 
-	frontendData, err := gc.Frontend.Process(bytes.NewReader(data))
+	frontendData, err := gc.Frontend.Process(lf)
 	if err != nil {
 		return fmt.Errorf("processing frontend: %w", err)
 	}
@@ -44,12 +43,12 @@ func (gc *GochartCompiler) PrintFrontend(path string, w io.Writer) error {
 }
 
 func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
-	data, err := os.ReadFile(path)
+	lf, err := output.LoadFileFromPath(path)
 	if err != nil {
-		return fmt.Errorf("reading file %q: %w", path, err)
+		return fmt.Errorf("loading file: %w", err)
 	}
 
-	frontendData, err := gc.Frontend.Process(bytes.NewReader(data))
+	frontendData, err := gc.Frontend.Process(lf)
 	if err != nil {
 		return fmt.Errorf("processing statechart: %w", err)
 	}
@@ -71,12 +70,12 @@ type BackendOutput struct {
 }
 
 func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*BackendOutput, error) {
-	data, err := os.ReadFile(path)
+	lf, err := output.LoadFileFromPath(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading file %q: %w", path, err)
+		return nil, fmt.Errorf("loading file: %w", err)
 	}
 
-	frontendData, err := gc.Frontend.Process(bytes.NewReader(data))
+	frontendData, err := gc.Frontend.Process(lf)
 	if err != nil {
 		return nil, fmt.Errorf("processing statechart: %w", err)
 	}

@@ -3,10 +3,12 @@ package gochart_lang
 import (
 	"fmt"
 	"slices"
-	"strings"
 	"testing"
 
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGatherTokens(t *testing.T) {
@@ -31,8 +33,6 @@ capture capture if {
 	do whatever
 }
 `
-
-	r := strings.NewReader(input)
 
 	want := []*Token{
 		{id: Token_LeftParen, literal: "(", line: 3, char: 1},
@@ -122,8 +122,11 @@ capture capture if {
 		{id: Token_EOF, line: 21, char: 0},
 	}
 
+	lf, err := output.LoadFile([]byte(input))
+	require.NoError(t, err)
+
 	s := NewScanner()
-	got, errors := s.gatherTokens(r)
+	got, errors := s.gatherTokens(lf)
 	assert.Empty(t, errors)
 	if errors == nil {
 		compareTokens(t, want, got)

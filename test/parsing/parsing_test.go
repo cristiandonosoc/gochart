@@ -2,13 +2,12 @@ package parsing
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,13 +23,13 @@ func TestParsing(t *testing.T) {
 	for _, rf := range runfiles {
 
 		t.Run(filepath.Base(rf), func(t *testing.T) {
-			data, err := os.ReadFile(rf)
+			lf, err := output.LoadFileFromPath(rf)
 			require.NoError(t, err)
 
-			normalText, wantErrorText, err := test_support.ExtractExpectedError(t, bytes.NewReader(data))
+			_, wantErrorText, err := test_support.ExtractExpectedError(t, bytes.NewReader(lf.Data))
 			require.NoError(t, err)
 
-			_, gotErr := gf.Process(strings.NewReader(normalText))
+			_, gotErr := gf.Process(lf)
 
 			if wantErrorText == "" {
 				require.NoError(t, gotErr)

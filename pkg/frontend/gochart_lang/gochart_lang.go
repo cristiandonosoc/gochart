@@ -3,9 +3,7 @@
 package gochart_lang
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
@@ -49,22 +47,17 @@ func NewGochartLangFrontend(opts ...option.Option) (*gochartLangFrontend, error)
 	}, nil
 }
 
-func (glf *gochartLangFrontend) Process(r io.Reader) (*output.StatechartData, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("reading input reader: %w", err)
-	}
-
+func (glf *gochartLangFrontend) Process(lf *output.LoadedFile) (*output.StatechartData, error) {
 	scanner := NewScanner()
-	tokens, errors := scanner.gatherTokens(bytes.NewReader(data))
+	tokens, errors := scanner.gatherTokens(lf)
 	if len(errors) > 0 {
-		return nil, NewFrontendErrorContainer(bytes.NewReader(data), errors)
+		return nil, NewFrontendErrorContainer(lf, errors)
 	}
 
 	parser := NewParser(glf.options)
 	root, errors := parser.Parse(tokens)
 	if len(errors) > 0 {
-		return nil, NewFrontendErrorContainer(bytes.NewReader(data), errors)
+		return nil, NewFrontendErrorContainer(lf, errors)
 	}
 
 	if len(root.statecharts) != 1 {

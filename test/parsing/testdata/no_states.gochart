@@ -1,9 +1,9 @@
 // --- ERROR BEGIN
 //
 //Parser error:
-//   2: statechart mumu {
-//   3:
-//   4: }
+//  10: statechart mumu {
+//  11:
+//  12: }
 //      ^---> empty statechart found, need at least one statement
 // --- ERROR END
 

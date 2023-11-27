@@ -1,7 +1,6 @@
 package gochart_lang
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -13,11 +12,11 @@ import (
 )
 
 func TestReadSimple(t *testing.T) {
-	data, err := test_support.ReadRunfile("testdata/example.gochart")
+	lf, err := test_support.LoadRunfile("testdata/example.gochart")
 	require.NoError(t, err)
 
 	scanner := NewScanner()
-	tokens, errors := scanner.gatherTokens(bytes.NewReader(data))
+	tokens, errors := scanner.gatherTokens(lf)
 	require.Empty(t, errors)
 
 	parser := NewParser(&Options{})

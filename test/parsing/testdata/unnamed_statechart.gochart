@@ -1,12 +1,14 @@
 // --- ERROR BEGIN
 //
 //Parser error:
-//   1:
-//   2: statechart {
+//  11:
+//  12:
+//  13: statechart {
 //                 ^---> after "statechart" keyword: expected "<identifier>", but got "{"
-//   3:
-//   4: }
+//  14:
+//  15: }
 // --- ERROR END
+
 
 statechart {
 

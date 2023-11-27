@@ -1,14 +1,13 @@
 package ir
 
 import (
-	"bytes"
 	"fmt"
-	"os"
 	"slices"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
 	"github.com/stretchr/testify/assert"
@@ -83,10 +82,10 @@ func TestReadSimpleYaml(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/simple.yaml")
 	require.NoError(t, err)
 
-	data, err := os.ReadFile(path)
+	lf, err := output.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(bytes.NewReader(data))
+	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
 	require.Equal(t, len(wantStates), len(scdata.States))
@@ -226,10 +225,10 @@ func TestConcurrentGroups(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/concurrent.gochart")
 	require.NoError(t, err)
 
-	data, err := os.ReadFile(path)
+	lf, err := output.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(bytes.NewReader(data))
+	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
 	require.Equal(t, len(wantStates), len(scdata.States))

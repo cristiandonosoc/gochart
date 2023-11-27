@@ -1,12 +1,14 @@
 // --- ERROR BEGIN
 //
 //Parser error:
-//   1: statechart mumu {
-//   2: 	state {
+//  11:
+//  12: statechart mumu {
+//  13: 	state {
 //      	      ^---> after "state" keyword: expected "<identifier>", but got "{"
-//   3:
-//   4: 	}
+//  14:
+//  15: 	}
 // --- ERROR END
+
 statechart mumu {
 	state {
 

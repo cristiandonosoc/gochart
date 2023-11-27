@@ -14,6 +14,7 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	cpp_backend "github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -113,12 +114,12 @@ func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform Unreal
 		return nil
 	}
 
-	data, err := os.ReadFile(gfc.GochartFile.Path)
+	lf, err := output.LoadFileFromPath(gfc.GochartFile.Path)
 	if err != nil {
-		return fmt.Errorf("reading %q: %w", gochart, err)
+		return fmt.Errorf("loading file: %w", err)
 	}
 
-	frontendData, err := ui.gf.Process(bytes.NewReader(data))
+	frontendData, err := ui.gf.Process(lf)
 	if err != nil {
 		return fmt.Errorf("processing statechart: %w", err)
 	}
