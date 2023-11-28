@@ -34,7 +34,7 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *outpu
 		Triggers:         triggers,
 		States:           states,
 		Transitions:      transitions,
-		FrontendPosition: ft.tokenToPosition(nsc.token),
+		FrontendPosition: tokenToPosition(ft.lf, nsc.token),
 	}
 }
 
@@ -42,7 +42,7 @@ func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.Trigg
 	return &output.TriggerData{
 		Name:             nt.Name,
 		ArgsString:       nt.ArgsString,
-		FrontendPosition: ft.tokenToPosition(nt.token),
+		FrontendPosition: tokenToPosition(ft.lf, nt.token),
 	}
 }
 
@@ -51,7 +51,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 		Name:             ns.Name,
 		Parent:           ns.ParentName,
 		Options:          ft.translateOptions(ns.Options),
-		FrontendPosition: ft.tokenToPosition(ns.token),
+		FrontendPosition: tokenToPosition(ft.lf, ns.token),
 	}
 
 	for _, er := range ns.EnterReactions {
@@ -67,7 +67,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 		state.Captures = append(state.Captures, &output.CaptureData{
 			Trigger:          c.Trigger,
 			Condition:        c.Condition,
-			FrontendPosition: ft.tokenToPosition(c.token),
+			FrontendPosition: tokenToPosition(ft.lf, c.token),
 		})
 	}
 
@@ -79,7 +79,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 			Trigger:          t.Trigger,
 			Condition:        t.Condition,
 			Action:           t.Action,
-			FrontendPosition: ft.tokenToPosition(t.token),
+			FrontendPosition: tokenToPosition(ft.lf, t.token),
 		}
 		transitions = append(transitions, transition)
 	}
@@ -99,21 +99,9 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.O
 			Name:             no.Name,
 			Kind:             no.ValueKind,
 			Value:            no.Value,
-			FrontendPosition: ft.tokenToPosition(no.token),
+			FrontendPosition: tokenToPosition(ft.lf, no.token),
 		})
 	}
 
 	return options
-}
-
-func (ft *frontendTranslator) tokenToPosition(token *Token) *files.LoadedFilePosition {
-	if token == nil {
-		return nil
-	}
-
-	return &files.LoadedFilePosition{
-		File: ft.lf,
-		Line: token.line,
-		Char: token.char,
-	}
 }

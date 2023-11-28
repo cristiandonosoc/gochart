@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
@@ -20,11 +21,13 @@ type Parser struct {
 	errors []error
 
 	options *Options
+	lf      *files.LoadedFile
 }
 
-func NewParser(options *Options) *Parser {
+func NewParser(lf *files.LoadedFile, options *Options) *Parser {
 	return &Parser{
 		options: options,
+		lf:      lf,
 	}
 }
 
@@ -879,7 +882,7 @@ func (p *Parser) pushErrorf(tokenOffset int, format string, args ...interface{})
 	originalErr := fmt.Errorf(format, args...)
 
 	token := p.tokenAt(p.current + tokenOffset)
-	fe := newFrontendError("Parser", originalErr, token.line, token.char)
+	fe := newFrontendError("Parser", originalErr, tokenToPosition(p.lf, token))
 	p.errors = append(p.errors, fe)
 
 	return originalErr

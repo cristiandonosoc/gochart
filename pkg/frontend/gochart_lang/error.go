@@ -22,18 +22,16 @@ func internalErrorf(format string, args ...interface{}) error {
 type frontendError struct {
 	Kind          string
 	InternalError error
-	Line          int
-	RuneCount     int
+	pos           *files.LoadedFilePosition
 }
 
 var _ error = (*frontendError)(nil)
 
-func newFrontendError(kind string, err error, line, runeCount int) *frontendError {
+func newFrontendError(kind string, err error, pos *files.LoadedFilePosition) *frontendError {
 	return &frontendError{
 		Kind:          kind,
 		InternalError: err,
-		Line:          line,
-		RuneCount:     runeCount,
+		pos:           pos,
 	}
 }
 
@@ -42,77 +40,24 @@ func (fe *frontendError) Error() string {
 }
 
 func (fe *frontendError) Render(lines []string) string {
-	var errorLines []string
-
-	// Start with an empty line.
-	errorLines = append(errorLines, "", fmt.Sprintf("%s error:", fe.Kind))
-
-	// Show a couple lines of context.
-	begin := fe.Line - FrontendErrorContextSize
-	end := fe.Line + FrontendErrorContextSize
+	if fe.pos == nil {
+		lines := []string{
+			"<no file position found>",
+			fe.InternalError.Error(),
+		}
+		return strings.Join(lines, "\n")
+	}
 
 	unwrappedError, errorCount := unwrapError(fe.InternalError)
 
-	// Just in case the line handling doesn't get to print the error line.
-	printedError := false
-
-	for i := begin; i <= end; i++ {
-		// NOTE: Line as 1-based.
-		arrayIndex := i - 1
-		if arrayIndex < 0 {
-			continue
-		}
-
-		if arrayIndex >= len(lines) {
-			break
-		}
-
-		line := lines[arrayIndex]
-
-		// We print the line.
-		errorLines = append(errorLines, fmt.Sprintf("%4d: %s", i, line))
-
-		// if this is the error line, we also add a caret on the location and the actual error.
-		if i == fe.Line {
-			// We need to create the padding taking into account tabs! Fucking tabs!
-			padding := make([]rune, 0, fe.RuneCount)
-			for _, runeValue := range line {
-				if len(padding) >= fe.RuneCount-1 {
-					break
-				}
-
-				// if it is a tab, we want to add it as is into the padding.
-				// Otherwise we just add a space (we assume all other characters are 1 char wide.
-				if runeValue == '\t' {
-					padding = append(padding, '\t')
-					continue
-				}
-
-				padding = append(padding, ' ')
-			}
-
-			// We merge the padding with the known padding we added to account for line numbers.
-			errorLines = append(errorLines, fmt.Sprintf("%*s%s^---> %s", 6, " ", string(padding), unwrappedError.Error()))
-			printedError = true
-		}
-	}
-
-	if !printedError {
-		errorLines = append(errorLines, fe.InternalError.Error())
-	}
-
-	// Add the full context if there was more than one wrapped error.
+	header := fmt.Sprintf("%s error:", fe.Kind)
+	msg := unwrappedError.Error()
+	footer := ""
 	if errorCount > 1 {
-		errorLines = append(errorLines, "")
-		errorLines = append(errorLines, fmt.Sprintf("Full context: %s", fe.InternalError.Error()))
+		footer = fmt.Sprintf("Full context: %s", fe.InternalError.Error())
 	}
 
-	// Trim the spaces.
-	for i := 0; i < len(errorLines); i++ {
-		errorLines[i] = strings.TrimRight(errorLines[i], " \r\n\t")
-	}
-
-	return strings.Join(errorLines, "\n")
+	return fe.pos.Render(header, msg, footer, FrontendErrorContextSize)
 }
 
 type FrontendErrorContainer struct {
@@ -158,4 +103,20 @@ func unwrapError(err error) (error, int) {
 	}
 
 	return err, count
+}
+
+func tokenToPosition(lf *files.LoadedFile, token *Token) *files.LoadedFilePosition {
+	if token == nil {
+		return nil
+	}
+
+	return newLoadedFilePosition(lf, token.line, token.char)
+}
+
+func newLoadedFilePosition(lf *files.LoadedFile, line, char int) *files.LoadedFilePosition {
+	return &files.LoadedFilePosition{
+		File: lf,
+		Line: line,
+		Char: char,
+	}
 }

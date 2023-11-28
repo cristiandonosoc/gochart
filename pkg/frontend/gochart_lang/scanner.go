@@ -867,5 +867,5 @@ func isRuneWhitespace(r rune) bool {
 }
 
 func (s *Scanner) newFrontendError(err error) error {
-	return newFrontendError("Scanner", err, s.line, s.currentRuneCountInLine)
+	return newFrontendError("Scanner", err, newLoadedFilePosition(s.lf, s.line, s.currentRuneCountInLine))
 }

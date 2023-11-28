@@ -55,7 +55,7 @@ func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*output.Statechar
 		return nil, NewFrontendErrorContainer(lf, errors)
 	}
 
-	parser := NewParser(glf.options)
+	parser := NewParser(lf, glf.options)
 	root, errors := parser.Parse(tokens)
 	if len(errors) > 0 {
 		return nil, NewFrontendErrorContainer(lf, errors)

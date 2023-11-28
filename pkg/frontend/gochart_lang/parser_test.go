@@ -19,7 +19,7 @@ func TestReadSimple(t *testing.T) {
 	tokens, errors := scanner.gatherTokens(lf)
 	require.Empty(t, errors)
 
-	parser := NewParser(&Options{})
+	parser := NewParser(lf, &Options{})
 	got, errors := parser.Parse(tokens)
 	require.Empty(t, errors)
 
