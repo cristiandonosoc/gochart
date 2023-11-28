@@ -4,7 +4,6 @@ go_library(
     name = "ir",
     srcs = [
         "cpp.go",
-        "error.go",
         "input.go",
         "ir.go",
         "options.go",
@@ -14,7 +13,7 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/ir",
     visibility = ["//visibility:public"],
     deps = [
-        "//internal/files",
+        "//internal/errors",
         "//internal/printer",
         "//pkg/frontend/output",
     ],

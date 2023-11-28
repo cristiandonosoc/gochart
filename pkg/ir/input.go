@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"fmt"
 
+	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
@@ -24,7 +25,7 @@ type inputHandler struct {
 func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
 	sc, err := processStatechartDataInternal(scdata)
 	if err != nil {
-		return nil, newIrErrorContainer([]error{err})
+		return nil, errors.NewErrorContainer([]error{err})
 	}
 	return sc, nil
 }
@@ -274,7 +275,7 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) 
 	for _, fc := range frontendCaptures {
 		trigger, ok := ih.triggerMap[fc.Trigger]
 		if !ok {
-			return nil, irErrorf(fc.FrontendPosition, "cannot find trigger %q", fc.Trigger)
+			return nil, errors.Errorf(fc.FrontendPosition, "cannot find trigger %q", fc.Trigger)
 		}
 
 		captures = append(captures, &StateCapture{
