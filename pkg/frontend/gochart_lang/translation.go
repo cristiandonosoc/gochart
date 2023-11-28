@@ -1,14 +1,15 @@
 package gochart_lang
 
 import (
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 type frontendTranslator struct {
-	lf *output.LoadedFile
+	lf *files.LoadedFile
 }
 
-func newFrontendTranslator(lf *output.LoadedFile) *frontendTranslator {
+func newFrontendTranslator(lf *files.LoadedFile) *frontendTranslator {
 	return &frontendTranslator{
 		lf: lf,
 	}
@@ -105,12 +106,12 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.O
 	return options
 }
 
-func (ft *frontendTranslator) tokenToPosition(token *Token) *output.LoadedFilePosition {
+func (ft *frontendTranslator) tokenToPosition(token *Token) *files.LoadedFilePosition {
 	if token == nil {
 		return nil
 	}
 
-	return &output.LoadedFilePosition{
+	return &files.LoadedFilePosition{
 		File: ft.lf,
 		Line: token.line,
 		Char: token.char,

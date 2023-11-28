@@ -11,11 +11,11 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/unreal",
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/files",
         "//internal/option",
         "//pkg/backend",
         "//pkg/backend/cpp",
         "//pkg/frontend",
-        "//pkg/frontend/output",
         "//pkg/ir",
         "@org_golang_x_sync//errgroup",
     ],

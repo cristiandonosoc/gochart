@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
@@ -20,7 +21,7 @@ import (
 type GochartFrontend interface {
 	// Process takes the content describing input for this frontend and is meant to return frontend
 	// data that can then be consumed by others parts of the program, mostly the |ir| package.
-	Process(lf *output.LoadedFile) (*output.StatechartData, error)
+	Process(lf *files.LoadedFile) (*output.StatechartData, error)
 }
 
 type frontendFactory func(*cli.Context) (GochartFrontend, error)

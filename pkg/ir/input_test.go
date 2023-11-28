@@ -5,9 +5,9 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
 	"github.com/stretchr/testify/assert"
@@ -82,7 +82,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/simple.yaml")
 	require.NoError(t, err)
 
-	lf, err := output.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
 	scdata, err := yf.Process(lf)
@@ -225,7 +225,7 @@ func TestConcurrentGroups(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/concurrent.gochart")
 	require.NoError(t, err)
 
-	lf, err := output.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
 	scdata, err := yf.Process(lf)

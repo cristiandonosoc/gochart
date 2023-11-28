@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 func toUnix(path string) string {
@@ -93,11 +93,11 @@ func RunfilePath(path string) (string, error) {
 }
 
 // ReadRunfile tries to read a file using the loading rules of |RunfilePath|.
-func LoadRunfile(path string) (*output.LoadedFile, error) {
+func LoadRunfile(path string) (*files.LoadedFile, error) {
 	rp, err := RunfilePath(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return output.LoadFileFromPath(rp)
+	return files.LoadFileFromPath(rp)
 }

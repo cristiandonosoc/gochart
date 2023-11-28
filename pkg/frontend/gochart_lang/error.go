@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 const (
@@ -117,12 +117,12 @@ func (fe *frontendError) Render(lines []string) string {
 
 type FrontendErrorContainer struct {
 	Errors []error
-	lf     *output.LoadedFile
+	lf     *files.LoadedFile
 }
 
 var _ error = (*FrontendErrorContainer)(nil)
 
-func NewFrontendErrorContainer(lf *output.LoadedFile, errors []error) *FrontendErrorContainer {
+func NewFrontendErrorContainer(lf *files.LoadedFile, errors []error) *FrontendErrorContainer {
 	return &FrontendErrorContainer{
 		Errors: errors,
 		lf:     lf,

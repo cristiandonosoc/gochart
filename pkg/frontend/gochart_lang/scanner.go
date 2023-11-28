@@ -8,7 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // ScanError is a custom error associated with scanning.
@@ -24,7 +24,7 @@ func (se *ScanError) Error() string {
 // Scanner is an object capable of taking in a reader and scanning over to create a valid
 // representation of our statechart grammar.
 type Scanner struct {
-	lf *output.LoadedFile
+	lf *files.LoadedFile
 
 	// We count our characters in runes, which could be more than one byte, because we support utf8,
 	// mostly because we're cool.
@@ -68,7 +68,7 @@ func (s *Scanner) reset() {
 	s.line = 1
 }
 
-func (s *Scanner) gatherTokens(lf *output.LoadedFile) ([]*Token, []error) {
+func (s *Scanner) gatherTokens(lf *files.LoadedFile) ([]*Token, []error) {
 	// Forget any previous state before scanning.
 	s.reset()
 	s.lf = lf

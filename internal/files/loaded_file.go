@@ -1,4 +1,4 @@
-package output
+package files
 
 import (
 	"bufio"
@@ -12,13 +12,6 @@ type LoadedFile struct {
 	Path  string
 	Data  []byte
 	Lines []string
-}
-
-// LoadedFilePosition represents a character position within a loaded file.
-type LoadedFilePosition struct {
-	File *LoadedFile
-	Line int
-	Char int
 }
 
 // LoadFileFromPath reads the contents of a file from path and caches it in convenient ways so that
@@ -54,4 +47,11 @@ func LoadFile(data []byte) (*LoadedFile, error) {
 		Data:  data,
 		Lines: lines,
 	}, nil
+}
+
+// LoadedFilePosition represents a character position within a loaded file.
+type LoadedFilePosition struct {
+	File *LoadedFile
+	Line int
+	Char int
 }

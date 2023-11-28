@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang",
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/files",
         "//internal/option",
         "//pkg/frontend/output",
     ],
@@ -27,6 +28,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":gochart_lang"],
     deps = [
+        "//internal/files",
         "//internal/test_support",
         "//pkg/frontend/output",
         "@com_github_stretchr_testify//assert",

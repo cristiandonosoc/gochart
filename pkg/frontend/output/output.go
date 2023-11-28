@@ -3,6 +3,8 @@ package output
 
 import (
 	"fmt"
+
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // StatechartData is all the information a frontend needs to output about a statechart.
@@ -13,7 +15,7 @@ type StatechartData struct {
 	States      []*StateData
 	Transitions []*TransitionData
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 type OptionValueKind int
@@ -42,14 +44,14 @@ type OptionData struct {
 	Kind  OptionValueKind
 	Value string
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 type TriggerData struct {
 	Name       string
 	ArgsString string
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 type StateData struct {
@@ -64,14 +66,14 @@ type StateData struct {
 
 	Captures []*CaptureData
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 type CaptureData struct {
 	Trigger   string
 	Condition string
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 type TransitionData struct {
@@ -81,7 +83,7 @@ type TransitionData struct {
 	Condition string
 	Action    string
 
-	FrontendPosition *LoadedFilePosition
+	FrontendPosition *files.LoadedFilePosition
 }
 
 func (tdata *TransitionData) String() string {

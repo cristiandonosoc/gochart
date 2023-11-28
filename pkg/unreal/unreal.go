@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	cpp_backend "github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -114,7 +114,7 @@ func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform Unreal
 		return nil
 	}
 
-	lf, err := output.LoadFileFromPath(gfc.GochartFile.Path)
+	lf, err := files.LoadFileFromPath(gfc.GochartFile.Path)
 	if err != nil {
 		return fmt.Errorf("loading file: %w", err)
 	}

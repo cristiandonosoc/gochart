@@ -27,9 +27,9 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":ir"],
     deps = [
+        "//internal/files",
         "//internal/test_support",
         "//pkg/frontend/gochart_lang",
-        "//pkg/frontend/output",
         "//pkg/frontend/yaml",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

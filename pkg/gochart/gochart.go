@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -26,7 +26,7 @@ func NewGochartCompiler(gf frontend.GochartFrontend, gb backend.GochartBackend) 
 }
 
 func (gc *GochartCompiler) PrintFrontend(path string, w io.Writer) error {
-	lf, err := output.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPath(path)
 	if err != nil {
 		return fmt.Errorf("loading file: %w", err)
 	}
@@ -43,7 +43,7 @@ func (gc *GochartCompiler) PrintFrontend(path string, w io.Writer) error {
 }
 
 func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
-	lf, err := output.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPath(path)
 	if err != nil {
 		return fmt.Errorf("loading file: %w", err)
 	}
@@ -70,7 +70,7 @@ type BackendOutput struct {
 }
 
 func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*BackendOutput, error) {
-	lf, err := output.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPath(path)
 	if err != nil {
 		return nil, fmt.Errorf("loading file: %w", err)
 	}

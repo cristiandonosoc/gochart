@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/internal/files"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -122,7 +122,7 @@ capture capture if {
 		{id: Token_EOF, line: 21, char: 0},
 	}
 
-	lf, err := output.LoadFile([]byte(input))
+	lf, err := files.LoadFile([]byte(input))
 	require.NoError(t, err)
 
 	s := NewScanner()

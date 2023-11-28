@@ -5,6 +5,7 @@ package yaml
 import (
 	"fmt"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 
@@ -18,7 +19,7 @@ func NewYamlFrontend(opts ...option.Option) (*yamlFrontend, error) {
 type yamlFrontend struct {
 }
 
-func (yf *yamlFrontend) Process(lf *output.LoadedFile) (*output.StatechartData, error) {
+func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*output.StatechartData, error) {
 	var yamlData YamlStatechart
 	if err := yaml.Unmarshal(lf.Data, &yamlData); err != nil {
 		return nil, fmt.Errorf("unmarshalling yaml: %w", err)

@@ -5,9 +5,9 @@ go_test(
     srcs = ["logical_test.go"],
     data = glob(["testdata/**"]),
     deps = [
+        "//internal/files",
         "//internal/test_support",
         "//pkg/frontend/gochart_lang",
-        "//pkg/frontend/output",
         "//pkg/ir",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
