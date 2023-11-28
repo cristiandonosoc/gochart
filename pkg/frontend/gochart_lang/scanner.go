@@ -8,6 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
@@ -230,7 +231,7 @@ NEXT_TOKEN_LOOP:
 	// Verify that the given tokens were correct.
 	for _, token := range tokens {
 		if token == nil || token.id == Token_Invalid {
-			return nil, internalErrorf("invalid token parsing")
+			return nil, errors.InternalErrorf("invalid token parsing")
 		}
 	}
 
@@ -867,5 +868,5 @@ func isRuneWhitespace(r rune) bool {
 }
 
 func (s *Scanner) newFrontendError(err error) error {
-	return newFrontendError("Scanner", err, newLoadedFilePosition(s.lf, s.line, s.currentRuneCountInLine))
+	return errors.Errorf(newLoadedFilePosition(s.lf, s.line, s.currentRuneCountInLine), "Scanner", "%s", err)
 }

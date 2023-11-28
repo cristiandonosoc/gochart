@@ -105,3 +105,19 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.O
 
 	return options
 }
+
+func tokenToPosition(lf *files.LoadedFile, token *Token) *files.LoadedFilePosition {
+	if token == nil {
+		return nil
+	}
+
+	return newLoadedFilePosition(lf, token.line, token.char)
+}
+
+func newLoadedFilePosition(lf *files.LoadedFile, line, char int) *files.LoadedFilePosition {
+	return &files.LoadedFilePosition{
+		File: lf,
+		Line: line,
+		Char: char,
+	}
+}

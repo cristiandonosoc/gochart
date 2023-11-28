@@ -5,6 +5,7 @@ package gochart_lang
 import (
 	"fmt"
 
+	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
@@ -50,15 +51,15 @@ func NewGochartLangFrontend(opts ...option.Option) (*gochartLangFrontend, error)
 
 func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*output.StatechartData, error) {
 	scanner := NewScanner()
-	tokens, errors := scanner.gatherTokens(lf)
-	if len(errors) > 0 {
-		return nil, NewFrontendErrorContainer(lf, errors)
+	tokens, scannerErrors := scanner.gatherTokens(lf)
+	if len(scannerErrors) > 0 {
+		return nil, errors.NewErrorContainer(scannerErrors)
 	}
 
 	parser := NewParser(lf, glf.options)
-	root, errors := parser.Parse(tokens)
-	if len(errors) > 0 {
-		return nil, NewFrontendErrorContainer(lf, errors)
+	root, parserErrors := parser.Parse(tokens)
+	if len(parserErrors) > 0 {
+		return nil, errors.NewErrorContainer(parserErrors)
 	}
 
 	if len(root.statecharts) != 1 {

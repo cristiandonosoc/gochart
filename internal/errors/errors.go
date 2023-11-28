@@ -13,42 +13,51 @@ const (
 )
 
 type gochartError struct {
+	Kind          string
 	InternalError error
 	pos           *files.LoadedFilePosition
 }
 
 var _ error = (*gochartError)(nil)
 
-func (ie *gochartError) Error() string {
-	return ie.InternalError.Error()
+func (ge *gochartError) Error() string {
+	return ge.InternalError.Error()
 }
 
-func (ie *gochartError) Render() string {
-	if ie.pos == nil {
+func (ge *gochartError) Render() string {
+	if ge.pos == nil {
 		lines := []string{
 			"<no file position found>",
-			ie.InternalError.Error(),
+			ge.InternalError.Error(),
 		}
 		return strings.Join(lines, "\n")
 	}
 
-	unwrappedError, errorCount := unwrapError(ie.InternalError)
+	unwrappedError, errorCount := unwrapError(ge.InternalError)
 
-	header := fmt.Sprintf("semantic error:")
+	header := fmt.Sprintf("%s error:", ge.Kind)
 	msg := unwrappedError.Error()
 	footer := ""
 	if errorCount > 1 {
-		footer = fmt.Sprintf("Full context: %s", ie.InternalError.Error())
+		footer = fmt.Sprintf("Full context: %s", ge.InternalError.Error())
 	}
 
-	return ie.pos.Render(header, msg, footer, kContextSize)
+	return ge.pos.Render(header, msg, footer, kContextSize)
 }
 
-func Errorf(pos *files.LoadedFilePosition, format string, args ...interface{}) error {
+func Errorf(pos *files.LoadedFilePosition, kind, format string, args ...interface{}) error {
 	return &gochartError{
+		Kind:          kind,
 		InternalError: fmt.Errorf(format, args...),
 		pos:           pos,
 	}
+}
+
+func InternalErrorf(format string, args ...interface{}) error {
+	originalText := fmt.Sprintf(format, args...)
+	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug with a repro. ***", originalText)
+
+	return fmt.Errorf(finalText)
 }
 
 type gochartErrorContainer struct {
@@ -63,10 +72,10 @@ func NewErrorContainer(errors []error) *gochartErrorContainer {
 	}
 }
 
-func (iec *gochartErrorContainer) Error() string {
-	errorStrings := make([]string, 0, len(iec.Errors))
+func (gec *gochartErrorContainer) Error() string {
+	errorStrings := make([]string, 0, len(gec.Errors))
 
-	for _, err := range iec.Errors {
+	for _, err := range gec.Errors {
 		var irerr *gochartError
 		if errors.As(err, &irerr) {
 			errorStrings = append(errorStrings, irerr.Render())

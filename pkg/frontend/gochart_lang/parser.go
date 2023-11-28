@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
@@ -882,7 +883,7 @@ func (p *Parser) pushErrorf(tokenOffset int, format string, args ...interface{})
 	originalErr := fmt.Errorf(format, args...)
 
 	token := p.tokenAt(p.current + tokenOffset)
-	fe := newFrontendError("Parser", originalErr, tokenToPosition(p.lf, token))
+	fe := errors.Errorf(tokenToPosition(p.lf, token), "Parser", "%s", originalErr)
 	p.errors = append(p.errors, fe)
 
 	return originalErr
