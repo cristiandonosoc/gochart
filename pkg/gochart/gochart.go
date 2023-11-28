@@ -55,7 +55,7 @@ func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
 
 	irData, err := ir.ProcessStatechartData(frontendData)
 	if err != nil {
-		return fmt.Errorf("processing frontend: %w", err)
+		return fmt.Errorf("processing statechart: %w", err)
 	}
 
 	printer := ir.NewPrinter(w)

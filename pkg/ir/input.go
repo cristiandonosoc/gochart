@@ -22,6 +22,14 @@ type inputHandler struct {
 }
 
 func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
+	sc, err := processStatechartDataInternal(scdata)
+	if err != nil {
+		return nil, newIrErrorContainer([]error{err})
+	}
+	return sc, nil
+}
+
+func processStatechartDataInternal(scdata *output.StatechartData) (*Statechart, error) {
 	ih := inputHandler{
 		scdata:     scdata,
 		triggerMap: make(map[string]*Trigger),
@@ -266,7 +274,7 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) 
 	for _, fc := range frontendCaptures {
 		trigger, ok := ih.triggerMap[fc.Trigger]
 		if !ok {
-			return nil, fmt.Errorf("cannot find trigger %q", fc.Trigger)
+			return nil, irErrorf(fc.FrontendPosition, "cannot find trigger %q", fc.Trigger)
 		}
 
 		captures = append(captures, &StateCapture{

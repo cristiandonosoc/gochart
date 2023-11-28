@@ -39,7 +39,7 @@ func (fe *frontendError) Error() string {
 	return fe.InternalError.Error()
 }
 
-func (fe *frontendError) Render(lines []string) string {
+func (fe *frontendError) Render() string {
 	if fe.pos == nil {
 		lines := []string{
 			"<no file position found>",
@@ -78,7 +78,7 @@ func (fec *FrontendErrorContainer) Error() string {
 	errorStrings := make([]string, 0, len(fec.Errors))
 	for _, err := range fec.Errors {
 		if fe, ok := err.(*frontendError); ok {
-			errorStrings = append(errorStrings, fe.Render(fec.lf.Lines))
+			errorStrings = append(errorStrings, fe.Render())
 		} else {
 			errorStrings = append(errorStrings, err.Error())
 		}
