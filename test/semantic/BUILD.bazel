@@ -1,8 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    name = "logical_test",
-    srcs = ["logical_test.go"],
+    name = "semantic_test",
+    srcs = ["semantic_test.go"],
     data = glob(["testdata/**"]),
     deps = [
         "//internal/files",

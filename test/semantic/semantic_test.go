@@ -1,4 +1,4 @@
-package logical
+package semantic
 
 import (
 	"bytes"
