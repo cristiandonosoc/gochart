@@ -235,15 +235,15 @@ func (ih *inputHandler) determineDefaultChild(parentName string, states []*State
 	return nil
 }
 
-func (ih *inputHandler) collectReactions(triggerNames []string, kind StateReactionKind) ([]*StateReaction, error) {
+func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionData, kind StateReactionKind) ([]*StateReaction, error) {
 	defaultFound := false
 
 	var triggers []*Trigger
-	for _, triggerName := range triggerNames {
+	for _, fr := range frontendReactions {
 		// Special case the empty trigger name, which is a default reaction with a nil trigger.
-		if triggerName == "" {
+		if fr.Trigger == "" {
 			if defaultFound {
-				return nil, fmt.Errorf("two default reactions found, only one allowed")
+				return nil, errors.Errorf(fr.FrontendPosition, "Semantic", "many default %q reactions found, only one allowed", kind)
 			}
 
 			triggers = append(triggers, nil)
@@ -251,14 +251,14 @@ func (ih *inputHandler) collectReactions(triggerNames []string, kind StateReacti
 			continue
 		}
 
-		trigger, ok := ih.triggerMap[triggerName]
+		trigger, ok := ih.triggerMap[fr.Trigger]
 		if !ok {
-			return nil, fmt.Errorf("cannot find trigger %q", triggerName)
+			return nil, errors.Errorf(fr.FrontendPosition, "Semantic", "cannot find trigger %q", fr.Trigger)
 		}
 		triggers = append(triggers, trigger)
 	}
 
-	reactions := make([]*StateReaction, 0, len(triggers))
+	reactions := make([]*StateReaction, 0, len(frontendReactions))
 	for _, trigger := range triggers {
 		reactions = append(reactions, &StateReaction{
 			Trigger: trigger,

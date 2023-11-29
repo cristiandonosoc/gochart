@@ -1,0 +1,18 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	state Root {
+//  14: 		enter
+//  15: 		enter
+//      		^---> many default "Enter" reactions found, only one allowed
+//  16: 	}
+//  17: }
+// --- ERROR END
+
+statechart Mumu {
+	state Root {
+		enter
+		enter
+	}
+}
+

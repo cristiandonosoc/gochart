@@ -113,18 +113,18 @@ func (fp *frontendPrinter) printTransitions(transitions []*output.TransitionData
 	}
 }
 
-func (fp *frontendPrinter) printReactions(kind string, reactions []string) {
+func (fp *frontendPrinter) printReactions(kind string, reactions []*output.ReactionData) {
 	if len(reactions) == 0 {
 		fp.p.WriteLine("No %s reactions", kind)
 		return
 	}
 
 	for _, reaction := range reactions {
-		if reaction == "" {
+		if reaction.Trigger == "" {
 			fp.p.WriteLine("%s", kind)
 			continue
 		}
 
-		fp.p.WriteLine("%s(%s)", kind, reaction)
+		fp.p.WriteLine("%s(%s)", kind, reaction.Trigger)
 	}
 }

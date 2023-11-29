@@ -528,7 +528,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 	switch stmtToken.id {
 	case Token_KeywordEnter:
 		p.debuglog("parsing state enter reaction node")
-		reaction, err := p.parseStateReaction(stmtToken.id)
+		reaction, err := p.parseStateReaction(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing enter reaction: %w", err)
 		}
@@ -536,7 +536,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		return true, nil
 	case Token_KeywordExit:
 		p.debuglog("parsing state exit reaction node")
-		reaction, err := p.parseStateReaction(stmtToken.id)
+		reaction, err := p.parseStateReaction(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing exit reaction: %w", err)
 		}
@@ -577,15 +577,17 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 
 type ASTNodeStateReaction struct {
 	Trigger string
+
+	token *Token
 }
 
 var _ ASTNode = (*ASTNodeStateReaction)(nil)
 
-func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeStateReaction, error) {
+func (p *Parser) parseStateReaction(baseToken *Token) (*ASTNodeStateReaction, error) {
 	p.debuglog("parsing state reaction node")
 
-	if keywordTokenId != Token_KeywordEnter && keywordTokenId != Token_KeywordExit {
-		return nil, p.pushInternalErrorf(0, "unexpected reaction token, expected 'enter', 'exit', got: %q", keywordTokenId)
+	if baseToken.id != Token_KeywordEnter && baseToken.id != Token_KeywordExit {
+		return nil, p.pushInternalErrorf(0, "unexpected reaction token, expected 'enter', 'exit', got: %q", baseToken.id)
 	}
 
 	// We check to see if the user indicated a trigger associated with the reaction.
@@ -596,6 +598,7 @@ func (p *Parser) parseStateReaction(keywordTokenId TokenIdentifier) (*ASTNodeSta
 
 	reaction := &ASTNodeStateReaction{
 		Trigger: triggerName,
+		token:   baseToken,
 	}
 
 	p.debuglog("-> parsed reaction: %+v", reaction)

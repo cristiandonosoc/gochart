@@ -60,11 +60,16 @@ type StateData struct {
 
 	Options []*OptionData
 
-	// TODO(cdc): Reactions should be its own struct, so we can append position data.
-	EnterReactions []string
-	ExitReactions  []string
+	EnterReactions []*ReactionData
+	ExitReactions  []*ReactionData
 
 	Captures []*CaptureData
+
+	FrontendPosition *files.LoadedFilePosition
+}
+
+type ReactionData struct {
+	Trigger string
 
 	FrontendPosition *files.LoadedFilePosition
 }

@@ -1,0 +1,17 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  12: statechart Mumu {
+//  13: 	state Root {
+//  14: 		exit NonExistent
+//      		^---> cannot find trigger "NonExistent"
+//  15: 	}
+//  16: }
+// --- ERROR END
+
+statechart Mumu {
+	state Root {
+		exit NonExistent
+	}
+}
+
