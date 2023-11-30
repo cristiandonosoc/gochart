@@ -18,9 +18,11 @@ type OptionDefinition struct {
 }
 
 var (
+	kStateOption_Default = "default"
+
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
-		"default": {
-			Name:        "default",
+		kStateOption_Default: {
+			Name:        kStateOption_Default,
 			Kind:        output.OptionValueKind_Boolean,
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),

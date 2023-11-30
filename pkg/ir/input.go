@@ -221,17 +221,26 @@ func (ih *inputHandler) determineDefaultChild(parentPrefix string, pos *files.Lo
 		return nil
 	}
 
-	defaultFound := false
-	for _, state := range states {
-		if state.Default {
-			if defaultFound {
-				return errors.Errorf(pos, "Semantic", "%s has more than one default child", parentPrefix)
+	stateHasDefaultOption := func(state *State) bool {
+		for _, option := range state.Options {
+			if option.Name() == kStateOption_Default {
+				return true
 			}
+		}
+		return false
+	}
 
-			defaultFound = true
+	// We see if a state defined a default option.
+	// If so, no automatic handling is to be done.
+	defaultOptionFound := false
+	for _, state := range states {
+		if stateHasDefaultOption(state) {
+			defaultOptionFound = true
 		}
 	}
-	if !defaultFound {
+
+	// If no option was set, we simply select the first state as default.
+	if !defaultOptionFound {
 		states[0].Default = true
 	}
 

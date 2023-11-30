@@ -2,6 +2,9 @@ package ir
 
 import (
 	"fmt"
+
+	"github.com/cristiandonosoc/gochart/internal/errors"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // validate is called once the complete statechart has been parsed and collected.
@@ -28,7 +31,7 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 		return fmt.Errorf("no root states found")
 	}
 
-	if err := validateDefaultChildExists(ih.rootStates); err != nil {
+	if err := validateDefaultChildExists(ih.scdata.Frontend_NamePos, ih.rootStates); err != nil {
 		return fmt.Errorf("validating that default child exists: %w", err)
 	}
 
@@ -38,7 +41,7 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 func validateState(state *State) error {
 	// If it has children, at least one of them has to be marked default child.
 	if len(state.Children) > 0 {
-		if err := validateDefaultChildExists(state.Children); err != nil {
+		if err := validateDefaultChildExists(state.frontendData.Frontend_NamePos, state.Children); err != nil {
 			return fmt.Errorf("state %q: validating that default child exists: %w", state.Name, err)
 		}
 	}
@@ -63,20 +66,20 @@ func validateState(state *State) error {
 	return nil
 }
 
-func validateDefaultChildExists(states []*State) error {
+func validateDefaultChildExists(parentPos *files.LoadedFilePosition, states []*State) error {
 	foundDefault := false
 	for _, state := range states {
 		if state.Default {
 			// There can only be one default child state.
 			if foundDefault {
-				return fmt.Errorf("state %q marked as default when a default state already exists", state.Name)
+				return errors.Errorf(state.frontendData.Frontend_NamePos, "Semantic", "state %q marked as default when a default state already exists", state.Name)
 			}
 			foundDefault = true
 		}
 	}
 
 	if !foundDefault {
-		return fmt.Errorf("no default child state found")
+		return errors.Errorf(parentPos, "Semantic", "no default child state found")
 	}
 
 	return nil
