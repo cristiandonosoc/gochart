@@ -308,12 +308,12 @@ func (ih *inputHandler) collectTransitions() error {
 func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transition, *State, error) {
 	from, ok := ih.stateMap[tdata.From]
 	if !ok {
-		return nil, nil, fmt.Errorf("cannot find from state %q", tdata.From)
+		return nil, nil, errors.InternalErrorf("cannot find from state %q", tdata.From)
 	}
 
 	to, ok := ih.stateMap[tdata.To]
 	if !ok {
-		return nil, nil, fmt.Errorf("cannot find to state %q", tdata.To)
+		return nil, nil, errors.Errorf(tdata.Frontend_TargetPos, "Semantic", "cannot find target state %q", tdata.To)
 	}
 
 	// See if there is a trigger available (if not, it's a null transition).
@@ -321,7 +321,7 @@ func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transit
 	if tdata.Trigger != "" {
 		t, ok := ih.triggerMap[tdata.Trigger]
 		if !ok {
-			return nil, nil, fmt.Errorf("cannot find trigger %q", tdata.Trigger)
+			return nil, nil, errors.Errorf(tdata.Frontend_TriggerPos, "Semantic", "cannot find trigger %q", tdata.Trigger)
 		}
 		trigger = t
 	}

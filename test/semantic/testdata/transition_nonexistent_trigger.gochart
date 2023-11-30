@@ -1,0 +1,23 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state From {
+//  16: 		transition NonExistent > To
+//      		           ^---> cannot find trigger "NonExistent"
+//  17: 	}
+//  18:
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state From {
+		transition NonExistent > To
+	}
+
+	state To {
+		capture SomeTrigger
+	}
+}
+
