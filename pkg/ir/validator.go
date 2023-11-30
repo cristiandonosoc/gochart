@@ -28,7 +28,7 @@ func validate(ih *inputHandler) error {
 
 func validateTopLevelStatechart(ih *inputHandler) error {
 	if len(ih.rootStates) == 0 {
-		return fmt.Errorf("no root states found")
+		return errors.Errorf(ih.scdata.Frontend_NamePos, "Semantic", "no root states found")
 	}
 
 	if err := validateDefaultChildExists(ih.scdata.Frontend_NamePos, ih.rootStates); err != nil {
@@ -51,14 +51,14 @@ func validateState(state *State) error {
 
 	for _, transition := range state.Transitions {
 		if _, ok := set[transition.Trigger]; ok {
-			return fmt.Errorf("state %q: Trigger %q already handled by transition or capture", state.Name, transition.Trigger.Name)
+			return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic", "state %q: Trigger %q already handled by transition or capture", state.Name, transition.Trigger.Name)
 		}
 		set[transition.Trigger] = struct{}{}
 	}
 
 	for _, capture := range state.Captures {
 		if _, ok := set[capture.Trigger]; ok {
-			return fmt.Errorf("state %q: Trigger %q already handled by transition or capture", state.Name, capture.Trigger.Name)
+			return errors.Errorf(capture.frontendData.Frontend_TriggerPos, "Semantic", "state %q: Trigger %q already handled by transition or capture", state.Name, capture.Trigger.Name)
 		}
 		set[capture.Trigger] = struct{}{}
 	}

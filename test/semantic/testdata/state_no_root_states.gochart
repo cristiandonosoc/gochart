@@ -1,0 +1,16 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  11:
+//  12:
+//  13: statechart Mumu {
+//                 ^---> no root states found
+//  14: 	trigger SomeTrigger()
+//  15: }
+// --- ERROR END
+
+
+statechart Mumu {
+	trigger SomeTrigger()
+}
+

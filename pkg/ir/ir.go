@@ -262,6 +262,8 @@ func (srk StateReactionKind) String() string {
 type StateReaction struct {
 	Trigger *Trigger
 	Kind    StateReactionKind
+
+	frontendData *output.ReactionData
 }
 
 func (sr *StateReaction) String() string {
@@ -278,6 +280,8 @@ func (sr *StateReaction) String() string {
 type StateCapture struct {
 	Trigger   *Trigger
 	Condition string
+
+	frontendData *output.CaptureData
 }
 
 func (sc *StateCapture) String() string {

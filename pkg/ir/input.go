@@ -250,31 +250,29 @@ func (ih *inputHandler) determineDefaultChild(parentPrefix string, pos *files.Lo
 func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionData, kind StateReactionKind) ([]*StateReaction, error) {
 	defaultFound := false
 
-	var triggers []*Trigger
+	reactions := make([]*StateReaction, 0, len(frontendReactions))
 	for _, fr := range frontendReactions {
+		var trigger *Trigger
+
 		// Special case the empty trigger name, which is a default reaction with a nil trigger.
 		if fr.Trigger == "" {
 			if defaultFound {
 				return nil, errors.Errorf(fr.Frontend_KeywordPos, "Semantic", "many default %q reactions found, only one allowed", kind)
 			}
 
-			triggers = append(triggers, nil)
 			defaultFound = true
-			continue
+		} else {
+			tr, ok := ih.triggerMap[fr.Trigger]
+			if !ok {
+				return nil, errors.Errorf(fr.Frontend_TriggerPos, "Semantic", "cannot find trigger %q", fr.Trigger)
+			}
+			trigger = tr
 		}
 
-		trigger, ok := ih.triggerMap[fr.Trigger]
-		if !ok {
-			return nil, errors.Errorf(fr.Frontend_TriggerPos, "Semantic", "cannot find trigger %q", fr.Trigger)
-		}
-		triggers = append(triggers, trigger)
-	}
-
-	reactions := make([]*StateReaction, 0, len(frontendReactions))
-	for _, trigger := range triggers {
 		reactions = append(reactions, &StateReaction{
-			Trigger: trigger,
-			Kind:    kind,
+			Trigger:      trigger,
+			Kind:         kind,
+			frontendData: fr,
 		})
 	}
 
@@ -291,8 +289,9 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) 
 		}
 
 		captures = append(captures, &StateCapture{
-			Trigger:   trigger,
-			Condition: fc.Condition,
+			Trigger:      trigger,
+			Condition:    fc.Condition,
+			frontendData: fc,
 		})
 	}
 

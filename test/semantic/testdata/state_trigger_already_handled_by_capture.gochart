@@ -1,0 +1,28 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  15: 	state Root {
+//  16: 		transition SomeTrigger > Root2
+//  17: 		capture SomeTrigger
+//      		        ^---> state "Root": Trigger "SomeTrigger" already handled by transition or capture
+//  18: 	}
+//  19:
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root {
+		transition SomeTrigger > Root2
+		capture SomeTrigger
+	}
+
+	state Root2 {
+		capture SomeTrigger
+	}
+
+	state Root3 {
+		capture SomeTrigger
+	}
+}
+
