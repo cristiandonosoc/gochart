@@ -4,35 +4,58 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
 type OptionDefinition struct {
 	Name        string
-	Scope       string
 	Kind        output.OptionValueKind
 	Description string
 	Handler     any
+
+	TestingOption bool
 }
 
 var (
-	kStateOptionDefinitions = map[string]*OptionDefinition{
+	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		"default": {
 			Name:        "default",
-			Scope:       "state",
 			Kind:        output.OptionValueKind_Boolean,
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),
 		},
 		"concurrent": {
 			Name:        "concurrent",
-			Scope:       "state",
 			Kind:        output.OptionValueKind_Boolean,
 			Description: "Whether this state is to be considered a concurrent one.",
 			Handler:     StateOptionHandler(parseStateOption_Concurrent),
 		},
-	}
+	})
 )
+
+func addHiddenTestingOptions(options map[string]*OptionDefinition) map[string]*OptionDefinition {
+	options["test_bool"] = &OptionDefinition{
+		Name:          "test_bool",
+		Kind:          output.OptionValueKind_Boolean,
+		Description:   "Option added for testing purposes.",
+		TestingOption: true,
+	}
+	options["test_int"] = &OptionDefinition{
+		Name:          "test_int",
+		Kind:          output.OptionValueKind_Integer,
+		Description:   "Option added for testing purposes.",
+		TestingOption: true,
+	}
+	options["test_string"] = &OptionDefinition{
+		Name:          "test_string",
+		Kind:          output.OptionValueKind_String,
+		Description:   "Option added for testing purposes.",
+		TestingOption: true,
+	}
+
+	return options
+}
 
 // Option represents the parsed option that comes from the frontend, which some getters for the
 // types.
@@ -49,7 +72,7 @@ type Option struct {
 func newOption(od *OptionDefinition, fo *output.OptionData) (*Option, error) {
 	// Check that the expected kind is the same as the provided one.
 	if fo.Kind != od.Kind {
-		return nil, fmt.Errorf("expected option %q to be %q, got %q instead", fo.Name, od.Kind, fo.Kind)
+		return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "expected option %q to be %q, got %q instead", fo.Name, od.Kind, fo.Kind)
 	}
 
 	option := &Option{
@@ -61,7 +84,7 @@ func newOption(od *OptionDefinition, fo *output.OptionData) (*Option, error) {
 	case output.OptionValueKind_Boolean:
 		value, err := strconv.ParseBool(fo.Value)
 		if err != nil {
-			return nil, fmt.Errorf("parsing bool value %q: %w", fo.Value, err)
+			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing bool value %q: %w", fo.Value, err)
 		}
 		option.boolValue = value
 	case output.OptionValueKind_String:
@@ -69,11 +92,11 @@ func newOption(od *OptionDefinition, fo *output.OptionData) (*Option, error) {
 	case output.OptionValueKind_Integer:
 		value, err := strconv.ParseInt(fo.Value, 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("parsing integer value %q: %w", fo.Value, err)
+			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing integer value %q: %w", fo.Value, err)
 		}
 		option.intValue = value
 	default:
-		panic(fmt.Sprintf("unknown OptionValueKind %v", od.Kind))
+		return nil, errors.InternalErrorf("unknown OptionValueKind %v", od.Kind)
 	}
 
 	return option, nil
@@ -117,13 +140,14 @@ func parseStateOptions(state *State, frontendOptions []*output.OptionData) error
 		// See if we can find the option definition.
 		od, ok := kStateOptionDefinitions[fo.Name]
 		if !ok {
-			return fmt.Errorf("unrecognized state option %q", fo.Name)
+			return errors.Errorf(fo.Frontend_NamePos, "Semantic", "unrecognized state option %q", fo.Name)
 		}
 
 		// Check if we haven't parsed this option already.
 		if _, ok := set[od.Name]; ok {
-			return fmt.Errorf("option %q set more than once", od.Name)
+			return errors.Errorf(fo.Frontend_NamePos, "Semantic", "option %q set more than once", od.Name)
 		}
+		set[od.Name] = struct{}{}
 
 		// Try to parse the option.
 		option, err := newOption(od, fo)
@@ -131,10 +155,15 @@ func parseStateOptions(state *State, frontendOptions []*output.OptionData) error
 			return fmt.Errorf("parsing state option %q: %w", fo.Name, err)
 		}
 
+		// If it is a testing option, we don't need to call a handler.
+		if od.TestingOption {
+			continue
+		}
+
 		// Cast to the handler
 		handler, ok := od.Handler.(StateOptionHandler)
 		if !ok {
-			panic(fmt.Sprintf("invalid handler type for state option %q", fo.Name))
+			return errors.InternalErrorf("invalid handler type for state option %q", fo.Name)
 		}
 
 		if err := handler(state, option); err != nil {

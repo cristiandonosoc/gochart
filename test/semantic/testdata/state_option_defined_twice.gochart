@@ -1,0 +1,19 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger SomeTrigger()
+//  14:
+//  15: 	state Root(default, default) {
+//      	                    ^---> option "default" set more than once
+//  16: 		capture SomeTrigger
+//  17: 	}
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root(default, default) {
+		capture SomeTrigger
+	}
+}
+

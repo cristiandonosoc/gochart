@@ -40,6 +40,7 @@ func TestLogicalErrors(t *testing.T) {
 				require.NoError(t, gotErr)
 				return
 			}
+			require.Error(t, gotErr)
 
 			if wantErrorText != gotErr.Error() {
 				t.Log("WANT:\n", wantErrorText)

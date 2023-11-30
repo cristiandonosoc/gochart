@@ -1,0 +1,19 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger SomeTrigger()
+//  14:
+//  15: 	state Root(non_existent) {
+//      	           ^---> unrecognized state option "non_existent"
+//  16: 		capture SomeTrigger
+//  17: 	}
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root(non_existent) {
+		capture SomeTrigger
+	}
+}
+

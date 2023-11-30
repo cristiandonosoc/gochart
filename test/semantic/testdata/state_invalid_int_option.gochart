@@ -1,0 +1,19 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger SomeTrigger()
+//  14:
+//  15: 	state Root(default, test_bool = true, test_int = "foo") {
+//      	                                      ^---> expected option "test_int" to be "int", got "string" instead
+//  16: 		capture SomeTrigger
+//  17: 	}
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root(default, test_bool = true, test_int = "foo") {
+		capture SomeTrigger
+	}
+}
+
