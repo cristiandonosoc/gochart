@@ -41,9 +41,10 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *outpu
 
 func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.TriggerData {
 	return &output.TriggerData{
-		Name:             nt.Name,
-		ArgsString:       nt.ArgsString,
-		FrontendPosition: tokenToPosition(ft.lf, nt.token),
+		Name:                nt.Name,
+		ArgsString:          nt.ArgsString,
+		Frontend_KeywordPos: tokenToPosition(ft.lf, nt.keywordToken),
+		Frontend_NamePos:    tokenToPosition(ft.lf, nt.nameToken),
 	}
 }
 
@@ -75,21 +76,24 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 
 	for _, c := range ns.Captures {
 		state.Captures = append(state.Captures, &output.CaptureData{
-			Trigger:          c.Trigger,
-			Condition:        c.Condition,
-			FrontendPosition: tokenToPosition(ft.lf, c.token),
+			Trigger:             c.Trigger,
+			Condition:           c.Condition,
+			Frontend_KeywordPos: tokenToPosition(ft.lf, c.keywordToken),
+			Frontend_TriggerPos: tokenToPosition(ft.lf, c.triggerToken),
 		})
 	}
 
 	// Collect the transitions.
 	for _, t := range ns.Transitions {
 		transition := &output.TransitionData{
-			From:             ns.Name,
-			To:               t.TargetState,
-			Trigger:          t.Trigger,
-			Condition:        t.Condition,
-			Action:           t.Action,
-			FrontendPosition: tokenToPosition(ft.lf, t.token),
+			From:                ns.Name,
+			To:                  t.TargetState,
+			Trigger:             t.Trigger,
+			Condition:           t.Condition,
+			Action:              t.Action,
+			Frontend_KeywordPos: tokenToPosition(ft.lf, t.keywordToken),
+			Frontend_TriggerPos: tokenToPosition(ft.lf, t.triggerToken),
+			Frontend_TargetPos:  tokenToPosition(ft.lf, t.targetToken),
 		}
 		transitions = append(transitions, transition)
 	}
@@ -109,7 +113,7 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.O
 			Name:             no.Name,
 			Kind:             no.ValueKind,
 			Value:            no.Value,
-			FrontendPosition: tokenToPosition(ft.lf, no.token),
+			Frontend_NamePos: tokenToPosition(ft.lf, no.token),
 		})
 	}
 

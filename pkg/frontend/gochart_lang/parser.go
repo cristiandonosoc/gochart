@@ -356,7 +356,8 @@ type ASTNodeTrigger struct {
 	Name       string
 	ArgsString string
 
-	token *Token
+	keywordToken *Token
+	nameToken    *Token
 }
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
@@ -369,10 +370,11 @@ func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 	}
 
 	// The name.
-	name, err := p.consumeTokenLiteral(Token_Identifier)
+	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
 		return nil, p.pushErrorf(0, "after \"trigger\" keyword: %v", err.Error())
 	}
+	name := nameToken.literal
 
 	// First paren.
 	if _, err := p.consumeToken(Token_LeftParen); err != nil {
@@ -395,9 +397,10 @@ func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 	}
 
 	trigger := &ASTNodeTrigger{
-		Name:       name,
-		ArgsString: args,
-		token:      baseToken,
+		Name:         name,
+		ArgsString:   args,
+		keywordToken: baseToken,
+		nameToken:    nameToken,
 	}
 
 	p.debuglog("-> parsed trigger: %+v", trigger)
@@ -625,7 +628,9 @@ type ASTNodeStateTransition struct {
 	Condition   string
 	Action      string
 
-	token *Token
+	keywordToken *Token
+	triggerToken *Token
+	targetToken  *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -639,12 +644,14 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 
 	// Check if it's a null transition. If not, we expected an identifier.
 	var triggerName string
+	var triggerToken *Token
 	if _, ok := p.match(Token_KeywordNull); !ok {
-		triggerToken, err := p.consumeToken(Token_Identifier)
+		tt, err := p.consumeToken(Token_Identifier)
 		if err != nil {
 			return nil, fmt.Errorf("expected null or identifier token: %w", err)
 		}
-		triggerName = triggerToken.literal
+		triggerToken = tt
+		triggerName = tt.literal
 	}
 
 	// The right angle bracket.
@@ -697,11 +704,13 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 	}
 
 	transition := &ASTNodeStateTransition{
-		Trigger:     triggerName,
-		TargetState: stateToken.literal,
-		Condition:   condition,
-		Action:      action,
-		token:       baseToken,
+		Trigger:      triggerName,
+		TargetState:  stateToken.literal,
+		Condition:    condition,
+		Action:       action,
+		keywordToken: baseToken,
+		triggerToken: triggerToken,
+		targetToken:  stateToken,
 	}
 
 	p.debuglog("-> parsed transition: %+v", transition)
@@ -716,7 +725,8 @@ type ASTNodeStateCapture struct {
 	Trigger   string
 	Condition string
 
-	token *Token
+	keywordToken *Token
+	triggerToken *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -729,10 +739,11 @@ func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, erro
 	}
 
 	// The trigger name.
-	triggerName, err := p.consumeTokenLiteral(Token_Identifier)
+	triggerToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
 		return nil, p.pushErrorf(0, "expected identifier after (: %w", err)
 	}
+	triggerName := triggerToken.literal
 
 	// Check if there is a condition.
 	var condition string
@@ -754,9 +765,10 @@ func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, erro
 	}
 
 	capture := &ASTNodeStateCapture{
-		Trigger:   triggerName,
-		Condition: condition,
-		token:     baseToken,
+		Trigger:      triggerName,
+		Condition:    condition,
+		keywordToken: baseToken,
+		triggerToken: triggerToken,
 	}
 
 	p.debuglog("-> parsed capture: %+v", capture)

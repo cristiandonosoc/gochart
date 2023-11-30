@@ -278,7 +278,7 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) 
 	for _, fc := range frontendCaptures {
 		trigger, ok := ih.triggerMap[fc.Trigger]
 		if !ok {
-			return nil, errors.Errorf(fc.FrontendPosition, "Semantic", "cannot find trigger %q", fc.Trigger)
+			return nil, errors.Errorf(fc.Frontend_TriggerPos, "Semantic", "cannot find trigger %q", fc.Trigger)
 		}
 
 		captures = append(captures, &StateCapture{

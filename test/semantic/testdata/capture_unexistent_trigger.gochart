@@ -4,7 +4,7 @@
 //  12: statechart Mumu {
 //  13: 	state Root {
 //  14: 		capture NonExistent
-//      		^---> cannot find trigger "NonExistent"
+//      		        ^---> cannot find trigger "NonExistent"
 //  15: 	}
 //  16: }
 // --- ERROR END

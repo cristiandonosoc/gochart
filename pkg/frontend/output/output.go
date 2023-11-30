@@ -45,14 +45,15 @@ type OptionData struct {
 	Kind  OptionValueKind
 	Value string
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_NamePos *files.LoadedFilePosition
 }
 
 type TriggerData struct {
 	Name       string
 	ArgsString string
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_NamePos    *files.LoadedFilePosition
 }
 
 type StateData struct {
@@ -81,7 +82,8 @@ type CaptureData struct {
 	Trigger   string
 	Condition string
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
 type TransitionData struct {
@@ -91,7 +93,9 @@ type TransitionData struct {
 	Condition string
 	Action    string
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_TriggerPos *files.LoadedFilePosition
+	Frontend_TargetPos  *files.LoadedFilePosition
 }
 
 func (tdata *TransitionData) String() string {
