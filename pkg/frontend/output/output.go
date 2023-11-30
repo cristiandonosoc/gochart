@@ -15,7 +15,8 @@ type StatechartData struct {
 	States      []*StateData
 	Transitions []*TransitionData
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_NamePos    *files.LoadedFilePosition
 }
 
 type OptionValueKind int
@@ -65,7 +66,8 @@ type StateData struct {
 
 	Captures []*CaptureData
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_NamePos    *files.LoadedFilePosition
 }
 
 type ReactionData struct {

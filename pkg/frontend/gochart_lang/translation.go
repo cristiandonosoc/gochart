@@ -30,11 +30,12 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *outpu
 	}
 
 	return &output.StatechartData{
-		Name:             nsc.Name,
-		Triggers:         triggers,
-		States:           states,
-		Transitions:      transitions,
-		FrontendPosition: tokenToPosition(ft.lf, nsc.token),
+		Name:                nsc.Name,
+		Triggers:            triggers,
+		States:              states,
+		Transitions:         transitions,
+		Frontend_KeywordPos: tokenToPosition(ft.lf, nsc.keywordToken),
+		Frontend_NamePos:    tokenToPosition(ft.lf, nsc.nameToken),
 	}
 }
 
@@ -48,10 +49,11 @@ func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.Trigg
 
 func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.StateData, transitions []*output.TransitionData) ([]*output.StateData, []*output.TransitionData) {
 	state := &output.StateData{
-		Name:             ns.Name,
-		Parent:           ns.ParentName,
-		Options:          ft.translateOptions(ns.Options),
-		FrontendPosition: tokenToPosition(ft.lf, ns.token),
+		Name:                ns.Name,
+		Parent:              ns.ParentName,
+		Options:             ft.translateOptions(ns.Options),
+		Frontend_KeywordPos: tokenToPosition(ft.lf, ns.keywordToken),
+		Frontend_NamePos:    tokenToPosition(ft.lf, ns.nameToken),
 	}
 
 	for _, er := range ns.EnterReactions {

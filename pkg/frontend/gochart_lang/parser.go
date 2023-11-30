@@ -109,7 +109,8 @@ type ASTNodeStatechart struct {
 	Triggers []*ASTNodeTrigger
 	States   []*ASTNodeState
 
-	token *Token
+	keywordToken *Token
+	nameToken    *Token
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
@@ -124,10 +125,11 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	// The name.
-	name, err := p.consumeTokenLiteral(Token_Identifier)
+	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
 		return nil, p.pushErrorf(0, "after \"statechart\" keyword: %v", err.Error())
 	}
+	name := nameToken.literal
 
 	// Debug tracking.
 	{
@@ -150,8 +152,9 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	}
 
 	sc := &ASTNodeStatechart{
-		Name:  name,
-		token: baseToken,
+		Name:         name,
+		keywordToken: baseToken,
+		nameToken:    nameToken,
 	}
 
 	{
@@ -417,7 +420,8 @@ type ASTNodeState struct {
 	Captures       []*ASTNodeStateCapture
 	Children       []*ASTNodeState
 
-	token *Token
+	keywordToken *Token
+	nameToken    *Token
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -430,10 +434,11 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 	}
 
 	// The name.
-	name, err := p.consumeTokenLiteral(Token_Identifier)
+	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
 		return nil, p.pushErrorf(0, "after \"state\" keyword: %v", err.Error())
 	}
+	name := nameToken.literal
 
 	// Debug tracking.
 	{
@@ -462,7 +467,9 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 		Name:       name,
 		Options:    options,
 		ParentName: parentName,
-		token:      baseToken,
+
+		keywordToken: baseToken,
+		nameToken:    nameToken,
 	}
 
 	// The body.

@@ -1,0 +1,25 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger SomeTrigger()
+//  14:
+//  15: 	state Root {
+//      	      ^---> state "Root" has more than one default child
+//  16: 		state Child1(default) {
+//  17: 			capture SomeTrigger
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root {
+		state Child1(default) {
+			capture SomeTrigger
+		}
+
+		state Child2(default) {
+			capture SomeTrigger
+		}
+	}
+}
+

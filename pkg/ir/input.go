@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
 )
 
@@ -112,7 +113,7 @@ func (ih *inputHandler) collectStates() error {
 	for _, statedata := range ih.scdata.States {
 		// The state should not exist.
 		if _, ok := stateMap[statedata.Name]; ok {
-			return fmt.Errorf("state %q already exists", statedata.Name)
+			return errors.Errorf(statedata.Frontend_NamePos, "Semantic", "state %q already exists", statedata.Name)
 		}
 
 		// For now, we simply create the state. Parenthood will be set on a second pass.
@@ -137,13 +138,13 @@ func (ih *inputHandler) collectStates() error {
 		// Search for the parent and mark it as a child of the other.
 		parent, ok := stateMap[state.frontendData.Parent]
 		if !ok {
-			return fmt.Errorf("state %q has unexistent parent state %q", state.Name, state.frontendData.Parent)
+			return errors.InternalErrorf("state %q has unexistent parent state %q", state.Name, state.frontendData.Parent)
 		}
 
 		// The parent should not have have this state already.
 		// We mark the parent <=> child relationship.
 		if parent.IsParentOf(state) {
-			return fmt.Errorf("state %q already has state %q as child", parent.Name, state.Name)
+			return errors.InternalErrorf("state %q already has state %q as child", parent.Name, state.Name)
 		}
 		parent.Children = append(parent.Children, state)
 		state.Parent = parent
@@ -183,14 +184,16 @@ func (ih *inputHandler) collectStates() error {
 	for _, state := range stateMap {
 		// For each state, if there is no default child, the first child should be default.
 		// TODO(cdc): Make the first-child-as-default heuristic toggable via options.
-		if err := ih.determineDefaultChild(state.Name, state.Children); err != nil {
+		prefix := fmt.Sprintf("state %q", state.Name)
+		if err := ih.determineDefaultChild(prefix, state.frontendData.Frontend_NamePos, state.Children); err != nil {
 			return fmt.Errorf("determining default child: %w", err)
 		}
 	}
 
 	// Perform some setup at the root level as well.
 	{
-		if err := ih.determineDefaultChild("Statechart Root", roots); err != nil {
+		prefix := fmt.Sprintf("statechart %q", ih.scdata.Name)
+		if err := ih.determineDefaultChild(prefix, ih.scdata.Frontend_NamePos, roots); err != nil {
 			return fmt.Errorf("determining default child: %w", err)
 		}
 	}
@@ -212,7 +215,7 @@ func (ih *inputHandler) collectStates() error {
 }
 
 // Separate function for validating child state, as this is also used at the root level.
-func (ih *inputHandler) determineDefaultChild(parentName string, states []*State) error {
+func (ih *inputHandler) determineDefaultChild(parentPrefix string, pos *files.LoadedFilePosition, states []*State) error {
 	// No children, there is nothing to do.
 	if len(states) == 0 {
 		return nil
@@ -222,7 +225,7 @@ func (ih *inputHandler) determineDefaultChild(parentName string, states []*State
 	for _, state := range states {
 		if state.Default {
 			if defaultFound {
-				return fmt.Errorf("state %q has more than one default child", parentName)
+				return errors.Errorf(pos, "Semantic", "%s has more than one default child", parentPrefix)
 			}
 
 			defaultFound = true

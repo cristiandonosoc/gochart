@@ -1,0 +1,23 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  17: 	}
+//  18:
+//  19: 	state Root {
+//      	      ^---> state "Root" already exists
+//  20: 		capture SomeTrigger
+//  21: 	}
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root {
+		capture SomeTrigger
+	}
+
+	state Root {
+		capture SomeTrigger
+	}
+}
+
