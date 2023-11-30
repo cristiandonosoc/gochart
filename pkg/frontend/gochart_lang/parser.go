@@ -578,7 +578,8 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 type ASTNodeStateReaction struct {
 	Trigger string
 
-	token *Token
+	keywordToken *Token
+	triggerToken *Token
 }
 
 var _ ASTNode = (*ASTNodeStateReaction)(nil)
@@ -592,13 +593,15 @@ func (p *Parser) parseStateReaction(baseToken *Token) (*ASTNodeStateReaction, er
 
 	// We check to see if the user indicated a trigger associated with the reaction.
 	var triggerName string
-	if nameToken, ok := p.match(Token_Identifier); ok {
-		triggerName = nameToken.literal
+	triggerToken, ok := p.match(Token_Identifier)
+	if ok {
+		triggerName = triggerToken.literal
 	}
 
 	reaction := &ASTNodeStateReaction{
-		Trigger: triggerName,
-		token:   baseToken,
+		Trigger:      triggerName,
+		keywordToken: baseToken,
+		triggerToken: triggerToken,
 	}
 
 	p.debuglog("-> parsed reaction: %+v", reaction)

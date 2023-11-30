@@ -71,7 +71,8 @@ type StateData struct {
 type ReactionData struct {
 	Trigger string
 
-	FrontendPosition *files.LoadedFilePosition
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
 type CaptureData struct {

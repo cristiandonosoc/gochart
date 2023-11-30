@@ -243,7 +243,7 @@ func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionDat
 		// Special case the empty trigger name, which is a default reaction with a nil trigger.
 		if fr.Trigger == "" {
 			if defaultFound {
-				return nil, errors.Errorf(fr.FrontendPosition, "Semantic", "many default %q reactions found, only one allowed", kind)
+				return nil, errors.Errorf(fr.Frontend_KeywordPos, "Semantic", "many default %q reactions found, only one allowed", kind)
 			}
 
 			triggers = append(triggers, nil)
@@ -253,7 +253,7 @@ func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionDat
 
 		trigger, ok := ih.triggerMap[fr.Trigger]
 		if !ok {
-			return nil, errors.Errorf(fr.FrontendPosition, "Semantic", "cannot find trigger %q", fr.Trigger)
+			return nil, errors.Errorf(fr.Frontend_TriggerPos, "Semantic", "cannot find trigger %q", fr.Trigger)
 		}
 		triggers = append(triggers, trigger)
 	}
