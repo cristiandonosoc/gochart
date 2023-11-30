@@ -54,6 +54,7 @@ type TriggerData struct {
 
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
+	Frontend_ArgsPos    *files.LoadedFilePosition
 }
 
 type StateData struct {

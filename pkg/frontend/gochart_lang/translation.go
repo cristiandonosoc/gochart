@@ -45,6 +45,7 @@ func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.Trigg
 		ArgsString:          nt.ArgsString,
 		Frontend_KeywordPos: tokenToPosition(ft.lf, nt.keywordToken),
 		Frontend_NamePos:    tokenToPosition(ft.lf, nt.nameToken),
+		Frontend_ArgsPos:    tokenToPosition(ft.lf, nt.argsToken),
 	}
 }
 

@@ -85,7 +85,7 @@ func (ih *inputHandler) collectTriggers() error {
 func (ih *inputHandler) createTrigger(tdata *output.TriggerData) (*Trigger, error) {
 	// We make sure that the trigger doesn't exist already.
 	if _, ok := ih.triggerMap[tdata.Name]; ok {
-		return nil, fmt.Errorf("trigger %q defined twice", tdata.Name)
+		return nil, errors.Errorf(tdata.Frontend_NamePos, "Semantic", "trigger %q defined more than once", tdata.Name)
 	}
 
 	// Parse the arguments.
@@ -94,7 +94,7 @@ func (ih *inputHandler) createTrigger(tdata *output.TriggerData) (*Trigger, erro
 		// For now we only support C++, but we could support other languages as well if needed.
 		parsedArgs, err := ParseCppArguments(tdata.ArgsString)
 		if err != nil {
-			return nil, fmt.Errorf("parsing arguments for trigger %q: %w", tdata.Name, err)
+			return nil, errors.Errorf(tdata.Frontend_ArgsPos, "Semantic", "parsing arguments for trigger %q: %w", tdata.Name, err)
 		}
 		args = parsedArgs
 	}

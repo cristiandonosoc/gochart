@@ -358,6 +358,7 @@ type ASTNodeTrigger struct {
 
 	keywordToken *Token
 	nameToken    *Token
+	argsToken    *Token
 }
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
@@ -383,12 +384,14 @@ func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 
 	// Optionally we could have arguments.
 	var args string
+	var argsToken *Token
 	if p.peek().id == Token_TriggerArgs {
-		argsStr, err := p.consumeTokenLiteral(Token_TriggerArgs)
+		at, err := p.consumeToken(Token_TriggerArgs)
 		if err != nil {
 			return nil, fmt.Errorf("consuming args token: %w", err)
 		}
-		args = argsStr
+		argsToken = at
+		args = at.literal
 	}
 
 	// Last paren.
@@ -401,6 +404,7 @@ func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 		ArgsString:   args,
 		keywordToken: baseToken,
 		nameToken:    nameToken,
+		argsToken:    argsToken,
 	}
 
 	p.debuglog("-> parsed trigger: %+v", trigger)

@@ -1,0 +1,20 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  12: statechart Mumu {
+//  13: 	trigger SomeTrigger()
+//  14: 	trigger SomeTrigger()
+//      	        ^---> trigger "SomeTrigger" defined more than once
+//  15:
+//  16: 	state Root {
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+	trigger SomeTrigger()
+
+	state Root {
+		capture SomeTrigger
+	}
+}
+
