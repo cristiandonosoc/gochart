@@ -1,0 +1,38 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  20:
+//  21: 			state Child12 {
+//  22: 				transition null > Child21
+//      				                  ^---> state "Child12" can only transition to states within its own concurrent group, under state "Group1"
+//  23: 			}
+//  24: 		}
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root(concurrent) {
+		state Group1 {
+			state Child11 {
+				transition SomeTrigger > Child12
+			}
+
+			state Child12 {
+				transition null > Child21
+			}
+		}
+
+		state Group2 {
+			state Child21 {
+				capture SomeTrigger
+			}
+		}
+
+		state Group3 {
+			capture SomeTrigger
+		}
+	}
+}
+
+

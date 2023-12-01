@@ -18,7 +18,8 @@ func validate(ih *inputHandler) error {
 
 	// Validate states.
 	for _, state := range ih.states {
-		if err := validateState(state); err != nil {
+		sv := newStateValidator(ih, state)
+		if err := sv.validate(); err != nil {
 			return fmt.Errorf("validating state %q: %w", state.Name, err)
 		}
 	}
@@ -38,29 +39,68 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 	return nil
 }
 
-func validateState(state *State) error {
+type stateValidator struct {
+	ih         *inputHandler
+	state      *State
+	triggerSet map[*Trigger]struct{}
+}
+
+func newStateValidator(ih *inputHandler, state *State) *stateValidator {
+	return &stateValidator{
+		ih:         ih,
+		state:      state,
+		triggerSet: make(map[*Trigger]struct{}),
+	}
+}
+
+func (sv *stateValidator) validate() error {
 	// If it has children, at least one of them has to be marked default child.
-	if len(state.Children) > 0 {
-		if err := validateDefaultChildExists(state.frontendData.Frontend_NamePos, state.Children); err != nil {
-			return fmt.Errorf("state %q: validating that default child exists: %w", state.Name, err)
+	if len(sv.state.Children) > 0 {
+		if err := validateDefaultChildExists(sv.state.frontendData.Frontend_NamePos, sv.state.Children); err != nil {
+			return fmt.Errorf("state %q: validating that default child exists: %w", sv.state.Name, err)
 		}
 	}
 
-	// Validate that transitions and captures don't work on the same trigger.
-	set := map[*Trigger]struct{}{}
-
-	for _, transition := range state.Transitions {
-		if _, ok := set[transition.Trigger]; ok {
-			return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic", "state %q: Trigger %q already handled by transition or capture", state.Name, transition.Trigger.Name)
-		}
-		set[transition.Trigger] = struct{}{}
+	if err := sv.validateTransitions(); err != nil {
+		return fmt.Errorf("validating transitions: %w", err)
 	}
 
-	for _, capture := range state.Captures {
-		if _, ok := set[capture.Trigger]; ok {
-			return errors.Errorf(capture.frontendData.Frontend_TriggerPos, "Semantic", "state %q: Trigger %q already handled by transition or capture", state.Name, capture.Trigger.Name)
+	if err := sv.validateCaptures(); err != nil {
+		return fmt.Errorf("validating captures: %w", err)
+	}
+
+	return nil
+}
+
+func (sv *stateValidator) validateTransitions() error {
+	for _, transition := range sv.state.Transitions {
+		// Validate that this trigger hasn't been used yet.
+		if _, ok := sv.triggerSet[transition.Trigger]; ok {
+			return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic",
+				"state %q: Trigger %q already handled by transition or capture",
+				sv.state.Name, transition.Trigger.Name)
 		}
-		set[capture.Trigger] = struct{}{}
+		sv.triggerSet[transition.Trigger] = struct{}{}
+
+		// Validate that the transition has the same concurrent group.
+		if sv.state.ConcurrentGroup != transition.To.ConcurrentGroup {
+			return errors.Errorf(transition.frontendData.Frontend_TargetPos, "Semantic",
+				"state %q can only transition to states within its own concurrent group, under %s",
+				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
+		}
+	}
+
+	return nil
+}
+
+func (sv *stateValidator) validateCaptures() error {
+	for _, capture := range sv.state.Captures {
+		if _, ok := sv.triggerSet[capture.Trigger]; ok {
+			return errors.Errorf(capture.frontendData.Frontend_TriggerPos, "Semantic",
+				"state %q: Trigger %q already handled by transition or capture",
+				sv.state.Name, capture.Trigger.Name)
+		}
+		sv.triggerSet[capture.Trigger] = struct{}{}
 	}
 
 	return nil
@@ -72,7 +112,9 @@ func validateDefaultChildExists(parentPos *files.LoadedFilePosition, states []*S
 		if state.Default {
 			// There can only be one default child state.
 			if foundDefault {
-				return errors.Errorf(state.frontendData.Frontend_NamePos, "Semantic", "state %q marked as default when a default state already exists", state.Name)
+				return errors.Errorf(state.frontendData.Frontend_NamePos, "Semantic",
+					"state %q marked as default when a default state already exists",
+					state.Name)
 			}
 			foundDefault = true
 		}
