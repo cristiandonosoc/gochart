@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cassert>
+#include <limits>
 
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
 #ifdef _MSC_VER
@@ -107,6 +108,41 @@ EState GetDefaultChild(EState state)
     GOCHART_DEBUG_BREAK;
     return EState::Invalid;
 }
+
+bool GetIsConcurrent(EState state)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		case EState::{{$state.Name}}:
+			return {{$state.Concurrent}};
+		{{- end }}{{/* range $sc.States */}}
+		default:
+			break;
+	}
+
+	GOCHART_DEBUG_BREAK;
+	return false;
+}
+
+size_t GetConcurrentGroup(EState state)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		case EState::{{$state.Name}}:
+			return {{$state.GetConcurrentGroup}};
+		{{- end }}{{/* range $sc.States */}}
+		default:
+			break;
+	}
+
+	GOCHART_DEBUG_BREAK;
+	return std::numeric_limits<size_t>::max();
+}
+
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -206,11 +242,13 @@ void Route::AppendDefaultEnters(EState state, Route* out)
 
 void Route::AppendDefaultExits(EState state, Route* out)
 {
-    while (state != EState::Invalid)
-    {
-        out->AppendExitState(state);
-        state = GetParentState(state);
-    }
+	// We only add default exists until we either find an invalid parent (meaning that we got into
+	// the root state, or we find a concurrent parent, which acts as the "root" of this concurrent
+	// group.
+	do {
+		out->AppendExitState(state);
+		state = GetParentState(state);
+	} while (state != EState::Invalid && !GetIsConcurrent(state));
 }
 
 void ComputeRoute(EState from, EState to, Route* out)
@@ -230,6 +268,8 @@ void ComputeRoute(EState from, EState to, Route* out)
     // We need to find the common state between them.
     // Since they are not the same, first we go from the |from|, compare, and then we compare
     // from the |to|. If not equal then, repeat the process.
+	//
+	// By definition, the common state between them will be the parent concurrent state.
     while (from != to)
     {
         // Try to go up from the |from| side.

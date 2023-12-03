@@ -14,6 +14,11 @@ const (
 	InvalidStateName   = "Invalid"
 )
 
+type ConcurrentHead struct {
+	Id        int
+	HeadState *State
+}
+
 // Statechart represents a single statechart state machine.
 type Statechart struct {
 	Name string
@@ -21,7 +26,8 @@ type Statechart struct {
 	Triggers []*Trigger
 
 	// Roots are the list of states that are "roots" (have no parents) within the state tree.
-	Roots []*State
+	Roots           []*State
+	ConcurrentHeads []*ConcurrentHead
 
 	// States are all the states, as defined in the order from the frontend.
 	States []*State
@@ -39,6 +45,10 @@ func (sc *Statechart) DefaultRootState() *State {
 	}
 
 	panic("No default root state found. This should've been caught in validation")
+}
+
+func (sc *Statechart) ConcurrentGroupCount() int {
+	return len(sc.ConcurrentHeads)
 }
 
 // TRIGGER -----------------------------------------------------------------------------------------
@@ -107,7 +117,9 @@ type State struct {
 
 	Captures []*StateCapture
 
-	Parent       *State
+	Parent *State
+
+	statechart   *Statechart
 	frontendData *output.StateData
 }
 
@@ -145,6 +157,28 @@ func (s *State) IsParentOf(other *State) bool {
 	}
 
 	return false
+}
+
+func (s *State) GetConcurrentGroup() int {
+	// Create a set of states.
+	headStates := make(map[*State]int)
+	for group, head := range s.statechart.ConcurrentHeads {
+		headStates[head.HeadState] = group
+	}
+
+	// Now we search until we find a group.
+	current := s
+	for current != nil {
+		// See if this is a concurrent head.
+		if group, ok := headStates[current]; ok {
+			return group
+		}
+
+		current = current.Parent
+	}
+
+	// Arriving here means that this state wasn't child of any concurrent head.
+	return 0
 }
 
 func (s *State) HasTransition(trigger *Trigger) bool {

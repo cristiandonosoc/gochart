@@ -38,15 +38,15 @@ int main()
 
     statechart->Activate();
 
-    std::cout << "Current State: "
-              << gochart::ToString(statechart->GetCurrentState())
-              << std::endl;
+    //std::cout << "Current State: "
+    //          << gochart::ToString(statechart->GetCurrentState())
+    //          << std::endl;
 
     statechart->TriggerTrigger1(2, 2.5f);
 
-    std::cout << "Current State: "
-              << gochart::ToString(statechart->GetCurrentState())
-              << std::endl;
+    //std::cout << "Current State: "
+    //          << gochart::ToString(statechart->GetCurrentState())
+    //          << std::endl;
 
     statechart->Deactivate();
 }

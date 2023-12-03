@@ -88,7 +88,6 @@ enum class EState
 
 {{- range $sc.States }}
 {{- $state := . }}
-
 constexpr std::size_t kState{{$state.Name}}ChildrenCount = {{len $state.Children}};
 {{- if gt (len $state.Children) 0 }}
 extern std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Name}}ChildrenArray;
@@ -194,6 +193,7 @@ class {{$impl}}
 {
 public:
     using ElementType = uint32_t;
+		static constexpr std::size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
 
 public:
     // **** TRIGGER API BEGIN ****
@@ -236,17 +236,18 @@ public:
     void Deactivate();
 
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
+	void EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data);
     void ExitState(EState state, ETrigger trigger, const void* trigger_data);
+	void EvaluateConcurrentExit(EState state, ETrigger trigger, const void *trigger_data);
     void CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data);
     void ProcessTriggerQueue();
     void ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data);
 
 public:
-    EState GetCurrentState() const { return CurrentState; }
     T* GetOwner() const { return Owner; }
 
 private:
-    EState CurrentState = EState::Invalid;
+	std::array<EState, kConcurrentGroupCount> CurrentStates;
     {{$namespace}}::TriggerProcessingState* ProcessingState = nullptr;
     T* Owner = nullptr;
     // State tracking flags.
@@ -276,9 +277,6 @@ public:
   {
     return std::unique_ptr<{{$interface}}>(new {{$interface}}(owner));
   }
-
-public:
-    {{$namespace}}::EState GetCurrentState() const { return Impl.GetCurrentState(); }
 
 public:
     void Activate() { Impl.Activate(); }
@@ -332,6 +330,8 @@ namespace {{$namespace}} {
 
 EState GetParentState(EState state);
 EState GetDefaultChild(EState state);
+bool GetIsConcurrent(EState state);
+size_t GetConcurrentGroup(EState state);
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -346,12 +346,21 @@ bool Has{{$reactionType}}Reaction(EState state, ETrigger trigger);
 // Constructor/Destructor --------------------------------------------------------------------------
 
 template <typename T>
-{{$impl}}<T>::{{$impl}}(T* owner) : Owner(owner) {}
+{{$impl}}<T>::{{$impl}}(T* owner) : Owner(owner)
+{
+	for (size_t i = 0; i < kConcurrentGroupCount; i++)
+	{
+		CurrentStates[i] = EState::Invalid;
+	}
+}
 
 template <typename T>
 {{$impl}}<T>::~{{$impl}}()
 {
-  assert(CurrentState == EState::Invalid);
+	for (size_t i = 0; i < kConcurrentGroupCount; i++)
+	{
+		assert(CurrentStates[i] == EState::Invalid);
+	}
 }
 
 // Activate/Deactivate -----------------------------------------------------------------------------
@@ -360,7 +369,10 @@ template <typename T>
 void {{$impl}}<T>::Activate()
 {
     assert(!GetIsActive());
-    assert(CurrentState == EState::Invalid);
+	for (EState state : CurrentStates)
+	{
+		assert(state == EState::Invalid);
+	}
 
     assert(!GetIsActivating());
     SetIsActive(true);
@@ -388,18 +400,23 @@ template <typename T>
 void {{$impl}}<T>::Deactivate()
 {
     assert(GetIsActive());
-    assert(CurrentState != EState::Invalid);
+	// The root state should be active.
+    assert(CurrentStates[0] != EState::Invalid);
 
     assert(!GetIsDeactivating());
     SetIsDeactivating(true);
 
-    // We process a transition to invalid, which means an exit.
-    ProcessTransition(CurrentState, EState::Invalid, ETrigger::Invalid, nullptr);
+    // We process a transition of the root concurrent group to invalid, which means an exit.
+    ProcessTransition(CurrentStates[0], EState::Invalid, ETrigger::Invalid, nullptr);
 
     SetIsDeactivating(false);
     SetIsActive(false);
 
-    assert(CurrentState == EState::Invalid);
+	// Now all states should be exited.
+	for (EState state : CurrentStates)
+	{
+		assert(state == EState::Invalid);
+	}
 }
 
 // Triggers ----------------------------------------------------------------------------------------
@@ -430,7 +447,7 @@ void {{$impl}}<T>::Trigger{{$trigger.Name}}({{$args}})
         .Data = std::move(data),
     };
 
-    // Check if we're currently processing a trigger.
+    // Check if we're currently processing a trigger.l
     // If so, we simply queue the event.
     if (ProcessingState)
     {
@@ -572,6 +589,7 @@ void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}<T>& impl
         {{- end }}
         {{- end }}
         case ETrigger::Invalid:
+		{
             {{- if $state.HasDefaultReaction $reactionType }}
             // Default {{$reactionType}}.
             impl.GetOwner()->State{{$state.Name}}_{{$reactionType}}();
@@ -579,6 +597,7 @@ void State{{$state.Name}}_Call{{$reactionType}}Reaction(const {{$impl}}<T>& impl
             // No default {{$reactionType}} reaction for state {{$state.SafeName}}.
             {{- end }}
             return;
+		}
     }
 
     GOCHART_DEBUG_BREAK;
@@ -615,41 +634,109 @@ template <typename T>
 void {{$impl}}<T>::EnterState(EState state, ETrigger trigger, const void* trigger_data)
 {
     assert(state != EState::Invalid);
-    CurrentState = state;
+	size_t concurrent_group = GetConcurrentGroup(state);
+	assert(concurrent_group < kConcurrentGroupCount);
+
+	CurrentStates[concurrent_group] = state;
 
     // First we check for trigger specific reactions, as the default one will be called always.
-    if (trigger != ETrigger::Invalid && HasEnterReaction(CurrentState, trigger))
+    if (trigger != ETrigger::Invalid && HasEnterReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
-        CallEnterReaction(*this, CurrentState, trigger, trigger_data);
+        CallEnterReaction(*this, state, trigger, trigger_data);
     }
 
     // Now we check if we need to also call the default enter reaction.
-    if (HasEnterReaction(CurrentState, ETrigger::Invalid))
+    if (HasEnterReaction(state, ETrigger::Invalid))
     {
-        CallEnterReaction(*this, CurrentState, ETrigger::Invalid, nullptr);
+        CallEnterReaction(*this, state, ETrigger::Invalid, nullptr);
     }
+
+	// Now that we enter, we see if this state is concurrent and we need to enter the other
+	// concurrent groups.
+	EvaluateConcurrentEnter(state, trigger, trigger_data);
+}
+
+template <typename T>
+void {{$impl}}<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		case EState::{{$state.Name}}:
+		{
+			{{- if $state.Concurrent }}
+			for (EState child_state : kState{{$state.Name}}ChildrenArray)
+			{
+				// We enter the state and the we trigger a transition to follow the default enters.
+				EnterState(child_state, trigger, trigger_data);
+				ProcessTransition(child_state, child_state, trigger, trigger_data);
+			}
+			{{- else }}
+			// State {{$state.Name}} is not concurrent. Nothing to do.
+			{{- end }}
+			break;
+		}
+
+		{{- end }}{{/* range $sc.States */}}
+	}
 }
 
 template <typename T>
 void {{$impl}}<T>::ExitState(EState state, ETrigger trigger, const void* trigger_data)
 {
     assert(state != EState::Invalid);
+	size_t concurrent_group = GetConcurrentGroup(state);
+	assert(concurrent_group < kConcurrentGroupCount);
+
+	// First we check if we need to exit any of the concurrent children.
+	EvaluateConcurrentExit(state, trigger, trigger_data);
 
     // First we check for a trigger specific exit. Then we call the default exit.
-    if (trigger != ETrigger::Invalid && HasExitReaction(CurrentState, trigger))
+    if (trigger != ETrigger::Invalid && HasExitReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
-        CallExitReaction(*this, CurrentState, trigger, trigger_data);
+        CallExitReaction(*this, state, trigger, trigger_data);
     }
 
     // Then we call the default exit.
-    if (HasExitReaction(CurrentState, ETrigger::Invalid))
+    if (HasExitReaction(state, ETrigger::Invalid))
     {
-        CallExitReaction(*this, CurrentState, ETrigger::Invalid, nullptr);
+        CallExitReaction(*this, state, ETrigger::Invalid, nullptr);
     }
 
-    CurrentState = GetParentState(state);
+	// If the parent is concurrent, then we mark this concurrent group as invalid (stopped).
+    EState parent = GetParentState(state);
+	if (parent != EState::Invalid && GetIsConcurrent(parent))
+	{
+		parent = EState::Invalid;
+	}
+	CurrentStates[concurrent_group] = parent;
+}
+
+template <typename T>
+void {{$impl}}<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const void* trigger_data)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		case EState::{{$state.Name}}:
+		{
+			{{- if $state.Concurrent }}
+			for (EState child_state : kState{{$state.Name}}ChildrenArray)
+			{
+				// We issue a transition of this state out.
+				ProcessTransition(child_state, EState::Invalid, trigger, trigger_data);
+			}
+			{{- else }}
+			// State {{$state.Name}} is not concurrent. Nothing to do.
+			{{- end }}
+			break;
+		}
+		{{- end }}{{/* range $sc.States */}}
+	}
 }
 
 template <typename T>
@@ -781,7 +868,18 @@ void {{$impl}}<T>::ProcessTriggerQueue()
         }
 
         ProcessingState->CurrentTrigger = entry.Trigger;
-        ProcessTrigger(this, CurrentState, entry);
+
+		// We issue the trigger to all current active concurrent states.
+		// The order of the concurrent groups is such that child groups will be processed first.
+		for (EState state : CurrentStates)
+		{
+			if (state == EState::Invalid)
+			{
+				continue;
+			}
+
+			ProcessTrigger(this, state, entry);
+		}
 
         ProcessingState->TriggerQueue.Dequeue();
     }

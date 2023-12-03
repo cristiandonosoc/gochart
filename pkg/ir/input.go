@@ -18,7 +18,7 @@ type inputHandler struct {
 	states     []*State
 
 	nextConcurrentGroup int
-	concurrentHeads     map[int]*State
+	concurrentHeads     []*ConcurrentHead
 
 	triggerMap map[string]*Trigger
 	stateMap   map[string]*State
@@ -34,10 +34,9 @@ func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
 
 func processStatechartDataInternal(scdata *output.StatechartData) (*Statechart, error) {
 	ih := inputHandler{
-		scdata:          scdata,
-		concurrentHeads: make(map[int]*State),
-		triggerMap:      make(map[string]*Trigger),
-		stateMap:        make(map[string]*State),
+		scdata:     scdata,
+		triggerMap: make(map[string]*Trigger),
+		stateMap:   make(map[string]*State),
 	}
 
 	if err := ih.collectTriggers(); err != nil {
@@ -56,15 +55,23 @@ func processStatechartDataInternal(scdata *output.StatechartData) (*Statechart, 
 		return nil, fmt.Errorf("validating input: %w", err)
 	}
 
-	return &Statechart{
-		Name:         scdata.Name,
-		Roots:        ih.rootStates,
-		Triggers:     ih.triggers,
-		States:       ih.states,
-		TriggerMap:   ih.triggerMap,
-		StateMap:     ih.stateMap,
-		frontendData: scdata,
-	}, nil
+	statechart := &Statechart{
+		Name:            scdata.Name,
+		Roots:           ih.rootStates,
+		ConcurrentHeads: ih.concurrentHeads,
+		Triggers:        ih.triggers,
+		States:          ih.states,
+		TriggerMap:      ih.triggerMap,
+		StateMap:        ih.stateMap,
+		frontendData:    scdata,
+	}
+
+	// Now that we have the statechart, we go over each state creating the back pointer.
+	for _, state := range statechart.States {
+		state.statechart = statechart
+	}
+
+	return statechart, nil
 }
 
 func (ih *inputHandler) collectTriggers() error {
@@ -202,7 +209,9 @@ func (ih *inputHandler) collectStates() error {
 
 	// Calculate concurrent-ness.
 	// This is better if calculated top down.
-	ih.concurrentHeads[0] = nil
+	ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+		Id: 0,
+	})
 	for _, rootState := range roots {
 		rootState.ConcurrentGroup = 0
 		if err := ih.calculateConcurrentness(rootState); err != nil {
@@ -374,7 +383,10 @@ func (ih *inputHandler) calculateConcurrentness(state *State) error {
 		if parent.Concurrent {
 			ih.nextConcurrentGroup++
 			group = ih.nextConcurrentGroup
-			ih.concurrentHeads[group] = current
+			ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+				Id:        group,
+				HeadState: current,
+			})
 		}
 		current.ConcurrentGroup = group
 
@@ -388,15 +400,12 @@ func (ih *inputHandler) calculateConcurrentness(state *State) error {
 }
 
 func (ih *inputHandler) getConcurrentGroupTitle(concurrentGroup int) string {
-	state, ok := ih.concurrentHeads[concurrentGroup]
-	if !ok {
-		panic(fmt.Sprintf("cannot find concurrent head for group %d", concurrentGroup))
-	}
+	head := ih.concurrentHeads[concurrentGroup]
 
 	// If the state is nil, it means that this is a root state.
-	if state == nil {
+	if head.HeadState == nil {
 		return fmt.Sprintf("statechart %q", ih.scdata.Name)
 	}
 
-	return fmt.Sprintf("state %q", state.Name)
+	return fmt.Sprintf("state %q", head.HeadState.Name)
 }
