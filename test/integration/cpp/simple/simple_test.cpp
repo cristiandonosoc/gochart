@@ -56,7 +56,7 @@ private:
 TEST(HelloTest, BasicAssertions)
 {
     Delegate delegate;
-    auto statechart = gochart::StatechartDoor<Delegate>::Create(&delegate);
+    auto statechart = gochart::Door::Create(&delegate);
     statechart->Activate();
     statechart->TriggerActivateDoorActuator(true);
     statechart->TriggerToggleDoor(true, false);
@@ -68,7 +68,7 @@ TEST(HelloTest, BasicAssertions)
 TEST(HelloTest, Captures)
 {
     Delegate delegate;
-    auto statechart = gochart::StatechartDoor<Delegate>::Create(&delegate);
+    auto statechart = gochart::Door::Create(&delegate);
 
     statechart->Activate();
     EXPECT_EQ(delegate.GetTotalCalls(), 0);
@@ -142,7 +142,7 @@ TEST(HelloTest, Captures)
 TEST(HelloText, TransitionAction)
 {
     Delegate delegate;
-    auto statechart = gochart::StatechartDoor<Delegate>::Create(&delegate);
+    auto statechart = gochart::Door::Create(&delegate);
 
     statechart->Activate();
     EXPECT_EQ(delegate.GetTotalCalls(), 0);

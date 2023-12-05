@@ -34,7 +34,7 @@ public:
 int main()
 {
     Delegate delegate;
-    auto statechart = gochart::StatechartSimple<Delegate>::Create(&delegate);
+    auto statechart = gochart::Simple::Create(&delegate);
 
     statechart->Activate();
 

@@ -37,6 +37,10 @@ type Statechart struct {
 	frontendData *output.StatechartData
 }
 
+func (sc *Statechart) ClassName() string {
+	return sc.Name
+}
+
 func (sc *Statechart) DefaultRootState() *State {
 	for _, state := range sc.States {
 		if state.Default {
