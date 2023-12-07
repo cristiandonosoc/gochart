@@ -4,11 +4,11 @@ package backend
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
+	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 
@@ -19,7 +19,7 @@ import (
 // they are meant to generate for. This is to decouple generated languages from the input (frontend)
 // language defined to specify them.
 type GochartBackend interface {
-	Generate(sc *ir.Statechart, opts ...option.Option) (header, body io.Reader, err error)
+	Generate(sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error)
 }
 
 type backendFactory func(*cli.Context) (GochartBackend, error)

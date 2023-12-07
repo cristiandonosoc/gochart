@@ -9,6 +9,7 @@ go_library(
         "//internal/files",
         "//internal/option",
         "//pkg/backend",
+        "//pkg/backend/common",
         "//pkg/frontend",
         "//pkg/ir",
     ],

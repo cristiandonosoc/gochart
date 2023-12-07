@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/internal/option"
+	//"github.com/cristiandonosoc/gochart/internal/files"
+	//"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
-	cpp_backend "github.com/cristiandonosoc/gochart/pkg/backend/cpp"
+	//cpp_backend "github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
-	"github.com/cristiandonosoc/gochart/pkg/ir"
+	//"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
 const (
@@ -114,38 +114,40 @@ func (ui *unrealIntegrator) generateGochart(gochart *UnrealFile, platform Unreal
 		return nil
 	}
 
-	lf, err := files.LoadFileFromPath(gfc.GochartFile.Path)
-	if err != nil {
-		return fmt.Errorf("loading file: %w", err)
-	}
+	panic("REIMPLEMENT ME")
 
-	frontendData, err := ui.gf.Process(lf)
-	if err != nil {
-		return fmt.Errorf("processing statechart: %w", err)
-	}
+	// lf, err := files.LoadFileFromPath(gfc.GochartFile.Path)
+	// if err != nil {
+	// 	return fmt.Errorf("loading file: %w", err)
+	// }
 
-	irData, err := ir.ProcessStatechartData(frontendData)
-	if err != nil {
-		return fmt.Errorf("processing frontend: %w", err)
-	}
+	// frontendData, err := ui.gf.Process(lf)
+	// if err != nil {
+	// 	return fmt.Errorf("processing statechart: %w", err)
+	// }
 
-	var opts []option.Option
-	opts = append(opts, cpp_backend.WithHeaderIncludePath(gfc.Header.Name()))
+	// irData, err := ir.ProcessStatechartData(frontendData)
+	// if err != nil {
+	// 	return fmt.Errorf("processing frontend: %w", err)
+	// }
 
-	header, cpp, err := ui.gb.Generate(irData, opts...)
-	if err != nil {
-		return fmt.Errorf("generating files: %w", err)
-	}
+	// var opts []option.Option
+	// opts = append(opts, cpp_backend.WithHeaderIncludePath(gfc.Header.Name()))
 
-	if err := gfc.writeIfDifferent(gfc.Header, header); err != nil {
-		return fmt.Errorf("writing header if different: %w", err)
-	}
+	// header, cpp, err := ui.gb.Generate(irData, opts...)
+	// if err != nil {
+	// 	return fmt.Errorf("generating files: %w", err)
+	// }
 
-	if err := gfc.writeIfDifferent(gfc.Cpp, cpp); err != nil {
-		return fmt.Errorf("writing cpp if different: %w", err)
-	}
+	// if err := gfc.writeIfDifferent(gfc.Header, header); err != nil {
+	// 	return fmt.Errorf("writing header if different: %w", err)
+	// }
 
-	return nil
+	// if err := gfc.writeIfDifferent(gfc.Cpp, cpp); err != nil {
+	// 	return fmt.Errorf("writing cpp if different: %w", err)
+	// }
+
+	// return nil
 }
 
 type GochartFileContext struct {

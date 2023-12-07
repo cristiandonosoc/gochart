@@ -12,39 +12,47 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
-//go:embed statechart.h.template statechart.cpp.template
+//go:embed forward_declare.h.template declare.h.template define.h.template
 var embeddedFS embed.FS
 
 type embedPath string
 
 const (
-	headerFilename embedPath = "statechart.h.template"
-	cppFilename    embedPath = "statechart.cpp.template"
+	kForwardDeclareFilename embedPath = "forward_declare.h.template"
+	kDeclareFilename        embedPath = "declare.h.template"
+	kDefineFilename         embedPath = "define.h.template"
 )
 
 // templateManager is a helper struct to handle the common context for template loading.
 type templateManager struct {
-	headerTemplate *template.Template
-	cppTemplate    *template.Template
+	forwardDeclareTemplate *template.Template
+	declareTemplate        *template.Template
+	defineTemplate         *template.Template
 
 	sc *ir.Statechart
 }
 
 func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
-	headerTemplate, err := readTemplate(headerFilename)
+	forwardDeclareTemplate, err := readTemplate(kForwardDeclareFilename)
 	if err != nil {
-		return nil, fmt.Errorf("reading header template: %w", err)
+		return nil, fmt.Errorf("reading forward declare template %q: %w", kForwardDeclareFilename, err)
 	}
 
-	cppTemplate, err := readTemplate(cppFilename)
+	declareTemplate, err := readTemplate(kDeclareFilename)
 	if err != nil {
-		return nil, fmt.Errorf("reading cpp template: %w", err)
+		return nil, fmt.Errorf("reading declare template %q: %w", kDeclareFilename, err)
+	}
+
+	defineTemplate, err := readTemplate(kDefineFilename)
+	if err != nil {
+		return nil, fmt.Errorf("reading define template %q: %w", kDefineFilename, err)
 	}
 
 	return &templateManager{
-		headerTemplate: headerTemplate,
-		cppTemplate:    cppTemplate,
-		sc:             sc,
+		forwardDeclareTemplate: forwardDeclareTemplate,
+		declareTemplate:        declareTemplate,
+		defineTemplate:         defineTemplate,
+		sc:                     sc,
 	}, nil
 }
 
@@ -67,26 +75,25 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateBody(options *Options) (io.Reader, error) {
+func (tm *templateManager) generateTemplates(options *Options) (_forwardDeclare, _declare, _define io.Reader, _err error) {
 	context := newTemplateContext(tm.sc, options)
 
-	var buf bytes.Buffer
-	if err := tm.cppTemplate.Execute(&buf, context); err != nil {
-		return nil, fmt.Errorf("executing template: %w", err)
+	var forwardDeclareBuf bytes.Buffer
+	if err := tm.forwardDeclareTemplate.Execute(&forwardDeclareBuf, context); err != nil {
+		return nil, nil, nil, fmt.Errorf("executing forward declare template: %w", err)
 	}
 
-	return &buf, nil
-}
-
-func (tm *templateManager) generateHeader(options *Options) (io.Reader, error) {
-	context := newTemplateContext(tm.sc, options)
-
-	var buf bytes.Buffer
-	if err := tm.headerTemplate.Execute(&buf, context); err != nil {
-		return nil, fmt.Errorf("executing template: %w", err)
+	var declareBuf bytes.Buffer
+	if err := tm.declareTemplate.Execute(&declareBuf, context); err != nil {
+		return nil, nil, nil, fmt.Errorf("executing declare template: %w", err)
 	}
 
-	return &buf, nil
+	var defineBuf bytes.Buffer
+	if err := tm.defineTemplate.Execute(&defineBuf, context); err != nil {
+		return nil, nil, nil, fmt.Errorf("executing define template: %w", err)
+	}
+
+	return &forwardDeclareBuf, &declareBuf, &defineBuf, nil
 }
 
 // templateContext is a common struct that has helpers and information needed by the templates.

@@ -1,23 +1,29 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//:defs.bzl", "generate_gochart_cpp")
 
-cc_binary(
-    name = "full_flow",
-    srcs = [
-        "main.cpp",
-    ],
-    includes = [
-        "statechart.generated.h",
-    ],
-    deps = [
-        ":gochart",
-    ],
-)
+# TODO(cdc): Reinstate
+# cc_binary(
+#     name = "full_flow",
+#     srcs = [
+#         "main.cpp",
+#     ],
+#     includes = [
+#         "declare.h",
+#         "define.h",
+#         "forward_declare.h",
+#     ],
+#     deps = [
+#         ":gochart",
+#     ],
+# )
 
 cc_library(
     name = "gochart",
-    srcs = ["statechart.generated.cpp"],
-    hdrs = ["statechart.generated.h"],
+    hdrs = [
+        "declare.h",
+        "define.h",
+        "forward_declare.h",
+    ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart"],
 )
@@ -25,6 +31,7 @@ cc_library(
 generate_gochart_cpp(
     name = "gen_gochart",
     src = "full_flow.gochart",
-    cpp_out = "statechart.generated.cpp",
-    header_out = "statechart.generated.h",
+    forward_declare_out = "forward_declare.h",
+    declare_out = "declare.h",
+    define_out = "define.h",
 )

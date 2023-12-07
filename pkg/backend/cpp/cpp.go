@@ -3,10 +3,10 @@ package cpp
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
+	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -72,25 +72,34 @@ func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	}, nil
 }
 
-func (cpp *cppGochartBackend) Generate(sc *ir.Statechart, opts ...option.Option) (_header, _cpp io.Reader, _err error) {
+func (cpp *cppGochartBackend) Generate(sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error) {
 	for _, opt := range opts {
 		opt(cpp.options)
 	}
 
 	tm, err := newTemplateManager(sc)
 	if err != nil {
-		return nil, nil, fmt.Errorf("building new template manager: %w", err)
+		return nil, fmt.Errorf("building new template manager: %w", err)
 	}
 
-	headerResult, err := tm.generateHeader(cpp.options)
+	forwardDeclare, declare, define, err := tm.generateTemplates(cpp.options)
 	if err != nil {
-		return nil, nil, fmt.Errorf("generating header: %w", err)
+		return nil, fmt.Errorf("generating templates: %w", err)
 	}
 
-	cppResult, err := tm.generateBody(cpp.options)
-	if err != nil {
-		return nil, nil, fmt.Errorf("generating cpp: %w", err)
+	outputs := []*common.BackendOutput{
+		{
+			Name:    "forward_declare",
+			Content: forwardDeclare,
+		},
+		{
+			Name:    "declare",
+			Content: declare,
+		},
+		{
+			Name:    "define",
+			Content: define,
+		},
 	}
-
-	return headerResult, cppResult, nil
+	return outputs, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
+	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
@@ -69,7 +70,7 @@ type BackendOutput struct {
 	Content io.Reader
 }
 
-func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*BackendOutput, error) {
+func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*backend_common.BackendOutput, error) {
 	lf, err := files.LoadFileFromPath(path)
 	if err != nil {
 		return nil, fmt.Errorf("loading file: %w", err)
@@ -85,20 +86,9 @@ func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*Back
 		return nil, fmt.Errorf("processing frontend: %w", err)
 	}
 
-	header, cpp, err := gc.Backend.Generate(irData, opts...)
+	outputs, err := gc.Backend.Generate(irData, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("generating files: %w", err)
-	}
-
-	outputs := []*BackendOutput{
-		{
-			Tag:     "header",
-			Content: header,
-		},
-		{
-			Tag:     "cpp",
-			Content: cpp,
-		},
 	}
 
 	return outputs, nil

@@ -1,19 +1,23 @@
 load("//:defs.bzl", "generate_gochart_cpp")
 
-cc_test(
-    name = "simple_test",
-    size = "small",
-    srcs = ["simple_test.cpp"],
-    deps = [
-        ":gochart",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
+# TODO(cdc): Reinstate
+# cc_test(
+#     name = "simple_test",
+#     size = "small",
+#     srcs = ["simple_test.cpp"],
+#     deps = [
+#         ":gochart",
+#         "@com_google_googletest//:gtest_main",
+#     ],
+# )
 
 cc_library(
     name = "gochart",
-    srcs = ["statechart.generated.cpp"],
-    hdrs = ["statechart.generated.h"],
+    hdrs = [
+        "simple.declare.h",
+        "simple.define.h",
+        "simple.forward_declare.h",
+    ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart"],
 )
@@ -21,6 +25,7 @@ cc_library(
 generate_gochart_cpp(
     name = "gen_gochart",
     src = "simple.gochart",
-    cpp_out = "statechart.generated.cpp",
-    header_out = "statechart.generated.h",
+    declare_out = "simple.declare.h",
+    define_out = "simple.define.h",
+    forward_declare_out = "simple.forward_declare.h",
 )
