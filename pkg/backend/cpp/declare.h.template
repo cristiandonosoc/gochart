@@ -12,6 +12,11 @@
 // TODO(cdc): Actually pass in this as a variable.
 #include "forward_declare.h"
 
+#include <array>
+#include <bitset>
+#include <cstddef>
+#include <memory>
+
 namespace gochart
 {
 namespace {{$publicNamespace}}
@@ -28,7 +33,7 @@ extern std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Nam
 {{- end }}
 {{- end }}{{/* range $sc.States */}}
 
-class TriggerProcessingState; // Forward declare.
+struct TriggerProcessingState; // Forward declare.
 class {{$implClassName}};	  // Forward declare.
 
 } // namespace {{$privateNamespace}}

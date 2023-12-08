@@ -622,8 +622,10 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 			{{- end }}
 			break;
 		}
-
 		{{- end }}{{/* range $sc.States */}}
+		case EState::Invalid:
+			GOCHART_DEBUG_BREAK;
+			break;
 	}
 }
 
@@ -680,6 +682,9 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 			break;
 		}
 		{{- end }}{{/* range $sc.States */}}
+		case EState::Invalid:
+			GOCHART_DEBUG_BREAK;
+			break;
 	}
 }
 

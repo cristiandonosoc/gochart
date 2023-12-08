@@ -1,4 +1,4 @@
-#include "statechart.generated.h"
+#include "define.h"
 
 #include <gtest/gtest.h>
 
