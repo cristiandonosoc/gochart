@@ -9,6 +9,20 @@ import (
 	"slices"
 )
 
+// DirExists check whether the directory exists and is a directory (not another type of file).
+func DirExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return false, fmt.Errorf("stating path %q", path)
+		}
+
+		return false, nil
+	}
+
+	return info.IsDir(), nil
+}
+
 func WriteToFile(path string, r io.Reader) error {
 	// Create or truncate the target file.
 	out, err := os.Create(path)

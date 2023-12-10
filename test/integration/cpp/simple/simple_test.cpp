@@ -1,4 +1,4 @@
-#include "define.h"
+#include "simple.define.h"
 
 #include <gtest/gtest.h>
 

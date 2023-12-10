@@ -29,10 +29,11 @@ type templateManager struct {
 	declareTemplate        *template.Template
 	defineTemplate         *template.Template
 
-	sc *ir.Statechart
+	sc     *ir.Statechart
+	config *Config
 }
 
-func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
+func newTemplateManager(config *Config, sc *ir.Statechart) (*templateManager, error) {
 	forwardDeclareTemplate, err := readTemplate(kForwardDeclareFilename)
 	if err != nil {
 		return nil, fmt.Errorf("reading forward declare template %q: %w", kForwardDeclareFilename, err)
@@ -53,6 +54,7 @@ func newTemplateManager(sc *ir.Statechart) (*templateManager, error) {
 		declareTemplate:        declareTemplate,
 		defineTemplate:         defineTemplate,
 		sc:                     sc,
+		config:                 config,
 	}, nil
 }
 
@@ -75,8 +77,8 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateTemplates(options *Options) (_forwardDeclare, _declare, _define io.Reader, _err error) {
-	context := newTemplateContext(tm.sc, options)
+func (tm *templateManager) generateTemplates() (_forwardDeclare, _declare, _define io.Reader, _err error) {
+	context := newTemplateContext(tm.config, tm.sc)
 
 	var forwardDeclareBuf bytes.Buffer
 	if err := tm.forwardDeclareTemplate.Execute(&forwardDeclareBuf, context); err != nil {
@@ -98,25 +100,29 @@ func (tm *templateManager) generateTemplates(options *Options) (_forwardDeclare,
 
 // templateContext is a common struct that has helpers and information needed by the templates.
 type templateContext struct {
-	Options
-
+	Config
 	Statechart *ir.Statechart
-
-	// Common Use strings.
-	ImplName      string
-	InterfaceName string
 }
 
-func newTemplateContext(sc *ir.Statechart, options *Options) *templateContext {
+func newTemplateContext(config *Config, sc *ir.Statechart) *templateContext {
 	tc := &templateContext{
-		Options:    *options,
+		Config:     *config,
 		Statechart: sc,
-
-		ImplName:      fmt.Sprintf("Statechart%sImpl", sc.Name),
-		InterfaceName: fmt.Sprintf("Statechart%s", sc.Name),
 	}
 
 	return tc
+}
+
+func (tc *templateContext) ForwardDeclareInclude() string {
+	return fmt.Sprintf("%s.forward_declare.h", tc.Config.FilePrefix)
+}
+
+func (tc *templateContext) DeclareInclude() string {
+	return fmt.Sprintf("%s.declare.h", tc.Config.FilePrefix)
+}
+
+func (tc *templateContext) DefineInclude() string {
+	return fmt.Sprintf("%s.define.h", tc.Config.FilePrefix)
 }
 
 // TEMPLATE HELPER FUNCTIONS -----------------------------------------------------------------------

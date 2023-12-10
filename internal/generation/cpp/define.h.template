@@ -9,8 +9,7 @@
 {{- $privateNamespace := "internal" }}
 {{- $implClassName := printf "%s_Impl" $sc.ClassName }}
 
-// TODO(cdc): Actually pass in this as a variable.
-#include "declare.h"
+#include "{{$root.DeclareInclude}}"
 
 #include <array>
 #include <bitset>

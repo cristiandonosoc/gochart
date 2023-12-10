@@ -1,4 +1,8 @@
-def generate_gochart_cpp(name, src, forward_declare_out, declare_out, define_out, **kwargs):
+def generate_gochart_cpp(name, src, file_prefix, **kwargs):
+  forward_declare_out = "{file_prefix}.forward_declare.h".format(file_prefix = file_prefix)
+  declare_out = "{file_prefix}.declare.h".format(file_prefix = file_prefix)
+  define_out = "{file_prefix}.define.h".format(file_prefix = file_prefix)
+
   native.genrule(
     name = name,
     srcs = [src],
@@ -8,11 +12,9 @@ def generate_gochart_cpp(name, src, forward_declare_out, declare_out, define_out
       define_out,
     ],
     cmd = ("$(execpath //cmd/gochart) backend cpp generate " +
-              "$(location {src}) $(location {forward_declare_out}) $(location {declare_out}) $(location {define_out})".format(
+              "$(location {src}) $(@D) {file_prefix}".format(
             src = src,
-            forward_declare_out = forward_declare_out,
-            declare_out = declare_out,
-            define_out = define_out,
+            file_prefix = file_prefix,
           )),
     tools = ["//cmd/gochart"],
   )

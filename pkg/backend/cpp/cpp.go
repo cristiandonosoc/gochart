@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
@@ -13,16 +14,17 @@ import (
 // Options -----------------------------------------------------------------------------------------
 
 type Options struct {
-	HeaderIncludePath string
-	Time              time.Time
-	Version           string
+	Version    string
+	Time       time.Time
+	OutputDir  string
+	FilePrefix string
 
 	Verbose bool
 }
 
-func WithHeaderIncludePath(path string) option.Option {
+func WithVersion(version string) option.Option {
 	return optWrapper(func(options *Options) {
-		options.HeaderIncludePath = path
+		options.Version = version
 	})
 }
 
@@ -32,9 +34,15 @@ func WithTime(t time.Time) option.Option {
 	})
 }
 
-func WithVersion(version string) option.Option {
+func WithOutputDir(outputDir string) option.Option {
 	return optWrapper(func(options *Options) {
-		options.Version = version
+		options.OutputDir = outputDir
+	})
+}
+
+func WithFilePrefix(filePrefix string) option.Option {
+	return optWrapper(func(options *Options) {
+		options.FilePrefix = filePrefix
 	})
 }
 
@@ -54,7 +62,8 @@ func optWrapper(fn func(options *Options)) option.Option {
 // Backend -----------------------------------------------------------------------------------------
 
 type cppGochartBackend struct {
-	options *Options
+	outputDir string
+	options   *Options
 }
 
 func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
@@ -77,29 +86,28 @@ func (cpp *cppGochartBackend) Generate(sc *ir.Statechart, opts ...option.Option)
 		opt(cpp.options)
 	}
 
-	tm, err := newTemplateManager(sc)
-	if err != nil {
-		return nil, fmt.Errorf("building new template manager: %w", err)
+	config := &cpp_gen.Config{
+		Version:           cpp.options.Version,
+		Time:              cpp.options.Time,
+		OutputDir:         cpp.options.OutputDir,
+		FilePrefix:        cpp.options.FilePrefix,
+		GenerateOutputDir: false,
+		Verbose:           cpp.options.Verbose,
 	}
 
-	forwardDeclare, declare, define, err := tm.generateTemplates(cpp.options)
+	gens, err := cpp_gen.Generate(config, sc)
 	if err != nil {
-		return nil, fmt.Errorf("generating templates: %w", err)
+		return nil, fmt.Errorf("Generating files: %w", err)
 	}
 
-	outputs := []*common.BackendOutput{
-		{
-			Name:    "forward_declare",
-			Content: forwardDeclare,
-		},
-		{
-			Name:    "declare",
-			Content: declare,
-		},
-		{
-			Name:    "define",
-			Content: define,
-		},
+	outputs := make([]*common.BackendOutput, 0, len(gens))
+	for _, gen := range gens {
+		outputs = append(outputs, &common.BackendOutput{
+			Name:         gen.Name,
+			Content:      gen.Content,
+			ExpectedPath: gen.ExpectedPath,
+		})
 	}
+
 	return outputs, nil
 }
