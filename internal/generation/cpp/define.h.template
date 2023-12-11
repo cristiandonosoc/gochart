@@ -170,6 +170,31 @@ std::unique_ptr<Gochart<T>> Create(T* owner)
 	return std::unique_ptr<Gochart<T>>(new Gochart(owner));
 }
 
+template <typename T>
+bool Gochart<T>::IsInState(EState state) const
+{
+	for (EState current_state : CurrentStates)
+	{
+		if (current_state == state)
+		{
+			return true;
+		}
+
+		// Go over the parent states and see if that is the state being asked for.
+		current_state = {{$privateNamespace}}::GetParentState(current_state);
+		while (current_state != EState::Invalid)
+		{
+			if (current_state == state)
+			{
+				return true;
+			}
+			current_state = {{$privateNamespace}}::GetParentState(current_state);
+		}
+	}
+
+	return false;
+}
+
 // Declare the state reaction data functions.
 // These are the ones that have actually the information of which reactions each state has.
 

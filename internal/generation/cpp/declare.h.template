@@ -44,6 +44,10 @@ template <typename T>
 class Gochart
 {
 public:
+	static constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
+	using ConcurrentGroupStateArray = std::array<EState, kConcurrentGroupCount>;
+
+public:
     Gochart(T* owner);
     ~Gochart();
 
@@ -52,16 +56,10 @@ public:
 
     T* GetOwner() const { return Owner; }
 
-private:
-	Gochart() = delete;
-
-	// No copy construction.
-	Gochart(const Gochart&) = delete;
-	Gochart& operator=(const Gochart&) = delete;
-
-	// No move construction.
-	Gochart(Gochart&&) = delete;
-	Gochart& operator=(Gochart&&) = delete;
+	// IsInState will go over all the active concurrent group and check whether it is currently in
+	// the required state. This will also check for parent states.
+	bool IsInState(EState state) const;
+	const ConcurrentGroupStateArray& GetCurrentStates() const { return CurrentStates; }
 
 public:
     // **** TRIGGER API BEGIN ****
@@ -97,6 +95,17 @@ public:
     // **** CALLBACK API END ****
 
 private:
+	Gochart() = delete;
+
+	// No copy construction.
+	Gochart(const Gochart&) = delete;
+	Gochart& operator=(const Gochart&) = delete;
+
+	// No move construction.
+	Gochart(Gochart&&) = delete;
+	Gochart& operator=(Gochart&&) = delete;
+
+private:
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data);
     void ExitState(EState state, ETrigger trigger, const void* trigger_data);
@@ -106,8 +115,7 @@ private:
     void ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data);
 
 private:
-	static constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
-	std::array<EState, kConcurrentGroupCount> CurrentStates;
+	ConcurrentGroupStateArray CurrentStates;
     {{$privateNamespace}}::TriggerProcessingState* ProcessingState = nullptr;
     T* Owner = nullptr;
     // State tracking flags.
