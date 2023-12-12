@@ -69,7 +69,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	sc, err := p.parseStatechart()
 	if err != nil {
 		if len(p.errors) == 0 {
-			panic(fmt.Sprintf("unaccounted parser error on err: %v", err.Error()))
+			p.pushInternalErrorf(0, "unaccounted parser error on err: %v", err.Error())
 		}
 		return nil, p.errors
 	}
@@ -82,7 +82,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 			sc, err := p.parseStatechart()
 			if err != nil {
 				if len(p.errors) == 0 {
-					panic(fmt.Sprintf("unaccounted parser error on err: %v", err.Error()))
+					p.pushInternalErrorf(0, fmt.Sprintf("unaccounted parser error on err: %v", err.Error()))
 				}
 				return nil, p.errors
 			}
@@ -652,7 +652,7 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 	if _, ok := p.match(Token_KeywordNull); !ok {
 		tt, err := p.consumeToken(Token_Identifier)
 		if err != nil {
-			return nil, fmt.Errorf("expected null or identifier token: %w", err)
+			return nil, p.pushErrorf(0, "expected null or identifier token: %w", err)
 		}
 		triggerToken = tt
 		triggerName = tt.literal
@@ -660,13 +660,14 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 
 	// The right angle bracket.
 	if _, err := p.consumeToken(Token_RightAngleBracket); err != nil {
-		return nil, fmt.Errorf("after transition trigger identifier: %w", err)
+		return nil, p.pushErrorf(0, "after transition trigger identifier: %w", err)
 	}
 
 	// We now expected the trigger identifier.
 	stateToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("expected identifier after >: %w", err)
+		// return nil, p.pushErrorf(0, "expected identifier after >: %w", err)
+		return nil, p.pushErrorf(0, "expected identifier after >: %w", err)
 	}
 
 	// Check if there is a condition.
@@ -920,7 +921,11 @@ func (p *Parser) pushErrorf(tokenOffset int, format string, args ...interface{})
 
 func (p *Parser) pushInternalErrorf(tokenOffset int, format string, args ...interface{}) error {
 	originalText := fmt.Sprintf(format, args...)
-	finalText := fmt.Sprintf("%s\n*** This is most likely an internal error. Please file a bug, hopefully with a repro. ***", originalText)
+	block := `
+**********************************************************************************
+***** THIS IS MOST LIKELY AN INTERNAL ERROR. PLEASE FILE A BUG WITH A REPRO. *****
+**********************************************************************************`
+	finalText := fmt.Sprintf("%s\n%s\n", originalText, block)
 	return p.pushErrorf(tokenOffset, finalText)
 }
 
