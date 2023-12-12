@@ -56,9 +56,13 @@ public:
 
     T* GetOwner() const { return Owner; }
 
-	// IsInState will go over all the active concurrent group and check whether it is currently in
-	// the required state. This will also check for parent states.
+	// IsInStateExact will go over all the active concurrent group and check whether it is currently
+	// in the required state. It will not consider parent states.
+	bool IsInStateExact(EState state) const;
+
+	// IsInState is like |IsInStateExact|, only that it will also check the parent states.
 	bool IsInState(EState state) const;
+
 	const ConcurrentGroupStateArray& GetCurrentStates() const { return CurrentStates; }
 
 public:

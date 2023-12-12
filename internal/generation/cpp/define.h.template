@@ -171,15 +171,32 @@ std::unique_ptr<Gochart<T>> Create(T* owner)
 }
 
 template <typename T>
-bool Gochart<T>::IsInState(EState state) const
+bool Gochart<T>::IsInStateExact(EState state) const
 {
+	// Go over all the concurrent groups and check if we're in that state.
 	for (EState current_state : CurrentStates)
 	{
 		if (current_state == state)
 		{
 			return true;
 		}
+	}
 
+	return false;
+}
+
+template <typename T>
+bool Gochart<T>::IsInState(EState state) const
+{
+	// First check if we're explicitly in any leaf state.
+	if (IsInStateExact(state))
+	{
+		return true;
+	}
+
+	// Otherwise we need to go over each concurrent group looking for parents.
+	for (EState current_state : CurrentStates)
+	{
 		// Go over the parent states and see if that is the state being asked for.
 		current_state = {{$privateNamespace}}::GetParentState(current_state);
 		while (current_state != EState::Invalid)
