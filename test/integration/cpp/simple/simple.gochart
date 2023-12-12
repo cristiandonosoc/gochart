@@ -1,6 +1,6 @@
+// This is a comment
 statechart Door {
-	trigger Update(bool tick)
-
+	trigger Update(bool tick)		// This is another comment
 
 	trigger ActivateDoorActuator(bool active)
 	trigger ToggleDoor(bool open, bool fast)

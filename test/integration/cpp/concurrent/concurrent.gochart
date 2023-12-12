@@ -1,0 +1,53 @@
+statechart Concurrent {
+	trigger ActivateActuator(EActuatorType actuator, bool activate)
+
+	trigger StartSpawning()
+	trigger Spawned()
+	trigger SpawningActuatorDone()
+
+	state Root(concurrent) {
+		state MainActuator {
+			state Idle {
+				transition StartSpawning > WaitingOnSpawning
+			}
+
+			state WaitingOnSpawning {
+				transition SpawningActuatorDone > Ready
+			}
+
+			state Ready {
+				enter
+			}
+		}
+
+		state SpawnActuator {
+			state SpawnInactive {
+				transition ActivateActuator > SpawnActive if {
+					return actuator == EActuatorType::Spawn && activate;
+				}
+			}
+
+			state SpawnActive {
+				transition ActivateActuator > SpawnInactive if {
+					return actuator == EActuatorType::Spawn && !activate;
+				}
+
+				state SpawnIdle {
+					transition StartSpawning > SpawnInProgress
+				}
+
+				state SpawnInProgress {
+					transition Spawned > SpawnDone
+				}
+
+				state SpawnDone {
+					enter
+
+					transition null > SpawnIdle do {
+						owner.TriggerSpawningActuatorDone();
+					}
+				}
+			}
+		}
+	}
+}

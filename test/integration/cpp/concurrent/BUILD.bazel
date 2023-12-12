@@ -1,0 +1,32 @@
+load("//:defs.bzl", "generate_gochart_cpp")
+
+# cc_test(
+#     name = "concurrent_test",
+#     size = "small",
+#     srcs = [
+# 		"concurrent_test.cpp",
+# 		"delegate.h",
+# 		"delegate.cpp",
+# 	],
+#     deps = [
+#         ":gochart",
+#         "@com_google_googletest//:gtest_main",
+#     ],
+# )
+
+cc_library(
+    name = "gochart",
+    hdrs = [
+        "concurrent.declare.h",
+        "concurrent.define.h",
+        "concurrent.forward_declare.h",
+    ],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart"],
+)
+
+generate_gochart_cpp(
+    name = "gen_gochart",
+    src = "concurrent.gochart",
+    file_prefix = "concurrent",
+)

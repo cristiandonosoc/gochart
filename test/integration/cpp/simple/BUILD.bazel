@@ -26,13 +26,3 @@ generate_gochart_cpp(
     src = "simple.gochart",
     file_prefix = "simple",
 )
-
-# generate_gochart_cpp(
-#     name = "gen_gochart",
-#     src = "simple.gochart",
-#     declare_out = "declare.h",
-#     define_out = "define.h",
-#     forward_declare_out = "forward_declare.h",
-# )
-
-
