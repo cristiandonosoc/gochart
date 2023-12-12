@@ -306,7 +306,7 @@ void Gochart<T>::Trigger{{$trigger.Name}}({{$args}})
     }
 
     // Create the data.
-    {{$trigger.Name}}Data data {
+    {{$privateNamespace}}::{{$trigger.Name}}Data data {
     {{- range $trigger.Args }}
     {{- $arg := . }}
         .{{$arg.Name}} = std::move({{$arg.Name}}),
@@ -453,7 +453,7 @@ static void State{{$state.Name}}_Call{{$reactionType}}Reaction(const Gochart<T>&
             {
                 // We cast the trigger data to the correct type.
                 assert(trigger_data != nullptr);
-                auto* data = reinterpret_cast<const {{$trigger.Name}}Data*>(trigger_data);
+                auto* data = reinterpret_cast<const {{$privateNamespace}}::{{$trigger.Name}}Data*>(trigger_data);
 
                 // Now we call the handler with the arguments.
                 gochart.GetOwner()->State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}(
@@ -522,7 +522,7 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
             {{- if $state.HasTransition $trigger }}
             {
                 // Get the trigger data.
-                const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
+                const auto& data = std::get<{{$privateNamespace}}::{{$trigger.Name}}Data>(trigger_entry.Data);
 
 								{{- $transition := $state.GetTransition $trigger }}
 								{{- if $transition.HasCondition }}
@@ -547,7 +547,7 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
             {{- else if $state.HasCapture $trigger }}
             {
                 // Get the trigger data.
-                const auto& data = std::get<{{$trigger.Name}}Data>(trigger_entry.Data);
+                const auto& data = std::get<{{$privateNamespace}}::{{$trigger.Name}}Data>(trigger_entry.Data);
 
                 {{- $capture := $state.GetCapture $trigger }}
                 {{- if $capture.HasCondition }}
@@ -652,7 +652,7 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 		case EState::{{$state.Name}}:
 		{
 			{{- if $state.Concurrent }}
-			for (EState child_state : kState{{$state.Name}}ChildrenArray)
+			for (EState child_state : {{$privateNamespace}}::kState{{$state.Name}}ChildrenArray)
 			{
 				// We enter the state and the we trigger a transition to follow the default enters.
 				EnterState(child_state, trigger, trigger_data);
@@ -712,7 +712,7 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 		case EState::{{$state.Name}}:
 		{
 			{{- if $state.Concurrent }}
-			for (EState child_state : kState{{$state.Name}}ChildrenArray)
+			for (EState child_state : {{$privateNamespace}}::kState{{$state.Name}}ChildrenArray)
 			{
 				// We issue a transition of this state out.
 				ProcessTransition(child_state, EState::Invalid, trigger, trigger_data);

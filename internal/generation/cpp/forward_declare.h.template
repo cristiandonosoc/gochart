@@ -52,21 +52,6 @@ enum class ETrigger
 };
 const char* ToString(ETrigger trigger);
 
-{{- range $sc.Triggers }}
-{{- $trigger := . }}
-
-struct {{$trigger.Name}}Data
-{
-	{{- range $trigger.Args }}
-	{{- $arg := . }}
-	{{$arg.Type}} {{$arg.Name}};
-	{{- end }}
-};
-
-{{- end }}{{/* range $sc.Triggers */}}
-
-struct NullTriggerData {};
-
 // States ====================
 enum class EState
 {

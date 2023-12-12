@@ -40,6 +40,30 @@ class {{$implClassName}};	  // Forward declare.
 template <typename T>
 std::unique_ptr<Gochart<T>> Create(T* owner);
 
+// Trigger Data ------------------------------------------------------------------------------------
+
+namespace {{$privateNamespace}}
+{
+
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+
+struct {{$trigger.Name}}Data
+{
+	{{- range $trigger.Args }}
+	{{- $arg := . }}
+	{{$arg.Type}} {{$arg.Name}};
+	{{- end }}
+};
+
+{{- end }}{{/* range $sc.Triggers */}}
+
+struct NullTriggerData {};
+
+} // namespace {{$privateNamespace}}
+
+// Gochart -----------------------------------------------------------------------------------------
+
 template <typename T>
 class Gochart
 {
