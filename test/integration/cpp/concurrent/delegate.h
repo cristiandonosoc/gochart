@@ -3,6 +3,9 @@
 #include <iostream>
 #include <memory>
 
+namespace test
+{
+
 enum class EActuatorType
 {
     Invalid,
@@ -23,6 +26,12 @@ public:
     void StateSpawnDone_Enter() { std::cout << __FUNCTION__ << std::endl; }
     // Gochart delegates end.
 
+
+    gochart::Concurrent::Gochart<Delegate>& GetGochart();
+    const gochart::Concurrent::Gochart<Delegate>& GetGochart() const;
+
 private:
     std::unique_ptr<gochart::Concurrent::Gochart<Delegate>> Gochart;
 };
+
+} // namespace test

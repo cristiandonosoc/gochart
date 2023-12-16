@@ -1,18 +1,17 @@
 load("//:defs.bzl", "generate_gochart_cpp")
 
-# cc_test(
-#     name = "concurrent_test",
-#     size = "small",
-#     srcs = [
-# 		"concurrent_test.cpp",
-# 		"delegate.h",
-# 		"delegate.cpp",
-# 	],
-#     deps = [
-#         ":gochart",
-#         "@com_google_googletest//:gtest_main",
-#     ],
-# )
+cc_test(
+    name = "concurrent_test",
+    size = "small",
+    srcs = [
+		"concurrent_test.cpp",
+		"delegate.h",
+	],
+    deps = [
+        ":gochart",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
 
 cc_library(
     name = "gochart",

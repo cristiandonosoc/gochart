@@ -1,5 +1,5 @@
 statechart Concurrent {
-	trigger ActivateActuator(EActuatorType actuator, bool activate)
+	trigger ActivateActuator(test::EActuatorType actuator, bool activate)
 
 	trigger StartSpawning()
 	trigger Spawned()
@@ -23,13 +23,13 @@ statechart Concurrent {
 		state SpawnActuator {
 			state SpawnInactive {
 				transition ActivateActuator > SpawnActive if {
-					return actuator == EActuatorType::Spawn && activate;
+					return actuator == test::EActuatorType::Spawn && activate;
 				}
 			}
 
 			state SpawnActive {
 				transition ActivateActuator > SpawnInactive if {
-					return actuator == EActuatorType::Spawn && !activate;
+					return actuator == test::EActuatorType::Spawn && !activate;
 				}
 
 				state SpawnIdle {
