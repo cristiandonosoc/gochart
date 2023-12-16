@@ -649,7 +649,9 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 	// Check if it's a null transition. If not, we expected an identifier.
 	var triggerName string
 	var triggerToken *Token
-	if _, ok := p.match(Token_KeywordNull); !ok {
+	if nullToken, ok := p.match(Token_KeywordNull); ok {
+		triggerToken = nullToken
+	} else {
 		tt, err := p.consumeToken(Token_Identifier)
 		if err != nil {
 			return nil, p.pushErrorf(0, "expected null or identifier token: %w", err)

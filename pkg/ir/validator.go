@@ -88,6 +88,17 @@ func (sv *stateValidator) validateTransitions() error {
 				"state %q can only transition to states within its own concurrent group, under %s",
 				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
 		}
+
+		// A state cannot have a non-conditional null transition and children state.
+		if transition.IsNullTransition() {
+			if !transition.HasCondition() {
+				if len(sv.state.Children) > 0 {
+					return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic",
+						"state %q cannot have a null transition and children states",
+						sv.state.Name)
+				}
+			}
+		}
 	}
 
 	return nil

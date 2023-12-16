@@ -1,0 +1,27 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state A {
+//  16: 		transition null > B
+//      		           ^---> state "A" cannot have a null transition and children states
+//  17:
+//  18: 		state ChildA1 {
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state A {
+		transition null > B
+
+		state ChildA1 {
+			enter
+		}
+	}
+
+	state B {
+		enter
+	}
+}
+
