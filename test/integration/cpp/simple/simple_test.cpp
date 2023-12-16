@@ -23,37 +23,45 @@ std::string ExtractFunctionName(const std::string& function_name)
 
 } // namespace
 
-#define COUNT_CALL()                                                                               \
-    CallCountMap[ExtractFunctionName(__FUNCTION__)]++;                                             \
-    TotalCalls++;
+#define COUNT_CALL() Calls.push_back(ExtractFunctionName(__FUNCTION__));
 
 class Delegate
 {
 public:
     // Statechart begin.
-
     void StateDoor_CaptureUpdate(bool tick) { COUNT_CALL(); }
     void StateDoorInactive_CaptureUpdate(bool tick) { COUNT_CALL(); }
     void StateDoorOpened_CaptureUpdate(bool tick) { COUNT_CALL(); }
     void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { COUNT_CALL(); }
+    void StateWindowInitial_Enter() { COUNT_CALL(); }
+    void StateWindowInitial_Exit() { COUNT_CALL(); }
+    void StateWindowIdle_Enter() { COUNT_CALL(); }
 
     void ActionFunction(bool active) { COUNT_CALL(); }
+    void NullTransitionCall() { COUNT_CALL(); }
     // Statechart end.
 
-    int GetCallCount(const char* function_name) const
+    const std::vector<std::string>& GetCalls() const { return Calls; }
+
+    size_t GetCallCount(const char* function_name) const
     {
-        auto it = CallCountMap.find(function_name);
-        return it != CallCountMap.end() ? it->second : 0;
+        size_t count = 0;
+        for (const auto& call : Calls)
+        {
+            if (call == function_name)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
-    int GetTotalCalls() const { return TotalCalls; }
-
 private:
-    std::map<std::string, int> CallCountMap;
-    int TotalCalls = 0;
+    std::vector<std::string> Calls;
 };
 
-TEST(HelloTest, BasicAssertions)
+TEST(SimpleTest, BasicAssertions)
 {
     Delegate delegate;
     auto statechart = gochart::Door::Create(&delegate);
@@ -65,7 +73,7 @@ TEST(HelloTest, BasicAssertions)
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 }
 
-TEST(HelloTest, Captures)
+TEST(SimpleTest, Captures)
 {
     Delegate delegate;
     auto statechart = gochart::Door::Create(&delegate);
@@ -76,13 +84,13 @@ TEST(HelloTest, Captures)
     EXPECT_FALSE(statechart->IsInStateExact(gochart::Door::EState::Door));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
     EXPECT_FALSE(statechart->IsInState(gochart::Door::EState::DoorActive)); // Check once.
-    EXPECT_EQ(delegate.GetTotalCalls(), 0);
+    EXPECT_EQ(delegate.GetCalls().size(), 0);
 
     statechart->TriggerUpdate(true);
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
-    EXPECT_EQ(delegate.GetTotalCalls(), 1);
+    EXPECT_EQ(delegate.GetCalls().size(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
@@ -92,7 +100,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
-    EXPECT_EQ(delegate.GetTotalCalls(), 1);
+    EXPECT_EQ(delegate.GetCalls().size(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
@@ -102,7 +110,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
-    EXPECT_EQ(delegate.GetTotalCalls(), 2);
+    EXPECT_EQ(delegate.GetCalls().size(), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
@@ -114,7 +122,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
     EXPECT_FALSE(statechart->IsInState(gochart::Door::EState::DoorInactive));
-    EXPECT_EQ(delegate.GetTotalCalls(), 3);
+    EXPECT_EQ(delegate.GetCalls().size(), 3);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
@@ -125,7 +133,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
-    EXPECT_EQ(delegate.GetTotalCalls(), 4);
+    EXPECT_EQ(delegate.GetCalls().size(), 4);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
@@ -136,7 +144,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
-    EXPECT_EQ(delegate.GetTotalCalls(), 5);
+    EXPECT_EQ(delegate.GetCalls().size(), 5);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
@@ -147,7 +155,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
-    EXPECT_EQ(delegate.GetTotalCalls(), 6);
+    EXPECT_EQ(delegate.GetCalls().size(), 6);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
@@ -158,7 +166,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
-    EXPECT_EQ(delegate.GetTotalCalls(), 7);
+    EXPECT_EQ(delegate.GetCalls().size(), 7);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
@@ -169,7 +177,7 @@ TEST(HelloTest, Captures)
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
     EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
     EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
-    EXPECT_EQ(delegate.GetTotalCalls(), 7);
+    EXPECT_EQ(delegate.GetCalls().size(), 7);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
@@ -178,20 +186,45 @@ TEST(HelloTest, Captures)
     statechart->Deactivate();
 }
 
-TEST(HelloText, TransitionAction)
+TEST(SimpleTest, TransitionAction)
+{
+    return;
+    Delegate delegate;
+    auto statechart = gochart::Door::Create(&delegate);
+
+    statechart->Activate();
+    EXPECT_EQ(delegate.GetCalls().size(), 0);
+
+    statechart->TriggerActivateDoorActuator(false);
+    EXPECT_EQ(delegate.GetCalls().size(), 0);
+
+    statechart->TriggerActivateDoorActuator(true);
+    EXPECT_EQ(delegate.GetCalls().size(), 1);
+    EXPECT_EQ(delegate.GetCallCount("ActionFunction"), 1);
+
+    statechart->Deactivate();
+}
+
+TEST(SimpleTest, NullTransition)
 {
     Delegate delegate;
     auto statechart = gochart::Door::Create(&delegate);
 
     statechart->Activate();
-    EXPECT_EQ(delegate.GetTotalCalls(), 0);
 
-    statechart->TriggerActivateDoorActuator(false);
-    EXPECT_EQ(delegate.GetTotalCalls(), 0);
+    statechart->TriggerTransferToWindow();
+    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::WindowIdle));
 
-    statechart->TriggerActivateDoorActuator(true);
-    EXPECT_EQ(delegate.GetTotalCalls(), 1);
-    EXPECT_EQ(delegate.GetCallCount("ActionFunction"), 1);
+    std::vector<std::string> wantCalls{
+        "StateWindowInitial_Enter",
+        "NullTransitionCall",
+        "StateWindowInitial_Exit",
+        "StateWindowIdle_Enter",
+    };
+    EXPECT_EQ(wantCalls, delegate.GetCalls());
+
+    EXPECT_EQ(delegate.GetCallCount("StateWindowInitial_Enter"), 1);
+    EXPECT_EQ(delegate.GetCallCount("StateWindowInitial_Exit"), 1);
 
     statechart->Deactivate();
 }

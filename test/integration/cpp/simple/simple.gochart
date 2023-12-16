@@ -6,42 +6,66 @@ statechart Door {
 	trigger ToggleDoor(bool open, bool fast)
 	trigger DoorMovingDone(bool opened)
 
-	state Door
-	{
-		capture Update
+	trigger TransferToWindow()
 
-		state DoorInactive
+	state Root
+	{
+		state Door
 		{
-			transition ActivateDoorActuator > DoorActive if {
-				return active;
-			} do {
-					owner.ActionFunction(active);
+			capture Update
+
+			state DoorInactive
+			{
+				transition ActivateDoorActuator > DoorActive if {
+					return active;
+				} do {
+						owner.ActionFunction(active);
+				}
+
+				transition TransferToWindow > Window
+
+				capture Update
 			}
 
-			capture Update
+			state DoorActive
+			{
+				transition ActivateDoorActuator > DoorInactive if { return !active; }
+
+				state DoorOpened
+				{
+					transition ToggleDoor > DoorMoving
+
+					capture Update if { return tick; }
+				}
+
+				state DoorMoving
+				{
+					enter ToggleDoor
+
+					transition DoorMovingDone > DoorClosed
+				}
+
+				state DoorClosed
+				{
+					transition ToggleDoor > DoorMoving
+				}
+			}
 		}
 
-		state DoorActive
+		state Window
 		{
-			transition ActivateDoorActuator > DoorInactive if { return !active; }
-
-			state DoorOpened
+			state WindowInitial
 			{
-				transition ToggleDoor > DoorMoving
+				enter
+				exit
 
-				capture Update if { return tick; }
+				transition null > WindowIdle do {
+					owner.NullTransitionCall();
+				}
 			}
 
-			state DoorMoving
-			{
-				enter ToggleDoor
-
-				transition DoorMovingDone > DoorClosed
-			}
-
-			state DoorClosed
-			{
-				transition ToggleDoor > DoorMoving
+			state WindowIdle {
+				enter
 			}
 		}
 	}

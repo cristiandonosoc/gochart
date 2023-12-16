@@ -24,14 +24,6 @@ namespace {{$publicNamespace}}
 namespace {{$privateNamespace}}
 {
 
-{{- range $sc.States }}
-{{- $state := . }}
-static constexpr std::size_t kState{{$state.Name}}ChildrenCount = {{len $state.Children}};
-{{- if gt (len $state.Children) 0 }}
-extern std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Name}}ChildrenArray;
-{{- end }}
-{{- end }}{{/* range $sc.States */}}
-
 struct TriggerProcessingState; // Forward declare.
 class {{$implClassName}};	  // Forward declare.
 
@@ -39,28 +31,6 @@ class {{$implClassName}};	  // Forward declare.
 
 template <typename T>
 std::unique_ptr<Gochart<T>> Create(T* owner);
-
-// Trigger Data ------------------------------------------------------------------------------------
-
-namespace {{$privateNamespace}}
-{
-
-{{- range $sc.Triggers }}
-{{- $trigger := . }}
-
-struct {{$trigger.Name}}Data
-{
-	{{- range $trigger.Args }}
-	{{- $arg := . }}
-	{{$arg.Type}} {{$arg.Name}};
-	{{- end }}
-};
-
-{{- end }}{{/* range $sc.Triggers */}}
-
-struct NullTriggerData {};
-
-} // namespace {{$privateNamespace}}
 
 // Gochart -----------------------------------------------------------------------------------------
 
@@ -135,6 +105,7 @@ private:
 
 private:
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
+	void EvaluateLeafConditions(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data);
     void ExitState(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateConcurrentExit(EState state, ETrigger trigger, const void *trigger_data);

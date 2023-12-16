@@ -199,6 +199,19 @@ func (s *State) GetTransition(trigger *Trigger) *Transition {
 	return nil
 }
 
+func (s *State) GetNullTransitions() []*Transition {
+	var result []*Transition
+	for _, transition := range s.Transitions {
+		if !transition.IsNullTransition() {
+			continue
+		}
+
+		result = append(result, transition)
+	}
+
+	return result
+}
+
 func (s *State) HasDefaultReaction(reactionType string) bool {
 	if reactionType == "Enter" {
 		return s.HasDefaultEnterReaction()

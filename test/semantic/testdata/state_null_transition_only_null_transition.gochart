@@ -1,0 +1,29 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger SomeTrigger()
+//  14:
+//  15: 	state A {
+//      	      ^---> state "A" has a non-conditional null transition. It can be the only transition on the state.
+//  16: 		transition SomeTrigger > C
+//  17: 		transition null > B
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state A {
+		transition SomeTrigger > C
+		transition null > B
+
+	}
+
+	state B {
+		enter
+	}
+
+	state C {
+		enter
+	}
+}
+

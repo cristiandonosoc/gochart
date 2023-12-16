@@ -89,12 +89,19 @@ func (sv *stateValidator) validateTransitions() error {
 				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
 		}
 
-		// A state cannot have a non-conditional null transition and children state.
 		if transition.IsNullTransition() {
 			if !transition.HasCondition() {
+				// A state cannot have a non-conditional null transition and children state.
 				if len(sv.state.Children) > 0 {
 					return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic",
 						"state %q cannot have a null transition and children states",
+						sv.state.Name)
+				}
+
+				// A non-conditional null transition should be alone.
+				if len(sv.state.Transitions) > 1 {
+					return errors.Errorf(sv.state.frontendData.Frontend_NamePos, "Semantic",
+						"state %q has a non-conditional null transition. It can be the only transition on the state.",
 						sv.state.Name)
 				}
 			}

@@ -114,12 +114,12 @@ TEST(ConcurrentTest, Hello)
     EXPECT_TRUE(gochart.IsInStateExact(EState::SpawnInProgress));
 
     // TODO(cdc): Activate when null transitions are done.
-    /* gochart.TriggerSpawned(); */
-    /* CompareStates(std::array{EState::Root, EState::Ready, EState::SpawnIdle}, */
-    /*               gochart.GetCurrentStates()); */
-    /* EXPECT_TRUE(gochart.IsInStateExact(EState::Root)); */
-    /* EXPECT_TRUE(gochart.IsInStateExact(EState::Ready)); */
-    /* EXPECT_TRUE(gochart.IsInStateExact(EState::SpawnIdle)); */
+    gochart.TriggerSpawned();
+    CompareStates(std::array{EState::Root, EState::Ready, EState::SpawnIdle},
+                  gochart.GetCurrentStates());
+    EXPECT_TRUE(gochart.IsInStateExact(EState::Root));
+    EXPECT_TRUE(gochart.IsInStateExact(EState::Ready));
+    EXPECT_TRUE(gochart.IsInStateExact(EState::SpawnIdle));
 
     delegate.End();
 }

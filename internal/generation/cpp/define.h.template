@@ -38,6 +38,8 @@ EState GetParentState(EState state);
 EState GetDefaultChild(EState state);
 bool GetIsConcurrent(EState state);
 size_t GetConcurrentGroup(EState state);
+size_t GetChildCount(EState state);
+
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -48,6 +50,51 @@ size_t GetConcurrentGroup(EState state);
 {{- end}}{{/* range $sc.States */}}
 bool Has{{$reactionType}}Reaction(EState state, ETrigger trigger);
 {{- end }}{{/* range $reactionTypes */}}
+
+// State Metadata ----------------------------------------------------------------------------------
+
+{{- range $sc.States }}
+{{- $state := . }}
+
+static constexpr std::size_t kState{{$state.Name}}ChildrenCount = {{len $state.Children}};
+
+{{- if gt (len $state.Children) 0 }}
+std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Name}}ChildrenArray = {
+	{{- range $state.Children }}
+	{{- $childState := . }}
+	EState::{{$childState.Name}},
+	{{- end }}{{/* range $state.Children */}}
+};
+{{- end }}{{/* if gt (len $state.Children) 0 */}}
+
+{{- $nullTransitions := $state.GetNullTransitions }}
+{{- if gt (len $nullTransitions) 0 }}
+std::array kState{{$state.Name}}NullTransitionTargetsArray {
+	{{- range $nullTransitions }}
+	{{- $nullTransition := . }}
+	EState::{{$nullTransition.To.Name}},
+	{{- end }}{{/* range $nullTransitions */}}
+};
+{{- end }}{{/* if gt (len $nullTransition) 0 */}}
+
+{{- end }}{{/* range $sc.States */}}
+
+// Trigger Data ------------------------------------------------------------------------------------
+
+{{- range $sc.Triggers }}
+{{- $trigger := . }}
+
+struct {{$trigger.Name}}Data
+{
+	{{- range $trigger.Args }}
+	{{- $arg := . }}
+	{{$arg.Type}} {{$arg.Name}};
+	{{- end }}
+};
+
+{{- end }}{{/* range $sc.Triggers */}}
+
+struct NullTriggerData {};
 
 // TriggerQueue ===========================
 
@@ -345,6 +392,7 @@ void Gochart<T>::Trigger{{$trigger.Name}}({{$args}})
 
 {{- end }}
 
+
 // Transition Conditions ---------------------------------------------------------------------------
 
 namespace {{$privateNamespace}} {
@@ -401,6 +449,101 @@ static void State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(T& owner, {{$
 {{- end }}{{/* $state.HasTransition */}}
 
 {{- end }}{{/* range $sc.Triggers */}}
+{{- end }}{{/* range $sc.States */}}
+
+// Null Transition Conditions ----------------------------------------------------------------------
+
+{{- range $sc.States }}
+{{- $state := . }}
+
+{{- $nullTransitions := $state.GetNullTransitions }}
+{{- if gt (len $nullTransitions) 0 }}
+
+{{- range $nullTransitions }}
+{{- $nullTransition := . }}
+
+{{- if $nullTransition.HasCondition }}
+
+template <typename T>
+static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(const T& owner)
+{
+	{{$nullTransition.Condition}};
+}
+
+{{- end }}{{/* if $nullTransition.HasCondition */}}
+{{- end }}{{/* range $nullTransitions */}}
+
+template <typename T>
+static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(const T& owner, EState target_state)
+{
+	switch (target_state)
+	{
+		{{- range $nullTransitions }}
+		{{- $nullTransition := . }}
+		{{- if $nullTransition.HasCondition }}
+
+		case EState::{{$nullTransition.To.Name}}:
+		{
+			return State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(owner);
+		}
+
+		{{- end }}{{/* if $nullTransition.HasCondition */}}
+		{{- end }}{{/* range $nullTransitions */}}
+		default:
+			break;
+	}
+
+	// If there is no condition, we simply return true.
+	return true;
+}
+
+{{- end }}{{/* if gt (len $nullTransitions) 0 */}}
+{{- end }}{{/* range $sc.States */}}
+
+// Null Transition Actions -------------------------------------------------------------------------
+
+{{- range $sc.States }}
+{{- $state := . }}
+
+{{- $nullTransitions := $state.GetNullTransitions }}
+{{- if gt (len $nullTransitions) 0 }}
+
+{{- range $nullTransitions }}
+{{- $nullTransition := . }}
+{{- if $nullTransition.HasAction }}
+
+template <typename T>
+static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(T& owner)
+{
+	{{$nullTransition.Action}};
+}
+
+{{- end }}{{/* if $nullTransition.HasAction */}}
+{{- end }}{{/* range $nullTransitions */}}
+
+template <typename T>
+static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting(T& owner, EState target_state)
+{
+	switch (target_state)
+	{
+		{{- range $nullTransitions }}
+		{{- $nullTransition := . }}
+		{{- if $nullTransition.HasAction }}
+
+		case EState::{{$nullTransition.To.Name}}:
+		{
+			State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(owner);
+			return;
+		}
+
+		{{- end }}{{/* if $nullTransition.HasAction */}}
+		{{- end }}{{/* range $nullTransitions */}}
+		default:
+			break;
+	}
+}
+
+{{- end }}{{/* if gt (len $nullTransitions) 0 */}}
 {{- end }}{{/* range $sc.States */}}
 
 // Capture Conditions ------------------------------------------------------------------------------
@@ -524,24 +667,25 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
                 // Get the trigger data.
                 const auto& data = std::get<{{$privateNamespace}}::{{$trigger.Name}}Data>(trigger_entry.Data);
 
-								{{- $transition := $state.GetTransition $trigger }}
-								{{- if $transition.HasCondition }}
-								{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-								if (!State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}}))
-								{
-										return false;
-								}
-								{{- end }}
+				{{- $transition := $state.GetTransition $trigger }}
 
-								{{- if $transition.HasAction }}
-								{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-								State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}});
-								{{- end }}
+				{{- if $transition.HasCondition }}
+				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+				if (!State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}}))
+				{
+					return false;
+				}
+				{{- end }}{{/* if $trasition.HasCondition */}}
+
+				{{- if $transition.HasAction }}
+				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+				State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}});
+				{{- end }}{{/* if $transition.HasAction */}}
 
                 gochart->ProcessTransition(EState::{{$transition.From.Name}},
-                                        EState::{{$transition.To.Name}},
-                                        ETrigger::{{$transition.Trigger.Name}},
-                                        &data);
+										   EState::{{$transition.To.Name}},
+										   ETrigger::{{$transition.Trigger.Name}},
+										   &data);
                 return true;
             }
             {{- else if $state.HasCapture $trigger }}
@@ -637,9 +781,66 @@ void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_
         {{$privateNamespace}}::{{$implClassName}}::CallEnterReaction(*this, state, ETrigger::Invalid, nullptr);
     }
 
-	// Now that we enter, we see if this state is concurrent and we need to enter the other
-	// concurrent groups.
-	EvaluateConcurrentEnter(state, trigger, trigger_data);
+	// If we have no more children, we know that we are the last enter of this route, so we can
+	// evaluate leaf conditions.
+	if ({{$privateNamespace}}::GetChildCount(state) == 0)
+	{
+		EvaluateLeafConditions(state, trigger, trigger_data);
+	}
+	else
+	{
+		// Now that we enter, we see if this state is concurrent and we need to enter the other
+		// concurrent groups.
+		if ({{$privateNamespace}}::GetIsConcurrent(state))
+		{
+			EvaluateConcurrentEnter(state, trigger, trigger_data);
+		}
+	}
+}
+
+template <typename T>
+void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const void* trigger_data)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		{{- if gt (len $state.GetNullTransitions) 0 }}
+		case EState::{{$state.Name}}:
+		{
+			assert({{$privateNamespace}}::GetChildCount(state) == 0);
+
+			// We check the null transitions.
+			bool handled = false;
+			for (EState target_state : {{$privateNamespace}}::kState{{$state.Name}}NullTransitionTargetsArray)
+			{
+				// Check if this null transition has a condition.
+				if (!{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(*this->GetOwner(), target_state))
+				{
+					continue;
+				}
+
+				// Check if this null transition has an embedded action.
+				{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionActionTargeting(*this->GetOwner(), target_state);
+
+				// Trigger immediatelly the transition.
+				ProcessTransition(state, target_state, ETrigger::Invalid, nullptr);
+				handled = true;
+				break;
+			}
+
+			if (handled)
+			{
+				return;
+			}
+
+			break;
+		}
+		{{- end }}{{/* if gt (len $state.GetNullTransitions) 0 */}}
+		{{- end }}{{/* range $sc.States */}}
+		default:
+			break;
+	}
 }
 
 template <typename T>
@@ -660,6 +861,7 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 			}
 			{{- else }}
 			// State {{$state.Name}} is not concurrent. Nothing to do.
+			GOCHART_DEBUG_BREAK;
 			{{- end }}
 			break;
 		}
@@ -844,20 +1046,6 @@ const char* ToString(EState state)
 namespace {{$privateNamespace}}
 {
 
-// State Metadata ----------------------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{ $state := . }}
-{{- if gt (len $state.Children) 0 }}
-std::array<EState, kState{{$state.Name}}ChildrenCount> kState{{$state.Name}}ChildrenArray = {
-	{{- range $state.Children }}
-	{{- $childState := . }}
-	EState::{{$childState.Name}},
-	{{- end }}{{/* range $state.Children */}}
-};
-{{- end }}
-{{- end }}{{/* range $sc.States */}}
-
 // Reaction ----------------------------------------------------------------------------------------
 
 EState GetParentState(EState state) {
@@ -916,6 +1104,23 @@ size_t GetConcurrentGroup(EState state)
 		{{- $state := . }}
 		case EState::{{$state.Name}}:
 			return {{$state.GetConcurrentGroup}};
+		{{- end }}{{/* range $sc.States */}}
+		default:
+			break;
+	}
+
+	GOCHART_DEBUG_BREAK;
+	return std::numeric_limits<size_t>::max();
+}
+
+size_t GetChildCount(EState state)
+{
+	switch (state)
+	{
+		{{- range $sc.States }}
+		{{- $state := . }}
+		case EState::{{$state.Name}}:
+			return kState{{$state.Name}}ChildrenCount;
 		{{- end }}{{/* range $sc.States */}}
 		default:
 			break;
