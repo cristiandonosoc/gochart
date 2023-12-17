@@ -4,9 +4,9 @@
 //  14:
 //  15: 	state A {
 //  16: 		transition null > B
-//      		           ^---> state "A" cannot have a null transition and children states
+//      		           ^---> state "A" cannot have a non-conditional null transition and children states (this null transition will never trigger)
 //  17:
-//  18: 		state ChildA1 {
+//  18: 		state ChildA {
 // --- ERROR END
 
 statechart Mumu {
@@ -15,7 +15,7 @@ statechart Mumu {
 	state A {
 		transition null > B
 
-		state ChildA1 {
+		state ChildA {
 			enter
 		}
 	}

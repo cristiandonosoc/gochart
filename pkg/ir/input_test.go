@@ -74,7 +74,6 @@ func TestReadSimpleYaml(t *testing.T) {
 	ith.setEnterReaction(t, "StateC", "Trigger1")
 	ith.setEnterReaction(t, "StateC", "")
 	ith.setTransition(t, "StateC", "StateB", "", "", "StateC->Action();")
-	ith.setCapture(t, "StateC", "Trigger1", "")
 
 	yf, err := yaml.NewYamlFrontend()
 	require.NoError(t, err)

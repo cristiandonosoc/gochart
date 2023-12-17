@@ -1,0 +1,30 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state Root {
+//  16: 		transition SomeTrigger > Root2
+//      		           ^---> state "Root": transition for trigger "SomeTrigger" is non-conditional, it must be the last for this trigger
+//  17: 		transition SomeTrigger > Root3 if {
+//  18: 			return false;
+// --- ERROR END
+
+statechart Mumu {
+	trigger SomeTrigger()
+
+	state Root {
+		transition SomeTrigger > Root2
+		transition SomeTrigger > Root3 if {
+			return false;
+		}
+	}
+
+	state Root2 {
+		capture SomeTrigger
+	}
+
+	state Root3 {
+		capture SomeTrigger
+	}
+}
+

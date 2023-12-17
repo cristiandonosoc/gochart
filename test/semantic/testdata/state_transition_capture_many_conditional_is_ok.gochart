@@ -1,0 +1,38 @@
+statechart Mumu {
+	trigger SomeTrigger1()
+	trigger SomeTrigger2()
+
+	state Root {
+		transition SomeTrigger1 > Root3 if {
+			return false;
+		}
+		transition SomeTrigger1 > Root2
+
+		transition SomeTrigger2 > Root2 if {
+			return true;
+		}
+
+		transition SomeTrigger2 > Root3 if {
+			return false;
+		}
+
+		capture SomeTrigger2
+
+		transition null > Root2 if {
+			return false;
+		}
+
+		transition null > Root3 if {
+			return true;
+		}
+	}
+
+	state Root2 {
+		enter
+	}
+
+	state Root3 {
+		enter
+	}
+}
+

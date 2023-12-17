@@ -27,8 +27,6 @@ states:
     enter_reactions:
       - "Trigger1"
       - ""
-    captures:
-      - trigger: "Trigger1"
 transitions:
   - from: StateB
     to: StateC

@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
@@ -40,16 +41,14 @@ func validateTopLevelStatechart(ih *inputHandler) error {
 }
 
 type stateValidator struct {
-	ih         *inputHandler
-	state      *State
-	triggerSet map[*Trigger]struct{}
+	ih    *inputHandler
+	state *State
 }
 
 func newStateValidator(ih *inputHandler, state *State) *stateValidator {
 	return &stateValidator{
-		ih:         ih,
-		state:      state,
-		triggerSet: make(map[*Trigger]struct{}),
+		ih:    ih,
+		state: state,
 	}
 }
 
@@ -69,42 +68,20 @@ func (sv *stateValidator) validate() error {
 		return fmt.Errorf("validating captures: %w", err)
 	}
 
+	if err := sv.validateTriggerBasedEntries(); err != nil {
+		return fmt.Errorf("validating trigger based entries: %w", err)
+	}
+
 	return nil
 }
 
 func (sv *stateValidator) validateTransitions() error {
 	for _, transition := range sv.state.Transitions {
-		// Validate that this trigger hasn't been used yet.
-		if _, ok := sv.triggerSet[transition.Trigger]; ok {
-			return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic",
-				"state %q: Trigger %q already handled by transition or capture",
-				sv.state.Name, transition.Trigger.Name)
-		}
-		sv.triggerSet[transition.Trigger] = struct{}{}
-
 		// Validate that the transition has the same concurrent group.
 		if sv.state.ConcurrentGroup != transition.To.ConcurrentGroup {
 			return errors.Errorf(transition.frontendData.Frontend_TargetPos, "Semantic",
 				"state %q can only transition to states within its own concurrent group, under %s",
 				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
-		}
-
-		if transition.IsNullTransition() {
-			if !transition.HasCondition() {
-				// A state cannot have a non-conditional null transition and children state.
-				if len(sv.state.Children) > 0 {
-					return errors.Errorf(transition.frontendData.Frontend_TriggerPos, "Semantic",
-						"state %q cannot have a null transition and children states",
-						sv.state.Name)
-				}
-
-				// A non-conditional null transition should be alone.
-				if len(sv.state.Transitions) > 1 {
-					return errors.Errorf(sv.state.frontendData.Frontend_NamePos, "Semantic",
-						"state %q has a non-conditional null transition. It can be the only transition on the state.",
-						sv.state.Name)
-				}
-			}
 		}
 	}
 
@@ -112,13 +89,119 @@ func (sv *stateValidator) validateTransitions() error {
 }
 
 func (sv *stateValidator) validateCaptures() error {
+	// Code for validating captures per se.
+
+	return nil
+}
+
+type triggerBasedEntry struct {
+	index       int
+	conditional bool
+
+	kind     string
+	position *files.LoadedFilePosition
+}
+
+type triggerBasedTracker struct {
+	entries         map[*Trigger][]*triggerBasedEntry
+	transitionCount int
+	captureCount    int
+}
+
+func newTriggerBasedTracker() *triggerBasedTracker {
+	return &triggerBasedTracker{
+		entries: make(map[*Trigger][]*triggerBasedEntry),
+	}
+}
+
+func (tbt *triggerBasedTracker) appendTransition(transition *Transition) {
+	// Ensure the list exists.
+	if _, ok := tbt.entries[transition.Trigger]; !ok {
+		tbt.entries[transition.Trigger] = []*triggerBasedEntry{}
+	}
+
+	tbt.entries[transition.Trigger] = append(tbt.entries[transition.Trigger], &triggerBasedEntry{
+		index:       transition.frontendData.Frontend_EntryIndex,
+		conditional: transition.HasCondition(),
+		kind:        "transition",
+		position:    transition.frontendData.Frontend_TriggerPos,
+	})
+	tbt.transitionCount++
+}
+
+func (tbt *triggerBasedTracker) appendCapture(capture *StateCapture) {
+	// Ensure the list exists.
+	if _, ok := tbt.entries[capture.Trigger]; !ok {
+		tbt.entries[capture.Trigger] = []*triggerBasedEntry{}
+	}
+
+	tbt.entries[capture.Trigger] = append(tbt.entries[capture.Trigger], &triggerBasedEntry{
+		index:       capture.frontendData.Frontend_EntryIndex,
+		conditional: capture.HasCondition(),
+		kind:        "capture",
+		position:    capture.frontendData.Frontend_TriggerPos,
+	})
+	tbt.captureCount++
+}
+
+func (tbt *triggerBasedTracker) sort() {
+	for trigger := range tbt.entries {
+		sort.Slice(tbt.entries[trigger], func(i, j int) bool {
+			return tbt.entries[trigger][i].index < tbt.entries[trigger][j].index
+		})
+	}
+}
+
+func (sv *stateValidator) validateTriggerBasedEntries() error {
+	// Collect all trigger based entries, based on trigger.
+	tbt := newTriggerBasedTracker()
+
+	for _, transition := range sv.state.Transitions {
+		tbt.appendTransition(transition)
+	}
 	for _, capture := range sv.state.Captures {
-		if _, ok := sv.triggerSet[capture.Trigger]; ok {
-			return errors.Errorf(capture.frontendData.Frontend_TriggerPos, "Semantic",
-				"state %q: Trigger %q already handled by transition or capture",
-				sv.state.Name, capture.Trigger.Name)
+		tbt.appendCapture(capture)
+	}
+	tbt.sort()
+
+	// Now that we have them sorted, we can create validation per list.
+	for trigger, triggerBasedList := range tbt.entries {
+		for i, tbe := range triggerBasedList {
+			// If it is not conditional, then it has to be the last.
+			if !tbe.conditional {
+				if i != len(triggerBasedList)-1 {
+					return errors.Errorf(tbe.position, "Semantic",
+						"state %q: %s for trigger %q is non-conditional, it must be the last for this trigger",
+						sv.state.Name, tbe.kind, trigger.SafeName())
+				}
+			}
 		}
-		sv.triggerSet[capture.Trigger] = struct{}{}
+	}
+
+	// We do a special case for the null transition case.
+	for _, tbe := range tbt.entries[nil] {
+		// Captures should not be able to capture null triggers.
+		if tbe.kind == "capture" {
+			return errors.InternalErrorf(
+				"State %q: detected capture for null trigger. This should not happen.",
+				sv.state.Name)
+		}
+
+		// Non-conditional null transitions should be alone.
+		if !tbe.conditional {
+			if tbt.transitionCount+tbt.captureCount > 1 {
+				return errors.Errorf(tbe.position, "Semantic",
+					"state %q has a non-conditional null transition. It can be the only transition or capture on the state.",
+					sv.state.Name)
+			}
+
+			if len(sv.state.Children) > 0 {
+				return errors.Errorf(tbe.position, "Semantic",
+					"state %q cannot have a non-conditional null transition and children states (this null transition will never trigger)",
+					sv.state.Name)
+			}
+
+		}
 	}
 
 	return nil
