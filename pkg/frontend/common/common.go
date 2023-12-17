@@ -52,6 +52,7 @@ type TriggerData struct {
 	Name       string
 	ArgsString string
 
+	Frontend_EntryIndex int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 	Frontend_ArgsPos    *files.LoadedFilePosition
@@ -68,25 +69,33 @@ type StateData struct {
 
 	Captures []*CaptureData
 
+	Frontend_EntryIndex int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 }
 
+// ReactionData represents entries for "reactions" to triggers.
+// This is mostly enter/exit statements.
 type ReactionData struct {
 	Trigger string
 
+	Frontend_EntryIndex int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
+// CaptureData represents captures, which "capture" a trigger and do things with them.
 type CaptureData struct {
 	Trigger   string
 	Condition string
 
+	Frontend_EntryIndex int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
+// TransitionData represents a transition, which, like captures, hold a trigger and perform a
+// transition to another state within the gochart.
 type TransitionData struct {
 	From      string
 	To        string
@@ -94,6 +103,7 @@ type TransitionData struct {
 	Condition string
 	Action    string
 
+	Frontend_EntryIndex int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 	Frontend_TargetPos  *files.LoadedFilePosition

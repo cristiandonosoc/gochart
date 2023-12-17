@@ -29,34 +29,42 @@ func TestReadSimple(t *testing.T) {
 				Name: "Example",
 				Triggers: []*ASTNodeTrigger{
 					{
-						Name: "Execute",
+						Name:       "Execute",
+						entryIndex: 0,
 					},
 					{
 						Name:       "Update",
 						ArgsString: "float dt",
+						entryIndex: 1,
 					},
 					{
 						Name:       "SomeMessage",
 						ArgsString: "const hvn::Message* message, int other, const std::string& another",
+						entryIndex: 2,
 					},
 				},
 				States: []*ASTNodeState{
 					{
-						Name: "First",
+						Name:       "First",
+						entryIndex: 3,
 						EnterReactions: []*ASTNodeStateReaction{
 							{
-								Trigger: "",
+								Trigger:    "",
+								entryIndex: 0,
 							},
 							{
-								Trigger: "Execute",
+								Trigger:    "Execute",
+								entryIndex: 1,
 							},
 						},
 						ExitReactions: []*ASTNodeStateReaction{
 							{
-								Trigger: "Execute",
+								Trigger:    "Execute",
+								entryIndex: 2,
 							},
 							{
-								Trigger: "",
+								Trigger:    "",
+								entryIndex: 3,
 							},
 						},
 						Transitions: []*ASTNodeStateTransition{
@@ -64,21 +72,25 @@ func TestReadSimple(t *testing.T) {
 								Trigger:     "",
 								TargetState: "Third",
 								Action:      " owner->SomeNullAction(); ",
+								entryIndex:  4,
 							},
 							{
 								Trigger:     "Execute",
 								TargetState: "Second",
+								entryIndex:  5,
 							},
 						},
 						Captures: []*ASTNodeStateCapture{
 							{
-								Trigger:   "Update",
-								Condition: " owner->SomeCondition ",
+								Trigger:    "Update",
+								Condition:  " owner->SomeCondition ",
+								entryIndex: 6,
 							},
 						},
 					},
 					{
-						Name: "Second",
+						Name:       "Second",
+						entryIndex: 4,
 						Options: []*ASTNodeOption{
 							{
 								Name:      "Option1",
@@ -92,11 +104,13 @@ func TestReadSimple(t *testing.T) {
 								TargetState: "First",
 								Condition:   "\r\n\t\t\treturn owner->SomeCondition();\r\n\t\t",
 								Action:      "\r\n\t\t\towner->ExecuteSomeAction();\r\n\t\t",
+								entryIndex:  0,
 							},
 						},
 					},
 					{
-						Name: "Third",
+						Name:       "Third",
+						entryIndex: 5,
 						Options: []*ASTNodeOption{
 							{
 								Name:      "Opt1",
@@ -143,11 +157,13 @@ func TestReadSimple(t *testing.T) {
 							{
 								Trigger:     "SomeMessage",
 								TargetState: "Second",
+								entryIndex:  0,
 							},
 						},
 						Children: []*ASTNodeState{
 							{
 								Name:       "ThirdChild1",
+								entryIndex: 1,
 								ParentName: "Third",
 								Options: []*ASTNodeOption{
 									{
@@ -164,6 +180,7 @@ func TestReadSimple(t *testing.T) {
 								Children: []*ASTNodeState{
 									{
 										Name:       "ThirdGrandChild",
+										entryIndex: 0,
 										ParentName: "ThirdChild1",
 										Options: []*ASTNodeOption{
 											{
@@ -174,23 +191,27 @@ func TestReadSimple(t *testing.T) {
 										},
 										EnterReactions: []*ASTNodeStateReaction{
 											{
-												Trigger: "",
+												Trigger:    "",
+												entryIndex: 1,
 											},
 										},
 										ExitReactions: []*ASTNodeStateReaction{
 											{
-												Trigger: "Update",
+												Trigger:    "Update",
+												entryIndex: 2,
 											},
 										},
 										Transitions: []*ASTNodeStateTransition{
 											{
 												Trigger:     "Execute",
 												TargetState: "Second",
+												entryIndex:  0,
 											},
 										},
 										Captures: []*ASTNodeStateCapture{
 											{
-												Trigger: "Execute",
+												Trigger:    "Execute",
+												entryIndex: 3,
 											},
 										},
 									},
@@ -198,6 +219,7 @@ func TestReadSimple(t *testing.T) {
 							},
 							{
 								Name:       "ThirdChild2",
+								entryIndex: 2,
 								ParentName: "Third",
 								Transitions: []*ASTNodeStateTransition{
 									{
@@ -267,6 +289,7 @@ type triggerComparer struct {
 
 func (tc *triggerComparer) compare(t *testing.T, want, got *ASTNodeTrigger) {
 	assert.Equal(t, want.Name, got.Name, "Statechart %q, Trigger %d", tc.statechartName, tc.index)
+	assert.Equal(t, want.entryIndex, got.entryIndex, tc.statechartName, tc.index, want.Name)
 
 	ctxStr := fmt.Sprintf("Statechart %q, Trigger %d (%s)", tc.statechartName, tc.index, want.Name)
 
@@ -281,6 +304,7 @@ type stateComparer struct {
 
 func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 	assert.Equal(t, want.Name, got.Name, "Statechart %s, State %d", sc.statechartName, sc.index)
+	assert.Equal(t, want.entryIndex, got.entryIndex, sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
 
 	ctxStr := fmt.Sprintf("Statechart %s, State %q, Parent %q, Trigger %d (%s)", sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
 
@@ -303,6 +327,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.EnterReactions[i]
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Option %d", ctxStr, i)
+			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
 
@@ -313,6 +338,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.ExitReactions[i]
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Option %d", ctxStr, i)
+			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
 
@@ -326,6 +352,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.Condition, got.Condition, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.Action, got.Action, "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
 
@@ -337,6 +364,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Capture %d", ctxStr, i)
 			assert.Equal(t, want.Condition, got.Condition, "%s, Capture %d", ctxStr, i)
+			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
 

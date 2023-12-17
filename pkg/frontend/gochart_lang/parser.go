@@ -163,16 +163,16 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			return nil, p.pushErrorf(0, err.Error())
 		}
 
-		bodyStmtsFound := 0
+		statechartEntriesCount := 0
 
 		for !p.atEnd() {
-			ok, err := p.parseStatechartBodyStmt(sc)
+			ok, err := p.parseStatechartBodyStmt(sc, statechartEntriesCount)
 			if err != nil {
 				return nil, fmt.Errorf("parsing statechart body statement: %w", err)
 			}
 
 			if ok {
-				bodyStmtsFound++
+				statechartEntriesCount++
 				continue
 
 			}
@@ -180,7 +180,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			break
 		}
 
-		if bodyStmtsFound == 0 {
+		if statechartEntriesCount == 0 {
 			return nil, p.pushErrorf(0, "empty statechart found, need at least one statement")
 		}
 
@@ -313,7 +313,7 @@ var expectedStatechartBodyStmtKeywords = []TokenIdentifier{
 	Token_KeywordState,
 }
 
-func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
+func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart, entryIndex int) (bool, error) {
 	// If we're closing the brace, we simply exit the statement.
 	if peek := p.peek(); peek.id == Token_RightBrace {
 		return false, nil
@@ -331,6 +331,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
+		trigger.entryIndex = entryIndex
 		sc.Triggers = append(sc.Triggers, trigger)
 		return true, nil
 
@@ -340,6 +341,7 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing root state: %w", err)
 		}
+		state.entryIndex = entryIndex
 		sc.States = append(sc.States, state)
 		return true, nil
 	}
@@ -359,6 +361,7 @@ type ASTNodeTrigger struct {
 	keywordToken *Token
 	nameToken    *Token
 	argsToken    *Token
+	entryIndex   int
 }
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
@@ -429,6 +432,7 @@ type ASTNodeState struct {
 
 	keywordToken *Token
 	nameToken    *Token
+	entryIndex   int
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -486,23 +490,22 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 			return nil, fmt.Errorf("state %q: parsing state body: %w", name, err)
 		}
 
-		bodyStmtsFound := 0
-
+		stateEntriesCount := 0
 		for !p.atEnd() {
-			ok, err := p.parseStateBodyStmt(state)
+			ok, err := p.parseStateBodyStmt(state, stateEntriesCount)
 			if err != nil {
 				return nil, fmt.Errorf("state %q: parsing state body statement: %w", state.Name, err)
 			}
 
 			if ok {
-				bodyStmtsFound++
+				stateEntriesCount++
 				continue
 			}
 
 			break
 		}
 
-		if bodyStmtsFound == 0 {
+		if stateEntriesCount == 0 {
 			return nil, p.pushErrorf(0, "state %q: empty state found, need at least one statement", state.Name)
 		}
 
@@ -533,7 +536,7 @@ var expectedStateBodyStmtKeywords = []TokenIdentifier{
 	Token_KeywordState,
 }
 
-func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
+func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, error) {
 	stmtToken, ok := p.matchAny(expectedStateBodyStmtKeywords...)
 	if !ok {
 		return false, nil
@@ -546,6 +549,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing enter reaction: %w", err)
 		}
+		reaction.entryIndex = entryIndex
 		state.EnterReactions = append(state.EnterReactions, reaction)
 		return true, nil
 	case Token_KeywordExit:
@@ -554,6 +558,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing exit reaction: %w", err)
 		}
+		reaction.entryIndex = entryIndex
 		state.ExitReactions = append(state.ExitReactions, reaction)
 		return true, nil
 	case Token_KeywordTransition:
@@ -561,6 +566,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing transition: %w", err)
 		}
+		transition.entryIndex = entryIndex
 		state.Transitions = append(state.Transitions, transition)
 		return true, nil
 	case Token_KeywordCapture:
@@ -569,6 +575,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing capture: %w", err)
 		}
+		capture.entryIndex = entryIndex
 		state.Captures = append(state.Captures, capture)
 		return true, nil
 	case Token_KeywordState:
@@ -577,6 +584,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing child state: %w", err)
 		}
+		child.entryIndex = entryIndex
 		state.Children = append(state.Children, child)
 		return true, nil
 	}
@@ -594,6 +602,7 @@ type ASTNodeStateReaction struct {
 
 	keywordToken *Token
 	triggerToken *Token
+	entryIndex   int
 }
 
 var _ ASTNode = (*ASTNodeStateReaction)(nil)
@@ -635,6 +644,7 @@ type ASTNodeStateTransition struct {
 	keywordToken *Token
 	triggerToken *Token
 	targetToken  *Token
+	entryIndex   int
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
@@ -734,9 +744,10 @@ type ASTNodeStateCapture struct {
 
 	keywordToken *Token
 	triggerToken *Token
+	entryIndex   int
 }
 
-var _ ASTNode = (*ASTNodeState)(nil)
+var _ ASTNode = (*ASTNodeStateCapture)(nil)
 
 func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, error) {
 	p.debuglog("parsing state capture node")
