@@ -6,12 +6,12 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
-	scdata *output.StatechartData
+	scdata *frontend_common.StatechartData
 
 	triggers   []*Trigger
 	rootStates []*State
@@ -24,7 +24,7 @@ type inputHandler struct {
 	stateMap   map[string]*State
 }
 
-func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
+func ProcessStatechartData(scdata *frontend_common.StatechartData) (*Statechart, error) {
 	sc, err := processStatechartDataInternal(scdata)
 	if err != nil {
 		return nil, errors.NewErrorContainer([]error{err})
@@ -32,7 +32,7 @@ func ProcessStatechartData(scdata *output.StatechartData) (*Statechart, error) {
 	return sc, nil
 }
 
-func processStatechartDataInternal(scdata *output.StatechartData) (*Statechart, error) {
+func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Statechart, error) {
 	ih := inputHandler{
 		scdata:     scdata,
 		triggerMap: make(map[string]*Trigger),
@@ -91,7 +91,7 @@ func (ih *inputHandler) collectTriggers() error {
 	return nil
 }
 
-func (ih *inputHandler) createTrigger(tdata *output.TriggerData) (*Trigger, error) {
+func (ih *inputHandler) createTrigger(tdata *frontend_common.TriggerData) (*Trigger, error) {
 	// We make sure that the trigger doesn't exist already.
 	if _, ok := ih.triggerMap[tdata.Name]; ok {
 		return nil, errors.Errorf(tdata.Frontend_NamePos, "Semantic", "trigger %q defined more than once", tdata.Name)
@@ -259,7 +259,7 @@ func (ih *inputHandler) determineDefaultChild(parentPrefix string, pos *files.Lo
 	return nil
 }
 
-func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionData, kind StateReactionKind) ([]*StateReaction, error) {
+func (ih *inputHandler) collectReactions(frontendReactions []*frontend_common.ReactionData, kind StateReactionKind) ([]*StateReaction, error) {
 	defaultFound := false
 
 	reactions := make([]*StateReaction, 0, len(frontendReactions))
@@ -291,7 +291,7 @@ func (ih *inputHandler) collectReactions(frontendReactions []*output.ReactionDat
 	return reactions, nil
 }
 
-func (ih *inputHandler) collectCaptures(frontendCaptures []*output.CaptureData) ([]*StateCapture, error) {
+func (ih *inputHandler) collectCaptures(frontendCaptures []*frontend_common.CaptureData) ([]*StateCapture, error) {
 	captures := make([]*StateCapture, 0, len(frontendCaptures))
 
 	for _, fc := range frontendCaptures {
@@ -325,7 +325,7 @@ func (ih *inputHandler) collectTransitions() error {
 }
 
 // createTransition returns a new transition, as well as the state it stems from.
-func (ih *inputHandler) createTransition(tdata *output.TransitionData) (*Transition, *State, error) {
+func (ih *inputHandler) createTransition(tdata *frontend_common.TransitionData) (*Transition, *State, error) {
 	from, ok := ih.stateMap[tdata.From]
 	if !ok {
 		return nil, nil, errors.InternalErrorf("cannot find from state %q", tdata.From)

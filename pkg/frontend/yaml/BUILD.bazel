@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//internal/files",
         "//internal/option",
-        "//pkg/frontend/output",
+        "//pkg/frontend/common",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

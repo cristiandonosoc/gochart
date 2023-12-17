@@ -16,7 +16,7 @@ go_library(
         "//internal/errors",
         "//internal/files",
         "//internal/printer",
-        "//pkg/frontend/output",
+        "//pkg/frontend/common",
     ],
 )
 

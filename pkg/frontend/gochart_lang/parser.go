@@ -7,7 +7,7 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
 	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
@@ -241,7 +241,7 @@ func (p *Parser) parseOptions() ([]*ASTNodeOption, bool, error) {
 
 type ASTNodeOption struct {
 	Name      string
-	ValueKind output.OptionValueKind
+	ValueKind common.OptionValueKind
 	Value     string
 
 	token *Token
@@ -260,28 +260,28 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 
 	// See if there is an optional value.
 	// If not, by default this is a "true" boolean option.
-	valueKind := output.OptionValueKind_Boolean
+	valueKind := common.OptionValueKind_Boolean
 	value := "true"
 	if _, ok := p.match(Token_Equal); ok {
 		if token, ok := p.match(Token_Identifier); ok {
-			valueKind = output.OptionValueKind_String
+			valueKind = common.OptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_String); ok {
-			valueKind = output.OptionValueKind_String
+			valueKind = common.OptionValueKind_String
 			value = token.literal
 		} else if token, ok := p.match(Token_Integer); ok {
 			_, err := strconv.Atoi(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to int: %w", token.literal, err)
 			}
-			valueKind = output.OptionValueKind_Integer
+			valueKind = common.OptionValueKind_Integer
 			value = token.literal
 		} else if token, ok := p.match(Token_Boolean); ok {
 			_, err := strconv.ParseBool(token.literal)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse option value %q to boolean: %w", token.literal, err)
 			}
-			valueKind = output.OptionValueKind_Boolean
+			valueKind = common.OptionValueKind_Boolean
 			value = token.literal
 		} else {
 			return nil, p.pushErrorf(0, "unexpected token on state option. Expected Identifier, String, Number or Boolean, got: %s", token.String())

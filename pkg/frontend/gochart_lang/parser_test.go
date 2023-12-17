@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,7 +82,7 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeOption{
 							{
 								Name:      "Option1",
-								ValueKind: output.OptionValueKind_Boolean,
+								ValueKind: common.OptionValueKind_Boolean,
 								Value:     "true",
 							},
 						},
@@ -100,42 +100,42 @@ func TestReadSimple(t *testing.T) {
 						Options: []*ASTNodeOption{
 							{
 								Name:      "Opt1",
-								ValueKind: output.OptionValueKind_Boolean,
+								ValueKind: common.OptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt2",
-								ValueKind: output.OptionValueKind_Boolean,
+								ValueKind: common.OptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt3",
-								ValueKind: output.OptionValueKind_String,
+								ValueKind: common.OptionValueKind_String,
 								Value:     "Identifier",
 							},
 							{
 								Name:      "Opt4",
-								ValueKind: output.OptionValueKind_String,
+								ValueKind: common.OptionValueKind_String,
 								Value:     "String",
 							},
 							{
 								Name:      "Opt5",
-								ValueKind: output.OptionValueKind_Integer,
+								ValueKind: common.OptionValueKind_Integer,
 								Value:     "2123",
 							},
 							{
 								Name:      "Opt6",
-								ValueKind: output.OptionValueKind_Boolean,
+								ValueKind: common.OptionValueKind_Boolean,
 								Value:     "true",
 							},
 							{
 								Name:      "Opt7",
-								ValueKind: output.OptionValueKind_Boolean,
+								ValueKind: common.OptionValueKind_Boolean,
 								Value:     "false",
 							},
 							{
 								Name:      "Opt8",
-								ValueKind: output.OptionValueKind_Integer,
+								ValueKind: common.OptionValueKind_Integer,
 								Value:     "22",
 							},
 						},
@@ -152,12 +152,12 @@ func TestReadSimple(t *testing.T) {
 								Options: []*ASTNodeOption{
 									{
 										Name:      "OptChild1",
-										ValueKind: output.OptionValueKind_Boolean,
+										ValueKind: common.OptionValueKind_Boolean,
 										Value:     "true",
 									},
 									{
 										Name:      "OptChild2",
-										ValueKind: output.OptionValueKind_String,
+										ValueKind: common.OptionValueKind_String,
 										Value:     "IdentifierChild",
 									},
 								},
@@ -168,7 +168,7 @@ func TestReadSimple(t *testing.T) {
 										Options: []*ASTNodeOption{
 											{
 												Name:      "OptGrandChild",
-												ValueKind: output.OptionValueKind_Boolean,
+												ValueKind: common.OptionValueKind_Boolean,
 												Value:     "false",
 											},
 										},

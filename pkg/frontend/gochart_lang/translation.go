@@ -2,7 +2,7 @@ package gochart_lang
 
 import (
 	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 type frontendTranslator struct {
@@ -15,21 +15,21 @@ func newFrontendTranslator(lf *files.LoadedFile) *frontendTranslator {
 	}
 }
 
-func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *output.StatechartData {
+func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *common.StatechartData {
 	// Collect triggers.
-	triggers := make([]*output.TriggerData, 0, len(nsc.Triggers))
+	triggers := make([]*common.TriggerData, 0, len(nsc.Triggers))
 	for _, nt := range nsc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(nt))
 	}
 
 	// Collect states.
-	var states []*output.StateData
-	var transitions []*output.TransitionData
+	var states []*common.StateData
+	var transitions []*common.TransitionData
 	for _, ns := range nsc.States {
 		states, transitions = ft.translateState(ns, states, transitions)
 	}
 
-	return &output.StatechartData{
+	return &common.StatechartData{
 		Name:                nsc.Name,
 		Triggers:            triggers,
 		States:              states,
@@ -39,8 +39,8 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *outpu
 	}
 }
 
-func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.TriggerData {
-	return &output.TriggerData{
+func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *common.TriggerData {
+	return &common.TriggerData{
 		Name:                nt.Name,
 		ArgsString:          nt.ArgsString,
 		Frontend_KeywordPos: tokenToPosition(ft.lf, nt.keywordToken),
@@ -49,8 +49,8 @@ func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *output.Trigg
 	}
 }
 
-func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.StateData, transitions []*output.TransitionData) ([]*output.StateData, []*output.TransitionData) {
-	state := &output.StateData{
+func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.StateData, transitions []*common.TransitionData) ([]*common.StateData, []*common.TransitionData) {
+	state := &common.StateData{
 		Name:                ns.Name,
 		Parent:              ns.ParentName,
 		Options:             ft.translateOptions(ns.Options),
@@ -59,7 +59,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	}
 
 	for _, er := range ns.EnterReactions {
-		state.EnterReactions = append(state.EnterReactions, &output.ReactionData{
+		state.EnterReactions = append(state.EnterReactions, &common.ReactionData{
 			Trigger:             er.Trigger,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, er.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, er.triggerToken),
@@ -67,7 +67,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	}
 
 	for _, er := range ns.ExitReactions {
-		state.ExitReactions = append(state.ExitReactions, &output.ReactionData{
+		state.ExitReactions = append(state.ExitReactions, &common.ReactionData{
 			Trigger:             er.Trigger,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, er.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, er.triggerToken),
@@ -76,7 +76,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	states = append(states, state)
 
 	for _, c := range ns.Captures {
-		state.Captures = append(state.Captures, &output.CaptureData{
+		state.Captures = append(state.Captures, &common.CaptureData{
 			Trigger:             c.Trigger,
 			Condition:           c.Condition,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, c.keywordToken),
@@ -86,7 +86,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 
 	// Collect the transitions.
 	for _, t := range ns.Transitions {
-		transition := &output.TransitionData{
+		transition := &common.TransitionData{
 			From:                ns.Name,
 			To:                  t.TargetState,
 			Trigger:             t.Trigger,
@@ -107,10 +107,10 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*output.
 	return states, transitions
 }
 
-func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*output.OptionData {
-	options := make([]*output.OptionData, 0, len(nos))
+func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*common.OptionData {
+	options := make([]*common.OptionData, 0, len(nos))
 	for _, no := range nos {
-		options = append(options, &output.OptionData{
+		options = append(options, &common.OptionData{
 			Name:             no.Name,
 			Kind:             no.ValueKind,
 			Value:            no.Value,

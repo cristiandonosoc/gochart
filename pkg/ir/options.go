@@ -5,12 +5,12 @@ import (
 	"strconv"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 type OptionDefinition struct {
 	Name        string
-	Kind        output.OptionValueKind
+	Kind        frontend_common.OptionValueKind
 	Description string
 	Handler     any
 
@@ -23,13 +23,13 @@ var (
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStateOption_Default: {
 			Name:        kStateOption_Default,
-			Kind:        output.OptionValueKind_Boolean,
+			Kind:        frontend_common.OptionValueKind_Boolean,
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),
 		},
 		"concurrent": {
 			Name:        "concurrent",
-			Kind:        output.OptionValueKind_Boolean,
+			Kind:        frontend_common.OptionValueKind_Boolean,
 			Description: "Whether this state is to be considered a concurrent one.",
 			Handler:     StateOptionHandler(parseStateOption_Concurrent),
 		},
@@ -39,19 +39,19 @@ var (
 func addHiddenTestingOptions(options map[string]*OptionDefinition) map[string]*OptionDefinition {
 	options["test_bool"] = &OptionDefinition{
 		Name:          "test_bool",
-		Kind:          output.OptionValueKind_Boolean,
+		Kind:          frontend_common.OptionValueKind_Boolean,
 		Description:   "Option added for testing purposes.",
 		TestingOption: true,
 	}
 	options["test_int"] = &OptionDefinition{
 		Name:          "test_int",
-		Kind:          output.OptionValueKind_Integer,
+		Kind:          frontend_common.OptionValueKind_Integer,
 		Description:   "Option added for testing purposes.",
 		TestingOption: true,
 	}
 	options["test_string"] = &OptionDefinition{
 		Name:          "test_string",
-		Kind:          output.OptionValueKind_String,
+		Kind:          frontend_common.OptionValueKind_String,
 		Description:   "Option added for testing purposes.",
 		TestingOption: true,
 	}
@@ -68,10 +68,10 @@ type Option struct {
 	intValue    int64
 	boolValue   bool
 
-	frontendData *output.OptionData
+	frontendData *frontend_common.OptionData
 }
 
-func newOption(od *OptionDefinition, fo *output.OptionData) (*Option, error) {
+func newOption(od *OptionDefinition, fo *frontend_common.OptionData) (*Option, error) {
 	// Check that the expected kind is the same as the provided one.
 	if fo.Kind != od.Kind {
 		return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "expected option %q to be %q, got %q instead", fo.Name, od.Kind, fo.Kind)
@@ -83,15 +83,15 @@ func newOption(od *OptionDefinition, fo *output.OptionData) (*Option, error) {
 	}
 
 	switch od.Kind {
-	case output.OptionValueKind_Boolean:
+	case frontend_common.OptionValueKind_Boolean:
 		value, err := strconv.ParseBool(fo.Value)
 		if err != nil {
 			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing bool value %q: %w", fo.Value, err)
 		}
 		option.boolValue = value
-	case output.OptionValueKind_String:
+	case frontend_common.OptionValueKind_String:
 		option.stringValue = fo.Value
-	case output.OptionValueKind_Integer:
+	case frontend_common.OptionValueKind_Integer:
 		value, err := strconv.ParseInt(fo.Value, 10, 32)
 		if err != nil {
 			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing integer value %q: %w", fo.Value, err)
@@ -109,21 +109,21 @@ func (so *Option) Name() string {
 }
 
 func (so *Option) StringValue() string {
-	if so.Definition.Kind != output.OptionValueKind_String {
+	if so.Definition.Kind != frontend_common.OptionValueKind_String {
 		panic(fmt.Sprintf("Accessing wrong type, wanted string, got %s", so.Definition.Kind))
 	}
 	return so.stringValue
 }
 
 func (so *Option) IntValue() int64 {
-	if so.Definition.Kind != output.OptionValueKind_Integer {
+	if so.Definition.Kind != frontend_common.OptionValueKind_Integer {
 		panic(fmt.Sprintf("Accessing wrong type, wanted int, got %s", so.Definition.Kind))
 	}
 	return so.intValue
 }
 
 func (so *Option) BoolValue() bool {
-	if so.Definition.Kind != output.OptionValueKind_Boolean {
+	if so.Definition.Kind != frontend_common.OptionValueKind_Boolean {
 		panic(fmt.Sprintf("Accessing wrong type, wanted boolean, got %s", so.Definition.Kind))
 	}
 	return so.boolValue
@@ -133,7 +133,7 @@ func (so *Option) BoolValue() bool {
 
 type StateOptionHandler func(state *State, option *Option) error
 
-func parseStateOptions(state *State, frontendOptions []*output.OptionData) error {
+func parseStateOptions(state *State, frontendOptions []*frontend_common.OptionData) error {
 	set := map[string]struct{}{}
 
 	var options []*Option

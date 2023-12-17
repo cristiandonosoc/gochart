@@ -1,5 +1,5 @@
-// Package output represents the output of a frontend, normally used by the IR.
-package output
+// Package common represents common types that is to be used by all frontend packages.
+package common
 
 import (
 	"fmt"

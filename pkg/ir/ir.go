@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 const (
@@ -34,7 +34,7 @@ type Statechart struct {
 
 	TriggerMap   map[string]*Trigger
 	StateMap     map[string]*State
-	frontendData *output.StatechartData
+	frontendData *frontend_common.StatechartData
 }
 
 func (sc *Statechart) ClassName() string {
@@ -61,7 +61,7 @@ type Trigger struct {
 	Name string
 	Args []*TriggerArgument
 
-	frontendData *output.TriggerData
+	frontendData *frontend_common.TriggerData
 }
 
 func (t *Trigger) SafeName() string {
@@ -124,7 +124,7 @@ type State struct {
 	Parent *State
 
 	statechart   *Statechart
-	frontendData *output.StateData
+	frontendData *frontend_common.StateData
 }
 
 func (s *State) SafeName() string {
@@ -314,7 +314,7 @@ type StateReaction struct {
 	Trigger *Trigger
 	Kind    StateReactionKind
 
-	frontendData *output.ReactionData
+	frontendData *frontend_common.ReactionData
 }
 
 func (sr *StateReaction) String() string {
@@ -332,7 +332,7 @@ type StateCapture struct {
 	Trigger   *Trigger
 	Condition string
 
-	frontendData *output.CaptureData
+	frontendData *frontend_common.CaptureData
 }
 
 func (sc *StateCapture) String() string {
@@ -353,7 +353,7 @@ type Transition struct {
 	Condition string
 	Action    string
 
-	frontendData *output.TransitionData
+	frontendData *frontend_common.TransitionData
 }
 
 func (t *Transition) IsNullTransition() bool {

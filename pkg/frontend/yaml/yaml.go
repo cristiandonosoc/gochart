@@ -7,7 +7,7 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 
 	"gopkg.in/yaml.v2"
 )
@@ -19,7 +19,7 @@ func NewYamlFrontend(opts ...option.Option) (*yamlFrontend, error) {
 type yamlFrontend struct {
 }
 
-func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*output.StatechartData, error) {
+func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*common.StatechartData, error) {
 	var yamlData YamlStatechart
 	if err := yaml.Unmarshal(lf.Data, &yamlData); err != nil {
 		return nil, fmt.Errorf("unmarshalling yaml: %w", err)
@@ -43,25 +43,25 @@ func newFrontendTranslator() *frontendTranslator {
 	return &frontendTranslator{}
 }
 
-func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *output.StatechartData {
+func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.StatechartData {
 	// Collect Triggers.
-	triggers := make([]*output.TriggerData, 0, len(ysc.Triggers))
+	triggers := make([]*common.TriggerData, 0, len(ysc.Triggers))
 	for _, yt := range ysc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(yt))
 	}
 
 	// Collect states.
-	states := make([]*output.StateData, 0, len(ysc.States))
+	states := make([]*common.StateData, 0, len(ysc.States))
 	for _, ys := range ysc.States {
 		states = append(states, ft.translateState(ys))
 	}
 
-	transitions := make([]*output.TransitionData, 0, len(ysc.Transitions))
+	transitions := make([]*common.TransitionData, 0, len(ysc.Transitions))
 	for _, yt := range ysc.Transitions {
 		transitions = append(transitions, ft.translateTransition(yt))
 	}
 
-	return &output.StatechartData{
+	return &common.StatechartData{
 		Name:        ysc.Name,
 		Triggers:    triggers,
 		States:      states,
@@ -69,17 +69,17 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *output.S
 	}
 }
 
-func (ft *frontendTranslator) translateTrigger(yt *YamlTrigger) *output.TriggerData {
+func (ft *frontendTranslator) translateTrigger(yt *YamlTrigger) *common.TriggerData {
 	ft.triggerIndex += 1
-	return &output.TriggerData{
+	return &common.TriggerData{
 		Name:       yt.Name,
 		ArgsString: yt.ArgsString,
 	}
 }
 
-func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
+func (ft *frontendTranslator) translateState(ys *YamlState) *common.StateData {
 	ft.stateIndex++
-	state := &output.StateData{
+	state := &common.StateData{
 		Name:   ys.Name,
 		Parent: ys.Parent,
 	}
@@ -89,19 +89,19 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 	}
 
 	for _, er := range ys.EnterReactions {
-		state.EnterReactions = append(state.EnterReactions, &output.ReactionData{
+		state.EnterReactions = append(state.EnterReactions, &common.ReactionData{
 			Trigger: er,
 		})
 	}
 
 	for _, er := range ys.ExitReactions {
-		state.ExitReactions = append(state.ExitReactions, &output.ReactionData{
+		state.ExitReactions = append(state.ExitReactions, &common.ReactionData{
 			Trigger: er,
 		})
 	}
 
 	for _, c := range ys.Captures {
-		state.Captures = append(state.Captures, &output.CaptureData{
+		state.Captures = append(state.Captures, &common.CaptureData{
 			Trigger:   c.Trigger,
 			Condition: c.Condition,
 		})
@@ -110,31 +110,31 @@ func (ft *frontendTranslator) translateState(ys *YamlState) *output.StateData {
 	return state
 }
 
-func (ft *frontendTranslator) translateOption(yso *YamlOption) *output.OptionData {
-	option := &output.OptionData{
+func (ft *frontendTranslator) translateOption(yso *YamlOption) *common.OptionData {
+	option := &common.OptionData{
 		Name:  yso.Name,
-		Kind:  output.OptionValueKind_Boolean,
+		Kind:  common.OptionValueKind_Boolean,
 		Value: "true",
 	}
 
 	if yso.IntValue != "" {
-		option.Kind = output.OptionValueKind_Integer
+		option.Kind = common.OptionValueKind_Integer
 		option.Value = yso.IntValue
 	} else if yso.StringValue != "" {
-		option.Kind = output.OptionValueKind_String
+		option.Kind = common.OptionValueKind_String
 		option.Value = yso.IntValue
 	} else if yso.BoolValue != "" {
-		option.Kind = output.OptionValueKind_Boolean
+		option.Kind = common.OptionValueKind_Boolean
 		option.Value = yso.IntValue
 	}
 
 	return option
 }
 
-func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *output.TransitionData {
+func (ft *frontendTranslator) translateTransition(yt *YamlTransition) *common.TransitionData {
 	ft.transitionIndex++
 
-	return &output.TransitionData{
+	return &common.TransitionData{
 		From:      yt.From,
 		To:        yt.To,
 		Trigger:   yt.Trigger,

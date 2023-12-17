@@ -4,11 +4,11 @@ import (
 	"io"
 
 	"github.com/cristiandonosoc/gochart/internal/printer"
-	"github.com/cristiandonosoc/gochart/pkg/frontend/output"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 type frontendPrinter struct {
-	sc *output.StatechartData
+	sc *common.StatechartData
 	p  *printer.Printer
 }
 
@@ -20,7 +20,7 @@ func NewPrinter(w io.Writer) *frontendPrinter {
 	}
 }
 
-func (fp *frontendPrinter) PrintStatechart(sc *output.StatechartData) {
+func (fp *frontendPrinter) PrintStatechart(sc *common.StatechartData) {
 	fp.sc = sc
 
 	fp.p.WriteLine("Statechart %s", sc.Name)
@@ -37,11 +37,11 @@ func (fp *frontendPrinter) PrintStatechart(sc *output.StatechartData) {
 	}
 }
 
-func (fp *frontendPrinter) printTrigger(trigger *output.TriggerData) {
+func (fp *frontendPrinter) printTrigger(trigger *common.TriggerData) {
 	fp.p.WriteLine("Trigger %s(%s)", trigger.Name, trigger.ArgsString)
 }
 
-func (fp *frontendPrinter) printState(state *output.StateData) {
+func (fp *frontendPrinter) printState(state *common.StateData) {
 	fp.p.WriteLine("State %s", state.Name)
 
 	fp.p.PushIndent()
@@ -58,7 +58,7 @@ func (fp *frontendPrinter) printState(state *output.StateData) {
 
 	{
 		// Print all the transitions for this state.
-		var transitions []*output.TransitionData
+		var transitions []*common.TransitionData
 		for _, transition := range fp.sc.Transitions {
 			if transition.From == state.Name {
 				transitions = append(transitions, transition)
@@ -86,7 +86,7 @@ func (fp *frontendPrinter) printState(state *output.StateData) {
 
 }
 
-func (fp *frontendPrinter) printOptions(options []*output.OptionData) {
+func (fp *frontendPrinter) printOptions(options []*common.OptionData) {
 	if len(options) == 0 {
 		fp.p.WriteLine("No options")
 		return
@@ -97,7 +97,7 @@ func (fp *frontendPrinter) printOptions(options []*output.OptionData) {
 	}
 }
 
-func (fp *frontendPrinter) printTransitions(transitions []*output.TransitionData) {
+func (fp *frontendPrinter) printTransitions(transitions []*common.TransitionData) {
 	if len(transitions) == 0 {
 		fp.p.WriteLine("No transitions")
 		return
@@ -113,7 +113,7 @@ func (fp *frontendPrinter) printTransitions(transitions []*output.TransitionData
 	}
 }
 
-func (fp *frontendPrinter) printReactions(kind string, reactions []*output.ReactionData) {
+func (fp *frontendPrinter) printReactions(kind string, reactions []*common.ReactionData) {
 	if len(reactions) == 0 {
 		fp.p.WriteLine("No %s reactions", kind)
 		return

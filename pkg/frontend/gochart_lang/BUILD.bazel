@@ -15,7 +15,7 @@ go_library(
         "//internal/errors",
         "//internal/files",
         "//internal/option",
-        "//pkg/frontend/output",
+        "//pkg/frontend/common",
     ],
 )
 
@@ -30,7 +30,7 @@ go_test(
     deps = [
         "//internal/files",
         "//internal/test_support",
-        "//pkg/frontend/output",
+        "//pkg/frontend/common",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
