@@ -123,14 +123,14 @@ private:
 
 #define GOCHART_DEFINE_STATE_FLAG(name, index) \
 public: \
-    bool Get##name() const { return StateFlags.test(index); } \
+    bool GetFlag_##name() const { return StateFlags.test(index); } \
 private: \
-    void Set##name(bool active) { StateFlags[index] = active; }
+    void SetFlag_##name(bool active) { StateFlags[index] = active; }
 
-    GOCHART_DEFINE_STATE_FLAG(IsActive, 0);
-    GOCHART_DEFINE_STATE_FLAG(IsActivating, 1);
-    GOCHART_DEFINE_STATE_FLAG(IsDeactivating, 2);
-    GOCHART_DEFINE_STATE_FLAG(IsProcessingTriggerQueue, 3);
+    GOCHART_DEFINE_STATE_FLAG(Active, 0);
+    GOCHART_DEFINE_STATE_FLAG(Activating, 1);
+    GOCHART_DEFINE_STATE_FLAG(Deactivating, 2);
+    GOCHART_DEFINE_STATE_FLAG(ProcessingTriggerQueue, 3);
 
 #undef GOCHART_DEFINE_STATE_FLAG
 

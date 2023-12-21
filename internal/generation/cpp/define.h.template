@@ -287,15 +287,15 @@ Gochart<T>::~Gochart()
 template <typename T>
 void Gochart<T>::Activate()
 {
-    assert(!GetIsActive());
+    assert(!GetFlag_Active());
 	for (EState state : CurrentStates)
 	{
 		assert(state == EState::Invalid);
 	}
 
-    assert(!GetIsActivating());
-    SetIsActive(true);
-    SetIsActivating(true);
+    assert(!GetFlag_Activating());
+    SetFlag_Active(true);
+    SetFlag_Activating(true);
 
     // Set the processing state for this operation.
     {{$privateNamespace}}::TriggerProcessingState processing_state;
@@ -312,24 +312,24 @@ void Gochart<T>::Activate()
 
     // Clear the processing state.
     ProcessingState = nullptr;
-    SetIsActivating(false);
+    SetFlag_Activating(false);
 }
 
 template <typename T>
 void Gochart<T>::Deactivate()
 {
-    assert(GetIsActive());
+    assert(GetFlag_Active());
 	// The root state should be active.
     assert(CurrentStates[0] != EState::Invalid);
 
-    assert(!GetIsDeactivating());
-    SetIsDeactivating(true);
+    assert(!GetFlag_Deactivating());
+    SetFlag_Deactivating(true);
 
     // We process a transition of the root concurrent group to invalid, which means an exit.
     ProcessTransition(CurrentStates[0], EState::Invalid, ETrigger::Invalid, nullptr);
 
-    SetIsDeactivating(false);
-    SetIsActive(false);
+    SetFlag_Deactivating(false);
+    SetFlag_Active(false);
 
 	// Now all states should be exited.
 	for (EState state : CurrentStates)
@@ -347,7 +347,7 @@ void Gochart<T>::Deactivate()
 template <typename T>
 void Gochart<T>::Trigger{{$trigger.Name}}({{$args}})
 {
-    if (!GetIsActive() || GetIsDeactivating())
+    if (!GetFlag_Active() || GetFlag_Deactivating())
     {
         return;
     }
@@ -944,11 +944,11 @@ void Gochart<T>::CaptureTrigger(EState state, ETrigger trigger, const void* trig
 template <typename T>
 void Gochart<T>::ProcessTriggerQueue()
 {
-    assert(GetIsActive());
+    assert(GetFlag_Active());
     assert(ProcessingState != nullptr);
 
-    assert(!GetIsProcessingTriggerQueue());
-    SetIsProcessingTriggerQueue(true);
+    assert(!GetFlag_ProcessingTriggerQueue());
+    SetFlag_ProcessingTriggerQueue(true);
 
     while (true)
     {
@@ -976,7 +976,7 @@ void Gochart<T>::ProcessTriggerQueue()
     }
 
     ProcessingState->CurrentTrigger = ETrigger::Invalid;
-    SetIsProcessingTriggerQueue(false);
+    SetFlag_ProcessingTriggerQueue(false);
 }
 
 // Process Transition ------------------------------------------------------------------------------
