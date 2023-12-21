@@ -5,6 +5,12 @@ statechart Concurrent {
 	trigger Spawned()
 	trigger SpawningActuatorDone()
 
+	trigger TargetAcquired()
+	trigger TargetConfirmed()
+	trigger TargetDispatched()
+
+	trigger Update(float dt)
+
 	state Root(concurrent) {
 		state MainActuator {
 			state Idle {
@@ -45,6 +51,46 @@ statechart Concurrent {
 
 					transition null > SpawnIdle do {
 						gochart.TriggerSpawningActuatorDone();
+					}
+				}
+			}
+		}
+
+		state AimingActuator {
+			state AimingInactive {
+				transition ActivateActuator > AimingActive if {
+					return actuator == test::EActuatorType::Aiming && activate;
+				}
+			}
+
+			state AimingActive(concurrent) {
+				transition ActivateActuator > AimingInactive if {
+					return actuator == test::EActuatorType::Aiming && !activate;
+				}
+
+				enter
+				exit
+
+				state AimingSearcher {
+					capture Update
+				}
+
+				state AimingAnalyzer {
+					enter
+					exit
+
+					capture TargetAcquired
+				}
+
+				state AimingDispatcher {
+					exit
+
+					state AimingDispatcherIdle {
+						transition TargetConfirmed > AimingDispacherDispatching
+					}
+
+					state AimingDispacherDispatching {
+						transition TargetDispatched > AimingDispatcherIdle
 					}
 				}
 			}

@@ -1024,7 +1024,7 @@ const char* ToString(ETrigger trigger)
 	}
 
 	GOCHART_DEBUG_BREAK;
-	return "<invalid>";
+	return "<unknown>";
 }
 
 const char* ToString(EState state)
@@ -1036,11 +1036,11 @@ const char* ToString(EState state)
             return "{{$state.Name}}";
 		{{- end }}
 		case EState::Invalid:
-            break;
+			return "Invalid";
 	}
 
 	GOCHART_DEBUG_BREAK;
-	return "<invalid>";
+	return "<unknown>";
 }
 
 namespace {{$privateNamespace}}
