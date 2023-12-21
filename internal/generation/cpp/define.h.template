@@ -414,7 +414,7 @@ public:
 {{- $args := $trigger.ArgsStringList | join ", " }}
 
 template <typename T>
-static bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const T& owner, {{$args}})
+static bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const Gochart<T>& gochart, {{$args}})
 {
     {{$transition.Condition}};
 }
@@ -440,9 +440,9 @@ static bool State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}
 {{- $args := $trigger.ArgsStringList | join ", " }}
 
 template <typename T>
-static void State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(T& owner, {{$args}})
+static void State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(Gochart<T>& gochart, {{$args}})
 {
-		{{$transition.Action}};
+	{{$transition.Action}};
 }
 
 {{- end }}{{/* $transition.HasAction */}}
@@ -465,7 +465,7 @@ static void State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(T& owner, {{$
 {{- if $nullTransition.HasCondition }}
 
 template <typename T>
-static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(const T& owner)
+static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(const Gochart<T>& gochart)
 {
 	{{$nullTransition.Condition}};
 }
@@ -474,7 +474,7 @@ static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$null
 {{- end }}{{/* range $nullTransitions */}}
 
 template <typename T>
-static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(const T& owner, EState target_state)
+static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(const Gochart<T>& gochart, EState target_state)
 {
 	switch (target_state)
 	{
@@ -484,7 +484,7 @@ static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(const 
 
 		case EState::{{$nullTransition.To.Name}}:
 		{
-			return State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(owner);
+			return State{{$state.Name}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(gochart);
 		}
 
 		{{- end }}{{/* if $nullTransition.HasCondition */}}
@@ -513,7 +513,7 @@ static bool State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(const 
 {{- if $nullTransition.HasAction }}
 
 template <typename T>
-static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(T& owner)
+static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(Gochart<T>& gochart)
 {
 	{{$nullTransition.Action}};
 }
@@ -522,7 +522,7 @@ static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTra
 {{- end }}{{/* range $nullTransitions */}}
 
 template <typename T>
-static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting(T& owner, EState target_state)
+static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting(Gochart<T>& gochart, EState target_state)
 {
 	switch (target_state)
 	{
@@ -532,7 +532,7 @@ static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting(T& owner,
 
 		case EState::{{$nullTransition.To.Name}}:
 		{
-			State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(owner);
+			State{{$state.Name}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(gochart);
 			return;
 		}
 
@@ -561,7 +561,7 @@ static void State{{$state.Name}}_EvaluateNullTransitionActionTargeting(T& owner,
 {{- $args := $trigger.ArgsStringList | join ", " }}
 
 template <typename T>
-static bool State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(const T& owner, {{$args}})
+static bool State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(const Gochart<T>& gochart, {{$args}})
 {
     {{$capture.Condition}};
 }
@@ -583,7 +583,7 @@ static bool State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(co
 {{- $state := . }}
 
 template <typename T>
-static void State{{$state.Name}}_Call{{$reactionType}}Reaction(const Gochart<T>& gochart,
+static void State{{$state.Name}}_Call{{$reactionType}}Reaction(Gochart<T>& gochart,
                                             ETrigger trigger,
                                             const void* trigger_data)
 {
@@ -599,7 +599,7 @@ static void State{{$state.Name}}_Call{{$reactionType}}Reaction(const Gochart<T>&
                 auto* data = reinterpret_cast<const {{$privateNamespace}}::{{$trigger.Name}}Data*>(trigger_data);
 
                 // Now we call the handler with the arguments.
-                gochart.GetOwner()->State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}(
+                gochart.GetOwner().State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}(
                     {{ TriggerCallArgs $trigger "data->" | join ", " }}
                 );
                 return;
@@ -613,7 +613,7 @@ static void State{{$state.Name}}_Call{{$reactionType}}Reaction(const Gochart<T>&
 		{
             {{- if $state.HasDefaultReaction $reactionType }}
             // Default {{$reactionType}}.
-            gochart.GetOwner()->State{{$state.Name}}_{{$reactionType}}();
+            gochart.GetOwner().State{{$state.Name}}_{{$reactionType}}();
             {{- else }}
             // No default {{$reactionType}} reaction for state {{$state.SafeName}}.
             {{- end }}
@@ -627,7 +627,7 @@ static void State{{$state.Name}}_Call{{$reactionType}}Reaction(const Gochart<T>&
 {{- end }}{{/* range $sc.States */}}
 
 template <typename T>
-static void Call{{$reactionType}}Reaction(const Gochart<T>& gochart,
+static void Call{{$reactionType}}Reaction(Gochart<T>& gochart,
                        EState state,
                        ETrigger trigger,
                        const void* trigger_data)
@@ -655,7 +655,7 @@ static void Call{{$reactionType}}Reaction(const Gochart<T>& gochart,
 {{ $state := . }}
 
 template <typename T>
-static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const TriggerEntry& trigger_entry)
+static bool State{{$state.Name}}_HandleTrigger(Gochart<T>& gochart, const TriggerEntry& trigger_entry)
 {
     switch (trigger_entry.Trigger)
     {
@@ -671,7 +671,7 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
 
 				{{- if $transition.HasCondition }}
 				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-				if (!State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}}))
+				if (!State{{$state.Name}}_EvaluateTransitionConditionFor{{$trigger.Name}}(gochart, {{$callArgs}}))
 				{
 					return false;
 				}
@@ -679,13 +679,13 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
 
 				{{- if $transition.HasAction }}
 				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-				State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}});
+				State{{$state.Name}}_ExecuteActionFor{{$trigger.Name}}(gochart, {{$callArgs}});
 				{{- end }}{{/* if $transition.HasAction */}}
 
-                gochart->ProcessTransition(EState::{{$transition.From.Name}},
-										   EState::{{$transition.To.Name}},
-										   ETrigger::{{$transition.Trigger.Name}},
-										   &data);
+                gochart.ProcessTransition(EState::{{$transition.From.Name}},
+										  EState::{{$transition.To.Name}},
+										  ETrigger::{{$transition.Trigger.Name}},
+										  &data);
                 return true;
             }
             {{- else if $state.HasCapture $trigger }}
@@ -696,13 +696,13 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
                 {{- $capture := $state.GetCapture $trigger }}
                 {{- if $capture.HasCondition }}
                 {{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-                if (!State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(*gochart->GetOwner(), {{$callArgs}}))
+                if (!State{{$state.Name}}_EvaluateCaptureConditionFor{{$trigger.Name}}(gochart, {{$callArgs}}))
                 {
 										return false;
                 }
                 {{- end }}
 
-                gochart->CaptureTrigger(EState::{{$state.Name}}, ETrigger::{{$trigger.Name}}, &data);
+                gochart.CaptureTrigger(EState::{{$state.Name}}, ETrigger::{{$trigger.Name}}, &data);
                 return true;
             }
             {{- else }}
@@ -721,7 +721,7 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>* gochart, const Trigge
 {{- end }}{{/* range $sc.States */}}
 
 template <typename T>
-static bool HandleTrigger(Gochart<T>* gochart, EState state, const TriggerEntry& trigger_entry)
+static bool HandleTrigger(Gochart<T>& gochart, EState state, const TriggerEntry& trigger_entry)
 {
     switch (state)
     {
@@ -739,7 +739,7 @@ static bool HandleTrigger(Gochart<T>* gochart, EState state, const TriggerEntry&
 }
 
 template <typename T>
-static void ProcessTrigger(Gochart<T>* gochart, EState state, const TriggerEntry& trigger_entry)
+static void ProcessTrigger(Gochart<T>& gochart, EState state, const TriggerEntry& trigger_entry)
 {
     // We go over each state starting from the current to see if they would handle the state.
     while (state != EState::Invalid)
@@ -815,13 +815,13 @@ void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const vo
 			for (EState target_state : {{$privateNamespace}}::kState{{$state.Name}}NullTransitionTargetsArray)
 			{
 				// Check if this null transition has a condition.
-				if (!{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(*this->GetOwner(), target_state))
+				if (!{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionConditionTargeting(*this, target_state))
 				{
 					continue;
 				}
 
 				// Check if this null transition has an embedded action.
-				{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionActionTargeting(*this->GetOwner(), target_state);
+				{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionActionTargeting(*this, target_state);
 
 				// Trigger immediatelly the transition.
 				ProcessTransition(state, target_state, ETrigger::Invalid, nullptr);
@@ -969,7 +969,7 @@ void Gochart<T>::ProcessTriggerQueue()
 				continue;
 			}
 
-			{{$privateNamespace}}::{{$implClassName}}::ProcessTrigger(this, state, entry);
+			{{$privateNamespace}}::{{$implClassName}}::ProcessTrigger(*this, state, entry);
 		}
 
         ProcessingState->TriggerQueue.Dequeue();

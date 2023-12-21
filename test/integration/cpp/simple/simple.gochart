@@ -19,7 +19,7 @@ statechart Door {
 				transition ActivateDoorActuator > DoorActive if {
 					return active;
 				} do {
-						owner.ActionFunction(active);
+					gochart.GetOwner().ActionFunction(active);
 				}
 
 				transition TransferToWindow > Window
@@ -60,7 +60,7 @@ statechart Door {
 				exit
 
 				transition null > WindowIdle do {
-					owner.NullTransitionCall();
+					gochart.GetOwner().NullTransitionCall();
 				}
 			}
 

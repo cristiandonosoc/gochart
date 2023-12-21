@@ -44,7 +44,7 @@ statechart Concurrent {
 					enter
 
 					transition null > SpawnIdle do {
-						owner.GetGochart().TriggerSpawningActuatorDone();
+						gochart.TriggerSpawningActuatorDone();
 					}
 				}
 			}

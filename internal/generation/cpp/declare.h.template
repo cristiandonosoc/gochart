@@ -48,7 +48,8 @@ public:
     void Activate();
     void Deactivate();
 
-    T* GetOwner() const { return Owner; }
+    T& GetOwner() { return *Owner; }
+	const T& GetOwner() const { return *Owner; }
 
 	// IsInStateExact will go over all the active concurrent group and check whether it is currently
 	// in the required state. It will not consider parent states.
