@@ -12,7 +12,13 @@ statechart Concurrent {
 	trigger Update(float dt)
 
 	state Root(concurrent) {
+		exit
+
 		state MainActuator {
+			exit
+
+			transition TargetDispatched > Attack
+
 			state Idle {
 				transition StartSpawning > WaitingOnSpawning
 			}
@@ -24,9 +30,16 @@ statechart Concurrent {
 			state Ready {
 				enter
 			}
+
+			state Attack {
+				enter
+				exit
+			}
 		}
 
 		state SpawnActuator {
+			exit
+
 			state SpawnInactive {
 				transition ActivateActuator > SpawnActive if {
 					return actuator == test::EActuatorType::Spawn && activate;
@@ -34,6 +47,8 @@ statechart Concurrent {
 			}
 
 			state SpawnActive {
+				exit
+
 				transition ActivateActuator > SpawnInactive if {
 					return actuator == test::EActuatorType::Spawn && !activate;
 				}
@@ -57,6 +72,9 @@ statechart Concurrent {
 		}
 
 		state AimingActuator {
+			enter
+			exit
+
 			state AimingInactive {
 				transition ActivateActuator > AimingActive if {
 					return actuator == test::EActuatorType::Aiming && activate;
@@ -86,10 +104,10 @@ statechart Concurrent {
 					exit
 
 					state AimingDispatcherIdle {
-						transition TargetConfirmed > AimingDispacherDispatching
+						transition TargetConfirmed > AimingDispatcherDispatching
 					}
 
-					state AimingDispacherDispatching {
+					state AimingDispatcherDispatching {
 						transition TargetDispatched > AimingDispatcherIdle
 					}
 				}

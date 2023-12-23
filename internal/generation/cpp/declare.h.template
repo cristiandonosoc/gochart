@@ -27,6 +27,8 @@ namespace {{$privateNamespace}}
 struct TriggerProcessingState; // Forward declare.
 class {{$implClassName}};	  // Forward declare.
 
+constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
+
 } // namespace {{$privateNamespace}}
 
 template <typename T>
@@ -38,8 +40,7 @@ template <typename T>
 class Gochart
 {
 public:
-	static constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
-	using ConcurrentGroupStateArray = std::array<EState, kConcurrentGroupCount>;
+	using ConcurrentGroupStateArray = std::array<EState, {{$privateNamespace}}::kConcurrentGroupCount>;
 
 public:
     Gochart(T* owner);

@@ -25,6 +25,8 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
+BinPackArguments: false
+BinPackParameters: false
 BreakBeforeBraces: Custom
 BreakConstructorInitializers: AfterColon
 ColumnLimit: 100

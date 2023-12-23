@@ -39,7 +39,7 @@ EState GetDefaultChild(EState state);
 bool GetIsConcurrent(EState state);
 size_t GetConcurrentGroup(EState state);
 size_t GetChildCount(EState state);
-
+bool IsChildOf(EState parent, EState child);
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -100,7 +100,7 @@ struct NullTriggerData {};
 
 struct TriggerEntry
 {
-	ETrigger Trigger = ETrigger::Invalid;
+	ETrigger Trigger = ETrigger::__Invalid__;
 	std::variant<
 	{{- range $sc.Triggers }}
 	{{- $trigger := . }}
@@ -142,7 +142,7 @@ private:
 struct TriggerProcessingState
 {
 	TriggerRingBufferQueue TriggerQueue;
-	ETrigger CurrentTrigger = ETrigger::Invalid;
+	ETrigger CurrentTrigger = ETrigger::__Invalid__;
 };
 
 // Route ===============================
@@ -162,6 +162,7 @@ public:
 	// Compute figures out a route between any two states.
 	// If |to| is invalid, it will figute out the exit route from the |from| state up out of the
 	// root. This is useful in the deactivate case.
+	//
 	// In any other case (even if |from| == |to|), if the |to| state is not a leaf state (ie. it
 	// has children), it will figure out the enter for the default childs correctly.
 	static void Compute(EState from, EState to, Route* out);
@@ -220,6 +221,13 @@ std::unique_ptr<Gochart<T>> Create(T* owner)
 template <typename T>
 bool Gochart<T>::IsInStateExact(EState state) const
 {
+	// You cannot query for invalid state.
+	if (state == EState::__Invalid__)
+	{
+		return false;
+	}
+
+
 	// Go over all the concurrent groups and check if we're in that state.
 	for (EState current_state : CurrentStates)
 	{
@@ -235,6 +243,13 @@ bool Gochart<T>::IsInStateExact(EState state) const
 template <typename T>
 bool Gochart<T>::IsInState(EState state) const
 {
+	// You cannot query for invalid state.
+	if (state == EState::__Invalid__)
+	{
+		return false;
+	}
+
+
 	// First check if we're explicitly in any leaf state.
 	if (IsInStateExact(state))
 	{
@@ -246,7 +261,7 @@ bool Gochart<T>::IsInState(EState state) const
 	{
 		// Go over the parent states and see if that is the state being asked for.
 		current_state = {{$privateNamespace}}::GetParentState(current_state);
-		while (current_state != EState::Invalid)
+		while (current_state != EState::__Invalid__)
 		{
 			if (current_state == state)
 			{
@@ -267,18 +282,18 @@ bool Gochart<T>::IsInState(EState state) const
 template <typename T>
 Gochart<T>::Gochart(T* owner) : Owner(owner)
 {
-	for (size_t i = 0; i < kConcurrentGroupCount; i++)
+	for (size_t i = 0; i < {{$privateNamespace}}::kConcurrentGroupCount; i++)
 	{
-		CurrentStates[i] = EState::Invalid;
+		CurrentStates[i] = EState::__Invalid__;
 	}
 }
 
 template <typename T>
 Gochart<T>::~Gochart()
 {
-	for (size_t i = 0; i < kConcurrentGroupCount; i++)
+	for (size_t i = 0; i < {{$privateNamespace}}::kConcurrentGroupCount; i++)
 	{
-		assert(CurrentStates[i] == EState::Invalid);
+		assert(CurrentStates[i] == EState::__Invalid__);
 	}
 }
 
@@ -290,7 +305,7 @@ void Gochart<T>::Activate()
     assert(!GetFlag_Active());
 	for (EState state : CurrentStates)
 	{
-		assert(state == EState::Invalid);
+		assert(state == EState::__Invalid__);
 	}
 
     assert(!GetFlag_Activating());
@@ -303,10 +318,10 @@ void Gochart<T>::Activate()
 
     // As an initialization, we enter the default root state.
     EState default_root = EState::{{$sc.DefaultRootState.Name}};
-    EnterState(default_root, ETrigger::Invalid, nullptr);
+    EnterState(default_root, ETrigger::__Invalid__, nullptr);
 
     // Now we do the default enter for this step.
-    ProcessTransition(default_root, default_root, ETrigger::Invalid, nullptr);
+    ProcessTransition(default_root, default_root, ETrigger::__Invalid__, nullptr);
 
     ProcessTriggerQueue();
 
@@ -320,13 +335,13 @@ void Gochart<T>::Deactivate()
 {
     assert(GetFlag_Active());
 	// The root state should be active.
-    assert(CurrentStates[0] != EState::Invalid);
+    assert(CurrentStates[0] != EState::__Invalid__);
 
     assert(!GetFlag_Deactivating());
     SetFlag_Deactivating(true);
 
     // We process a transition of the root concurrent group to invalid, which means an exit.
-    ProcessTransition(CurrentStates[0], EState::Invalid, ETrigger::Invalid, nullptr);
+    ProcessTransition(CurrentStates[0], EState::__Invalid__, ETrigger::__Invalid__, nullptr);
 
     SetFlag_Deactivating(false);
     SetFlag_Active(false);
@@ -334,7 +349,7 @@ void Gochart<T>::Deactivate()
 	// Now all states should be exited.
 	for (EState state : CurrentStates)
 	{
-		assert(state == EState::Invalid);
+		assert(state == EState::__Invalid__);
 	}
 }
 
@@ -609,7 +624,7 @@ static void State{{$state.Name}}_Call{{$reactionType}}Reaction(Gochart<T>& gocha
             return;
         {{- end }}
         {{- end }}
-        case ETrigger::Invalid:
+        case ETrigger::__Invalid__:
 		{
             {{- if $state.HasDefaultReaction $reactionType }}
             // Default {{$reactionType}}.
@@ -640,7 +655,7 @@ static void Call{{$reactionType}}Reaction(Gochart<T>& gochart,
             State{{$state.Name}}_Call{{$reactionType}}Reaction(gochart, trigger, trigger_data);
             return;
         {{- end }}
-        case EState::Invalid:
+        case EState::__Invalid__:
             break;
     }
 
@@ -710,7 +725,7 @@ static bool State{{$state.Name}}_HandleTrigger(Gochart<T>& gochart, const Trigge
             return false;
             {{- end }}
         {{- end }}
-        case ETrigger::Invalid:
+        case ETrigger::__Invalid__:
             break;
     }
 
@@ -730,7 +745,7 @@ static bool HandleTrigger(Gochart<T>& gochart, EState state, const TriggerEntry&
         case EState::{{$state.Name}}:
             return State{{$state.Name}}_HandleTrigger(gochart, trigger_entry);
         {{- end }}
-        case EState::Invalid:
+        case EState::__Invalid__:
             break;
     }
 
@@ -742,7 +757,7 @@ template <typename T>
 static void ProcessTrigger(Gochart<T>& gochart, EState state, const TriggerEntry& trigger_entry)
 {
     // We go over each state starting from the current to see if they would handle the state.
-    while (state != EState::Invalid)
+    while (state != EState::__Invalid__)
     {
         // If this particular state handles the trigger, we stop bubbling up.
         if (HandleTrigger(gochart, state, trigger_entry))
@@ -762,23 +777,23 @@ static void ProcessTrigger(Gochart<T>& gochart, EState state, const TriggerEntry
 template <typename T>
 void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_data)
 {
-    assert(state != EState::Invalid);
+    assert(state != EState::__Invalid__);
 	size_t concurrent_group = {{$privateNamespace}}::GetConcurrentGroup(state);
-	assert(concurrent_group < kConcurrentGroupCount);
+	assert(concurrent_group < {{$privateNamespace}}::kConcurrentGroupCount);
 
 	CurrentStates[concurrent_group] = state;
 
     // First we check for trigger specific reactions, as the default one will be called always.
-    if (trigger != ETrigger::Invalid && {{$privateNamespace}}::HasEnterReaction(state, trigger))
+    if (trigger != ETrigger::__Invalid__ && {{$privateNamespace}}::HasEnterReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
         {{$privateNamespace}}::{{$implClassName}}::CallEnterReaction(*this, state, trigger, trigger_data);
     }
 
     // Now we check if we need to also call the default enter reaction.
-    if ({{$privateNamespace}}::HasEnterReaction(state, ETrigger::Invalid))
+    if ({{$privateNamespace}}::HasEnterReaction(state, ETrigger::__Invalid__))
     {
-        {{$privateNamespace}}::{{$implClassName}}::CallEnterReaction(*this, state, ETrigger::Invalid, nullptr);
+        {{$privateNamespace}}::{{$implClassName}}::CallEnterReaction(*this, state, ETrigger::__Invalid__, nullptr);
     }
 
 	// If we have no more children, we know that we are the last enter of this route, so we can
@@ -824,7 +839,7 @@ void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const vo
 				{{$privateNamespace}}::{{$implClassName}}::State{{$state.Name}}_EvaluateNullTransitionActionTargeting(*this, target_state);
 
 				// Trigger immediatelly the transition.
-				ProcessTransition(state, target_state, ETrigger::Invalid, nullptr);
+				ProcessTransition(state, target_state, ETrigger::__Invalid__, nullptr);
 				handled = true;
 				break;
 			}
@@ -866,7 +881,7 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 			break;
 		}
 		{{- end }}{{/* range $sc.States */}}
-		case EState::Invalid:
+		case EState::__Invalid__:
 			GOCHART_DEBUG_BREAK;
 			break;
 	}
@@ -875,31 +890,31 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 template <typename T>
 void Gochart<T>::ExitState(EState state, ETrigger trigger, const void* trigger_data)
 {
-    assert(state != EState::Invalid);
+    assert(state != EState::__Invalid__);
 	size_t concurrent_group = {{$privateNamespace}}::GetConcurrentGroup(state);
-	assert(concurrent_group < kConcurrentGroupCount);
+	assert(concurrent_group < {{$privateNamespace}}::kConcurrentGroupCount);
 
 	// First we check if we need to exit any of the concurrent children.
 	EvaluateConcurrentExit(state, trigger, trigger_data);
 
     // First we check for a trigger specific exit. Then we call the default exit.
-    if (trigger != ETrigger::Invalid && {{$privateNamespace}}::HasExitReaction(state, trigger))
+    if (trigger != ETrigger::__Invalid__ && {{$privateNamespace}}::HasExitReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
         {{$privateNamespace}}::{{$implClassName}}::CallExitReaction(*this, state, trigger, trigger_data);
     }
 
     // Then we call the default exit.
-    if ({{$privateNamespace}}::HasExitReaction(state, ETrigger::Invalid))
+    if ({{$privateNamespace}}::HasExitReaction(state, ETrigger::__Invalid__))
     {
-        {{$privateNamespace}}::{{$implClassName}}::CallExitReaction(*this, state, ETrigger::Invalid, nullptr);
+        {{$privateNamespace}}::{{$implClassName}}::CallExitReaction(*this, state, ETrigger::__Invalid__, nullptr);
     }
 
 	// If the parent is concurrent, then we mark this concurrent group as invalid (stopped).
     EState parent = {{$privateNamespace}}::GetParentState(state);
-	if (parent != EState::Invalid && {{$privateNamespace}}::GetIsConcurrent(parent))
+	if (parent != EState::__Invalid__ && {{$privateNamespace}}::GetIsConcurrent(parent))
 	{
-		parent = EState::Invalid;
+		parent = EState::__Invalid__;
 	}
 	CurrentStates[concurrent_group] = parent;
 }
@@ -917,7 +932,7 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 			for (EState child_state : {{$privateNamespace}}::kState{{$state.Name}}ChildrenArray)
 			{
 				// We issue a transition of this state out.
-				ProcessTransition(child_state, EState::Invalid, trigger, trigger_data);
+				ProcessTransition(child_state, EState::__Invalid__, trigger, trigger_data);
 			}
 			{{- else }}
 			// State {{$state.Name}} is not concurrent. Nothing to do.
@@ -925,7 +940,7 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 			break;
 		}
 		{{- end }}{{/* range $sc.States */}}
-		case EState::Invalid:
+		case EState::__Invalid__:
 			GOCHART_DEBUG_BREAK;
 			break;
 	}
@@ -934,7 +949,7 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 template <typename T>
 void Gochart<T>::CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data)
 {
-    assert(state != EState::Invalid);
+    assert(state != EState::__Invalid__);
 
     {{$privateNamespace}}::{{$implClassName}}::CallCaptureReaction(*this, state, trigger, trigger_data);
 }
@@ -953,7 +968,7 @@ void Gochart<T>::ProcessTriggerQueue()
     while (true)
     {
         const auto& entry = ProcessingState->TriggerQueue.GetCurrent();
-        if (entry.Trigger == ETrigger::Invalid)
+        if (entry.Trigger == ETrigger::__Invalid__)
         {
             break;
         }
@@ -964,7 +979,7 @@ void Gochart<T>::ProcessTriggerQueue()
 		// The order of the concurrent groups is such that child groups will be processed first.
 		for (EState state : CurrentStates)
 		{
-			if (state == EState::Invalid)
+			if (state == EState::__Invalid__)
 			{
 				continue;
 			}
@@ -975,7 +990,7 @@ void Gochart<T>::ProcessTriggerQueue()
         ProcessingState->TriggerQueue.Dequeue();
     }
 
-    ProcessingState->CurrentTrigger = ETrigger::Invalid;
+    ProcessingState->CurrentTrigger = ETrigger::__Invalid__;
     SetFlag_ProcessingTriggerQueue(false);
 }
 
@@ -984,6 +999,17 @@ void Gochart<T>::ProcessTriggerQueue()
 template <typename T>
 void Gochart<T>::ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data)
 {
+	// From the child state, we find the current active state of that concurrent group,
+	// since that is the one we have to exit from.
+	size_t concurrent_group = {{$privateNamespace}}::GetConcurrentGroup(from);
+	assert(concurrent_group < {{$privateNamespace}}::kConcurrentGroupCount);
+
+	if (EState active_state = CurrentStates[concurrent_group]; active_state != from)
+	{
+		assert({{$privateNamespace}}::IsChildOf(from, active_state));
+		from = active_state;
+	}
+
     // Get the default enter route from this state.
     {{$privateNamespace}}::Route route;
     {{$privateNamespace}}::Route::Compute(from, to, &route);
@@ -1019,8 +1045,8 @@ const char* ToString(ETrigger trigger)
 		case ETrigger::{{$trigger.Name}}:
             return "{{$trigger.Name}}";
 		{{- end }}
-		case ETrigger::Invalid:
-            break;
+		case ETrigger::__Invalid__:
+			return "<invalid>";
 	}
 
 	GOCHART_DEBUG_BREAK;
@@ -1035,8 +1061,8 @@ const char* ToString(EState state)
 		case EState::{{$state.Name}}:
             return "{{$state.Name}}";
 		{{- end }}
-		case EState::Invalid:
-			return "Invalid";
+		case EState::__Invalid__:
+			return "<invalid>";
 	}
 
 	GOCHART_DEBUG_BREAK;
@@ -1055,12 +1081,12 @@ EState GetParentState(EState state) {
         case EState::{{$state.Name}}:
             return EState::{{$state.Parent.SafeName}};
         {{- end }}
-        case EState::Invalid:
+        case EState::__Invalid__:
             break;
     }
 
     GOCHART_DEBUG_BREAK;
-    return EState::Invalid;
+    return EState::__Invalid__;
 }
 
 EState GetDefaultChild(EState state)
@@ -1071,12 +1097,12 @@ EState GetDefaultChild(EState state)
         case EState::{{$state.Name}}:
             return EState::{{$state.DefaultChild.SafeName}};
         {{- end }}
-        case EState::Invalid:
+        case EState::__Invalid__:
             break;
     }
 
     GOCHART_DEBUG_BREAK;
-    return EState::Invalid;
+    return EState::__Invalid__;
 }
 
 bool GetIsConcurrent(EState state)
@@ -1130,6 +1156,22 @@ size_t GetChildCount(EState state)
 	return std::numeric_limits<size_t>::max();
 }
 
+bool IsChildOf(EState parent, EState child)
+{
+	EState target = GetParentState(child);
+	while (target != EState::__Invalid__)
+	{
+		if (target == parent)
+		{
+			return true;
+		}
+
+		target = GetParentState(target);
+	}
+
+	return false;
+}
+
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -1148,7 +1190,7 @@ bool State{{$state.Name}}_Has{{$reactionType}}Reaction(ETrigger trigger)
         case ETrigger::{{$trigger.Name}}:
             return {{ $state.HasReaction $reactionType $trigger }};
         {{- end }}
-        case ETrigger::Invalid:
+        case ETrigger::__Invalid__:
             // Default {{$reactionType}}.
             return {{ $state.HasReaction $reactionType nil }};
     }
@@ -1168,7 +1210,7 @@ bool Has{{$reactionType}}Reaction(EState state, ETrigger trigger)
         case EState::{{$state.Name}}:
             return State{{$state.Name}}_Has{{$reactionType}}Reaction(trigger);
         {{- end }}
-        case EState::Invalid:
+        case EState::__Invalid__:
             break;
     }
 
@@ -1185,8 +1227,8 @@ Route::Route()
     // We ensure that the route are filled with invalid.
     for (size_t i = 0; i < kMaxRouteLength; i++)
     {
-        EnterStates[i] = EState::Invalid;
-        ExitStates[i] = EState::Invalid;
+        EnterStates[i] = EState::__Invalid__;
+        ExitStates[i] = EState::__Invalid__;
     }
 }
 
@@ -1214,7 +1256,7 @@ void Route::SwapEnterStates()
 void Route::AppendDefaultEnters(EState state, Route* out)
 {
     EState default_child = GetDefaultChild(state);
-    while (default_child != EState::Invalid)
+    while (default_child != EState::__Invalid__)
     {
         out->AppendEnterState(default_child);
         default_child = GetDefaultChild(default_child);
@@ -1229,16 +1271,16 @@ void Route::AppendDefaultExits(EState state, Route* out)
 	do {
 		out->AppendExitState(state);
 		state = GetParentState(state);
-	} while (state != EState::Invalid && !GetIsConcurrent(state));
+	} while (state != EState::__Invalid__ && !GetIsConcurrent(state));
 }
 
 void Route::Compute(EState from, EState to, Route* out)
 {
-    assert(from != EState::Invalid);
+    assert(from != EState::__Invalid__);
 
     // Special case of when we are just entering a state without a target.
     // The main case is when activating the statechart, in which we enter the root state.
-    if (to == EState::Invalid)
+    if (to == EState::__Invalid__)
     {
         out->AppendDefaultExits(from, out);
         return;
@@ -1254,7 +1296,7 @@ void Route::Compute(EState from, EState to, Route* out)
     while (from != to)
     {
         // Try to go up from the |from| side.
-        if (EState from_parent = GetParentState(from); from_parent != EState::Invalid)
+        if (EState from_parent = GetParentState(from); from_parent != EState::__Invalid__)
         {
             out->AppendExitState(from);
             from = from_parent;
@@ -1269,7 +1311,7 @@ void Route::Compute(EState from, EState to, Route* out)
         }
 
         // Now we pop the |to| side.
-        if (EState to_parent = GetParentState(to); to_parent != EState::Invalid)
+        if (EState to_parent = GetParentState(to); to_parent != EState::__Invalid__)
         {
             out->AppendEnterState(to);
             to = to_parent;

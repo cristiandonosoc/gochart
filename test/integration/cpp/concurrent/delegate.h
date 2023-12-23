@@ -36,7 +36,7 @@ enum class EActuatorType
 class Delegate
 {
 public:
-    using Callback = std::function<void(Delegate*)>;
+    using Callback = std::function<void()>;
 
     Delegate();
     ~Delegate();
@@ -54,7 +54,19 @@ public:
     void End();
 
     // Gochart delegates begin.
+    void StateRoot_Exit() { TrackCall(__FUNCTION__); }
+
+    void StateMainActuator_Exit() { TrackCall(__FUNCTION__); }
     void StateReady_Enter() { TrackCall(__FUNCTION__); }
+    void StateAttack_Enter() { TrackCall(__FUNCTION__); }
+    void StateAttack_Exit() { TrackCall(__FUNCTION__); }
+
+    void StateSpawnActuator_Exit() { TrackCall(__FUNCTION__); }
+    void StateSpawnActive_Exit() { TrackCall(__FUNCTION__); }
+    void StateSpawnDone_Enter() { TrackCall(__FUNCTION__); }
+
+    void StateAimingActuator_Enter() { TrackCall(__FUNCTION__); }
+    void StateAimingActuator_Exit() { TrackCall(__FUNCTION__); }
     void StateAimingActive_Enter() { TrackCall(__FUNCTION__); }
     void StateAimingActive_Exit() { TrackCall(__FUNCTION__); }
     void StateAimingSearcher_CaptureUpdate(float dt) { TrackCall(__FUNCTION__); }
@@ -62,7 +74,7 @@ public:
     void StateAimingAnalyzer_Exit() { TrackCall(__FUNCTION__); }
     void StateAimingAnalyzer_CaptureTargetAcquired() { TrackCall(__FUNCTION__); }
     void StateAimingDispatcher_Exit() { TrackCall(__FUNCTION__); }
-    void StateSpawnDone_Enter() { TrackCall(__FUNCTION__); }
+
     // Gochart delegates end.
 
 private:
@@ -76,7 +88,7 @@ private:
         // See if we need to call the callback.
         if (Callbacks.contains(extracted))
         {
-            Callbacks[extracted](this);
+            Callbacks[extracted]();
         }
     }
 

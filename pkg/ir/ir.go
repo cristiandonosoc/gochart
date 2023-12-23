@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	InvalidTriggerName = "Invalid"
-	InvalidStateName   = "Invalid"
+	InvalidTriggerName = "__Invalid__"
+	InvalidStateName   = "__Invalid__"
 )
 
 type ConcurrentHead struct {
