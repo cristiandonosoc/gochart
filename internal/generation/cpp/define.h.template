@@ -929,10 +929,14 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 		case EState::{{$state.Name}}:
 		{
 			{{- if $state.Concurrent }}
-			for (EState child_state : {{$privateNamespace}}::kState{{$state.Name}}ChildrenArray)
+			// It it is a concurrent state, we need to close the concurrent children.
+			// We iterate them in reverse order so that that they are closed from bottom of the file
+			// upwards.
+			auto& children = {{$privateNamespace}}::kState{{$state.Name}}ChildrenArray;
+			for (auto it = children.rbegin(); it != children.rend(); it++)
 			{
 				// We issue a transition of this state out.
-				ProcessTransition(child_state, EState::__Invalid__, trigger, trigger_data);
+				ProcessTransition(*it, EState::__Invalid__, trigger, trigger_data);
 			}
 			{{- else }}
 			// State {{$state.Name}} is not concurrent. Nothing to do.

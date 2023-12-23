@@ -187,10 +187,10 @@ TEST(ConcurrentTest, SimpleCase)
             std::string("StateSpawnDone_Enter"),
             std::string("StateReady_Enter"),
 
-            std::string("StateMainActuator_Exit"),
+            std::string("StateAimingActuator_Exit"),
             std::string("StateSpawnActive_Exit"),
             std::string("StateSpawnActuator_Exit"),
-            std::string("StateAimingActuator_Exit"),
+            std::string("StateMainActuator_Exit"),
             std::string("StateRoot_Exit"),
         },
         delegate.GetCalls());
@@ -310,14 +310,14 @@ TEST(ConcurrentTest, ComplexCase)
             std::string("StateAimingAnalyzer_CaptureTargetAcquired"),
             std::string("StateAttack_Enter"),
 
-            std::string("StateAttack_Exit"),
-            std::string("StateMainActuator_Exit"),
-            std::string("StateSpawnActive_Exit"),
-            std::string("StateSpawnActuator_Exit"),
-            std::string("StateAimingAnalyzer_Exit"),
             std::string("StateAimingDispatcher_Exit"),
+            std::string("StateAimingAnalyzer_Exit"),
             std::string("StateAimingActive_Exit"),
             std::string("StateAimingActuator_Exit"),
+            std::string("StateSpawnActive_Exit"),
+            std::string("StateSpawnActuator_Exit"),
+            std::string("StateAttack_Exit"),
+            std::string("StateMainActuator_Exit"),
             std::string("StateRoot_Exit"),
         },
         delegate.GetCalls());
