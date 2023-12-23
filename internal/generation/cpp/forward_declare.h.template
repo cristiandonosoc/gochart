@@ -5,9 +5,9 @@
 
 {{- $root := . -}}
 {{- $sc := $root.Statechart }}
-{{- $publicNamespace := $sc.ClassName }}
-{{- $privateNamespace := "internal" }}
-{{- $implClassName := printf "%s_Impl" $sc.ClassName }}
+{{- $namespace := printf "gochart::%s" $sc.ClassName }}
+{{- $internal := "internal" }}
+{{- $impl := printf "%s_Impl" $sc.ClassName }}
 
 /***************************************************************************************************
  *
@@ -34,10 +34,7 @@ void State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$args}});
  *
  **************************************************************************************************/
 
-
-namespace gochart
-{
-namespace {{$publicNamespace}}
+namespace {{$namespace}}
 {
 
 template <typename T>
@@ -52,7 +49,6 @@ enum class ETrigger
 };
 const char* ToString(ETrigger trigger);
 
-// States ====================
 enum class EState
 {
 	__Invalid__,
@@ -62,5 +58,4 @@ enum class EState
 };
 const char* ToString(EState state);
 
-} // namespace {{$publicNamespace}}
-} // namespace gochart
+} // namespace {{$namespace}}
