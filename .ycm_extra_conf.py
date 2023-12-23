@@ -63,6 +63,7 @@ flags = [
     "-Ibazel-out/x64_windows-fastbuild/bin/external/bazel_tools",
     "-Ibazel-out/x64_windows-fastbuild/bin/test/integration/cpp/simple/_virtual_includes/gochart",
     "-Ibazel-out/x64_windows-fastbuild/bin/test/integration/cpp/concurrent/_virtual_includes/gochart",
+    "-Ibazel-out/x64_windows-fastbuild/bin/test/support/cpp/_virtual_includes/test_support",
     "-Iexternal/com_google_googletest/googlemock",
     "-Ibazel-out/x64_windows-fastbuild/bin/external/com_google_googletest/googlemock",
     "-Iexternal/com_google_googletest/googlemock/include",

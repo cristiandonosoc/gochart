@@ -2,43 +2,26 @@
 
 #include <gtest/gtest.h>
 
+#include <test/test_support.h>
+
 #include <iostream>
 #include <map>
 #include <string>
-
-namespace
-{
-
-std::string ExtractFunctionName(const std::string& function_name)
-{
-    size_t pos = function_name.rfind("::");
-    if (pos != std::string::npos)
-    {
-        // +2 to skip "::".
-        return function_name.substr(pos + 2);
-    }
-    // Return the original name if "::" not found.
-    return function_name;
-}
-
-} // namespace
-
-#define COUNT_CALL() Calls.push_back(ExtractFunctionName(__FUNCTION__));
 
 class Delegate
 {
 public:
     // Statechart begin.
-    void StateDoor_CaptureUpdate(bool tick) { COUNT_CALL(); }
-    void StateDoorInactive_CaptureUpdate(bool tick) { COUNT_CALL(); }
-    void StateDoorOpened_CaptureUpdate(bool tick) { COUNT_CALL(); }
-    void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { COUNT_CALL(); }
-    void StateWindowInitial_Enter() { COUNT_CALL(); }
-    void StateWindowInitial_Exit() { COUNT_CALL(); }
-    void StateWindowIdle_Enter() { COUNT_CALL(); }
+    void StateDoor_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorInactive_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorOpened_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { TrackCall(__FUNCTION__); }
+    void StateWindowInitial_Enter() { TrackCall(__FUNCTION__); }
+    void StateWindowInitial_Exit() { TrackCall(__FUNCTION__); }
+    void StateWindowIdle_Enter() { TrackCall(__FUNCTION__); }
 
-    void ActionFunction(bool active) { COUNT_CALL(); }
-    void NullTransitionCall() { COUNT_CALL(); }
+    void ActionFunction(bool active) { TrackCall(__FUNCTION__); }
+    void NullTransitionCall() { TrackCall(__FUNCTION__); }
     // Statechart end.
 
     const std::vector<std::string>& GetCalls() const { return Calls; }
@@ -58,6 +41,14 @@ public:
     }
 
 private:
+    void TrackCall(const std::string& function_name)
+    {
+        auto extracted = test::ExtractFunctionName(function_name);
+
+        std::cout << extracted << std::endl;
+        Calls.push_back(extracted);
+    }
+
     std::vector<std::string> Calls;
 };
 

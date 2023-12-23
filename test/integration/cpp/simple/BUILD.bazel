@@ -6,6 +6,7 @@ cc_test(
     srcs = ["simple_test.cpp"],
     deps = [
         ":gochart",
+				"//test/support/cpp:test_support",
         "@com_google_googletest//:gtest_main",
     ],
 )

@@ -1,27 +1,12 @@
 #include "concurrent.forward_declare.h"
 
+#include <test/test_support.h>
+
 #include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <vector>
-
-namespace
-{
-
-std::string ExtractFunctionName(const std::string& function_name)
-{
-    size_t pos = function_name.rfind("::");
-    if (pos != std::string::npos)
-    {
-        // +2 to skip "::".
-        return function_name.substr(pos + 2);
-    }
-    // Return the original name if "::" not found.
-    return function_name;
-}
-
-} // namespace
 
 namespace test
 {
@@ -80,7 +65,7 @@ public:
 private:
     void TrackCall(const std::string& function_name)
     {
-        auto extracted = ExtractFunctionName(function_name);
+        auto extracted = test::ExtractFunctionName(function_name);
 
         std::cout << extracted << std::endl;
         Calls.push_back(extracted);

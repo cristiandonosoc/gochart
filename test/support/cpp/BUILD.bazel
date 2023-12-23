@@ -1,0 +1,23 @@
+cc_library(
+	name = "test_support",
+	hdrs = [
+		"test_support.h",
+	],
+	srcs = [
+		"test_support.cpp",
+	],
+	include_prefix = "test",  # Add -I of dependencies.
+	visibility = [
+		":test_packages",
+	],
+	deps = [
+		"@com_google_googletest//:gtest",
+	],
+)
+
+package_group(
+	name = "test_packages",
+	packages = [
+		"//test/...",
+	]
+)
