@@ -41,6 +41,9 @@ func TestReadSimpleYaml(t *testing.T) {
 
 	wantStates := []*State{
 		{
+			Name: kRootStateName,
+		},
+		{
 			Name: "StateA",
 		},
 		{
@@ -58,6 +61,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	}
 
 	// StateA
+	ith.setParenthood(t, kRootStateName, "StateA")
 	ith.setEnterReaction(t, "StateA", "Trigger1")
 	ith.setEnterReaction(t, "StateA", "")
 	ith.setExitReaction(t, "StateA", "Trigger1")
@@ -87,7 +91,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States))
+	require.Equal(t, len(wantStates), len(scdata.States)+1) // Root doesn't exists in frontend.
 
 	sc, err := ProcessStatechartData(scdata)
 	require.NoError(t, err)
@@ -103,18 +107,8 @@ func TestReadSimpleYaml(t *testing.T) {
 		}
 	}
 
-	wantRootStates := []*State{
-		ith.findState(t, "StateA"),
-	}
-
-	if assert.Equal(t, len(wantRootStates), len(sc.Roots), "Different amount of root states") {
-		for i := 0; i < len(wantRootStates); i++ {
-			want := wantRootStates[i]
-			got := sc.Roots[i]
-
-			compareState(t, want, got)
-		}
-	}
+	want := ith.findState(t, kRootStateName)
+	compareState(t, want, sc.Root)
 }
 
 func TestConcurrentGroups(t *testing.T) {
@@ -125,6 +119,10 @@ func TestConcurrentGroups(t *testing.T) {
 	}
 
 	wantStates := []*State{
+		{
+			Name:            kRootStateName,
+			ConcurrentGroup: 0,
+		},
 		{
 			Name:            "A",
 			ConcurrentGroup: 0,
@@ -201,6 +199,7 @@ func TestConcurrentGroups(t *testing.T) {
 		states:   wantStates,
 	}
 
+	ith.setParenthood(t, kRootStateName, "A")
 	ith.setParenthood(t, "A", "B", "C")
 	ith.setParenthood(t, "B", "D")
 	ith.setParenthood(t, "C", "E", "F", "G")
@@ -230,7 +229,7 @@ func TestConcurrentGroups(t *testing.T) {
 	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States))
+	require.Equal(t, len(wantStates), len(scdata.States)+1) // Root doesn't exit in frontend.
 
 	sc, err := ProcessStatechartData(scdata)
 	require.NoError(t, err)
@@ -246,19 +245,8 @@ func TestConcurrentGroups(t *testing.T) {
 		}
 	}
 
-	wantRootStates := []*State{
-		ith.findState(t, "A"),
-	}
-
-	if assert.Equal(t, len(wantRootStates), len(sc.Roots), "Different amount of root states") {
-		// Only compare the root states.
-		for i := 0; i < len(wantRootStates); i++ {
-			want := wantRootStates[i]
-			got := sc.Roots[i]
-
-			compareState(t, want, got)
-		}
-	}
+	want := ith.findState(t, kRootStateName)
+	compareState(t, want, sc.Root)
 }
 
 // COMPARE FUNCTIONS -------------------------------------------------------------------------------
@@ -303,7 +291,7 @@ func compareState(t *testing.T, want, got *State) {
 	}
 
 	// Compare that we have the same children.
-	if assert.Equal(t, len(want.Children), len(got.Children)) {
+	if assert.Equal(t, len(want.Children), len(got.Children), want.SafeName()) {
 		for i := 0; i < len(want.Children); i++ {
 			want := want.Children[i]
 			got := got.Children[i]

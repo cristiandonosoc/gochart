@@ -25,8 +25,9 @@ type Statechart struct {
 
 	Triggers []*Trigger
 
-	// Roots are the list of states that are "roots" (have no parents) within the state tree.
-	Roots           []*State
+	// Root is the base state of the complete statechart.
+	// Normally this is a "hidden" state created by the gochart.
+	Root            *State
 	ConcurrentHeads []*ConcurrentHead
 
 	// States are all the states, as defined in the order from the frontend.

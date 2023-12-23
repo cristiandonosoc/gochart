@@ -31,9 +31,7 @@ func (ip *irPrinter) PrintStatechart(sc *Statechart) {
 		ip.printTrigger(trigger)
 	}
 
-	for _, root := range sc.Roots {
-		ip.printState(root)
-	}
+	ip.printState(sc.Root)
 }
 
 func (ip *irPrinter) printTrigger(trigger *Trigger) {
