@@ -7,18 +7,6 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
-// StatechartData is all the information a frontend needs to output about a statechart.
-// This will be consumed by the |ir| package and validated.
-type StatechartData struct {
-	Name        string
-	Triggers    []*TriggerData
-	States      []*StateData
-	Transitions []*TransitionData
-
-	Frontend_KeywordPos *files.LoadedFilePosition
-	Frontend_NamePos    *files.LoadedFilePosition
-}
-
 type OptionValueKind int
 
 const (
@@ -46,6 +34,21 @@ type OptionData struct {
 	Value string
 
 	Frontend_NamePos *files.LoadedFilePosition
+}
+
+// StatechartData is all the information a frontend needs to output about a statechart.
+// This will be consumed by the |ir| package and validated.
+type StatechartData struct {
+	Name string
+
+	Options []*OptionData
+
+	Triggers    []*TriggerData
+	States      []*StateData
+	Transitions []*TransitionData
+
+	Frontend_KeywordPos *files.LoadedFilePosition
+	Frontend_NamePos    *files.LoadedFilePosition
 }
 
 type TriggerData struct {

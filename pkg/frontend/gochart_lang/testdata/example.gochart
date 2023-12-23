@@ -1,4 +1,4 @@
-statechart Example {
+statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 	trigger Execute()
 	trigger Update(float dt)
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)

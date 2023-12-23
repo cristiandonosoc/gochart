@@ -27,6 +27,23 @@ func TestReadSimple(t *testing.T) {
 		statecharts: []*ASTNodeStatechart{
 			{
 				Name: "Example",
+				Options: []*ASTNodeOption{
+					{
+						Name:      "Opt1",
+						ValueKind: common.OptionValueKind_Boolean,
+						Value:     "true",
+					},
+					{
+						Name:      "Opt2",
+						ValueKind: common.OptionValueKind_String,
+						Value:     "String",
+					},
+					{
+						Name:      "Opt3",
+						ValueKind: common.OptionValueKind_Integer,
+						Value:     "33",
+					},
+				},
 				Triggers: []*ASTNodeTrigger{
 					{
 						Name:       "Execute",

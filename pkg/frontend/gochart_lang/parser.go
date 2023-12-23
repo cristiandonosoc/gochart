@@ -105,7 +105,10 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 // Statechart -> 'statechart' NAME ( '(' ')' )? '{' StatechartBodyStmt+ '}'
 
 type ASTNodeStatechart struct {
-	Name     string
+	Name string
+
+	Options []*ASTNodeOption
+
 	Triggers []*ASTNodeTrigger
 	States   []*ASTNodeState
 
@@ -140,6 +143,14 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}()
 	}
 
+	// The options.
+	var options []*ASTNodeOption
+	if opts, ok, err := p.parseOptions(); err != nil {
+		return nil, fmt.Errorf("statechart %q: parsing options: %w", name, err)
+	} else if ok {
+		options = opts
+	}
+
 	// Optional ( ).
 	if p.peekToken(Token_LeftParen) {
 		if _, err := p.consumeToken(Token_LeftParen); err != nil {
@@ -153,6 +164,7 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 
 	sc := &ASTNodeStatechart{
 		Name:         name,
+		Options:      options,
 		keywordToken: baseToken,
 		nameToken:    nameToken,
 	}

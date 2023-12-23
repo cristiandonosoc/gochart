@@ -31,6 +31,7 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *commo
 
 	return &common.StatechartData{
 		Name:                nsc.Name,
+		Options:             ft.translateOptions(nsc.Options),
 		Triggers:            triggers,
 		States:              states,
 		Transitions:         transitions,
