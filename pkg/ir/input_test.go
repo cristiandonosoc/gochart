@@ -147,52 +147,52 @@ func TestConcurrentGroups(t *testing.T) {
 		},
 		{
 			Name:            "E",
-			ConcurrentGroup: 1,
+			ConcurrentGroup: 3,
 		},
 		{
 			Name:            "F",
 			Concurrent:      true,
-			ConcurrentGroup: 2,
+			ConcurrentGroup: 4,
 		},
 		{
 			Name:            "G",
-			ConcurrentGroup: 3,
+			ConcurrentGroup: 7,
 		},
 		{
 			Name:            "H",
 			Default:         true,
-			ConcurrentGroup: 4,
+			ConcurrentGroup: 1,
 		},
 		{
 			Name:            "I",
-			ConcurrentGroup: 5,
+			ConcurrentGroup: 2,
 		},
 		{
 			Name:            "J",
 			Default:         true,
-			ConcurrentGroup: 1,
+			ConcurrentGroup: 3,
 		},
 		{
 			Name:            "K",
-			ConcurrentGroup: 1,
+			ConcurrentGroup: 3,
 		},
 		{
 			Name:            "L",
 			Default:         true,
-			ConcurrentGroup: 6,
+			ConcurrentGroup: 5,
 		},
 		{
 			Name:            "M",
-			ConcurrentGroup: 7,
+			ConcurrentGroup: 6,
 		},
 		{
 			Name:            "N",
 			Default:         true,
-			ConcurrentGroup: 3,
+			ConcurrentGroup: 7,
 		},
 		{
 			Name:            "O",
-			ConcurrentGroup: 3,
+			ConcurrentGroup: 7,
 		},
 	}
 

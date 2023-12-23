@@ -358,9 +358,39 @@ func (ih *inputHandler) createTransition(tdata *frontend_common.TransitionData) 
 	return transition, from, nil
 }
 
-// calculateConcurrentness traverse the statechart tree in BFS order and calcualte the concurrent
-// groups.
 func (ih *inputHandler) calculateConcurrentness(state *State) error {
+	return ih.calculateConcurrentnessDFS(state)
+}
+
+// calculateConcurrentnessDFS traverse the statechart tree in BFS order, calculating concurrent
+// groups as it finds them.
+func (ih *inputHandler) calculateConcurrentnessDFS(state *State) error {
+	for _, child := range state.Children {
+		// If it's not a concurrent state, we use the parent concurrent group.
+		// Otherwise we create a new group for this child.
+		group := state.ConcurrentGroup
+		if state.Concurrent {
+			ih.nextConcurrentGroup++
+			group = ih.nextConcurrentGroup
+			ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+				Id:        group,
+				HeadState: child,
+			})
+		}
+		child.ConcurrentGroup = group
+
+		// We iterate over the children immediatelly to perform the DFS search.
+		if err := ih.calculateConcurrentnessDFS(child); err != nil {
+			return fmt.Errorf("calculating concurrent group for state %q: %w", child.SafeName(), err)
+		}
+	}
+
+	return nil
+}
+
+// calculateConcurrentnessBFS traverse the statechart tree in BFS order, calculating concurrent
+// groups as it finds them.
+func (ih *inputHandler) calculateConcurrentnessBFS(state *State) error {
 	// Create a queue with states to calculate.
 	queue := list.New()
 	for _, child := range state.Children {
