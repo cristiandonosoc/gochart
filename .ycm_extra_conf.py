@@ -30,6 +30,7 @@
 
 from distutils.sysconfig import get_python_inc
 import platform
+import os
 import os.path as p
 import subprocess
 
@@ -61,9 +62,6 @@ flags = [
     "-Ibazel-out/x64_windows-fastbuild/bin/external/com_google_googletest",
     "-Iexternal/bazel_tools",
     "-Ibazel-out/x64_windows-fastbuild/bin/external/bazel_tools",
-    "-Ibazel-out/x64_windows-fastbuild/bin/test/integration/cpp/simple/_virtual_includes/gochart",
-    "-Ibazel-out/x64_windows-fastbuild/bin/test/integration/cpp/concurrent/_virtual_includes/gochart",
-    "-Ibazel-out/x64_windows-fastbuild/bin/test/support/cpp/_virtual_includes/test_support",
     "-Iexternal/com_google_googletest/googlemock",
     "-Ibazel-out/x64_windows-fastbuild/bin/external/com_google_googletest/googlemock",
     "-Iexternal/com_google_googletest/googlemock/include",
@@ -73,6 +71,48 @@ flags = [
     "-Iexternal/com_google_googletest/googletest/include",
     "-Ibazel-out/x64_windows-fastbuild/bin/external/com_google_googletest/googletest/include",
 ]
+
+# We append the bazel.
+
+def AppendVirtualIncludesForDir(directory, out):
+  for child in os.listdir(directory):
+    path = os.path.join(directory, child)
+    if not os.path.isdir(path):
+      continue
+    out.append(path)
+
+
+def SearchForVirtualIncludes(directory, out):
+  child_dirs = []
+  for child in os.listdir(directory):
+    path = os.path.join(directory, child)
+    if not os.path.isdir(path):
+      continue
+    child_dirs.append(path)
+
+  for child_dir in child_dirs:
+    # If it is a virtual include, we add it to the matched.
+    if '_virtual_includes' in child_dir:
+      AppendVirtualIncludesForDir(child_dir, out)
+      continue
+    # We look into this child directory.
+    SearchForVirtualIncludes(child_dir, out)
+
+def AppendBazelVirtualIncludes(base_directory, current_flags):
+  matches = []
+
+  # We search in the bazel-out directory.
+  base_dir = os.path.join(base_directory, "bazel-out", "x64_windows-fastbuild", "bin")
+  SearchForVirtualIncludes(base_dir, matches)
+
+  # Append the found matches to the flags, relative to the current path.
+  print("BASE_DIR:", base_directory)
+  for match in matches:
+    rel = os.path.relpath(match, base_directory)
+    current_flags.append("-I%s" % rel)
+
+AppendBazelVirtualIncludes(DIR_OF_THIS_SCRIPT, flags)
+
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
 # compile_commands.json file to use that instead of 'flags'. See here for
@@ -85,6 +125,8 @@ flags = [
 # Most projects will NOT need to set this to anything; you can just change the
 # 'flags' list of compilation flags. Notice that YCM itself uses that approach.
 compilation_database_folder = '.'
+
+
 
 
 def IsHeaderFile( filename ):
@@ -100,7 +142,6 @@ def FindCorrespondingSourceFile( filename ):
       if p.exists( replacement_file ):
         return replacement_file
   return filename
-
 
 def PathToPythonUsedDuringBuild():
   try:
