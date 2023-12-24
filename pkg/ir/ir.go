@@ -120,6 +120,22 @@ type State struct {
 	frontendData *frontend_common.StateData
 }
 
+func (s *State) IsRoot() bool {
+	if s.Parent != nil {
+		return false
+	}
+	return true
+}
+
+// DisplayName is the name to be used for user facing displays of this state.
+// Mostly used to give an easier time to the backend.
+func (s *State) DisplayName() string {
+	if s.IsRoot() {
+		return "Statechart"
+	}
+	return fmt.Sprintf("State%s", s.Name)
+}
+
 func (s *State) SafeName() string {
 	if s == nil {
 		return InvalidStateName

@@ -9,6 +9,8 @@
 class Delegate
 {
 public:
+    void Statechart_Enter() { TrackCall(__FUNCTION__); }
+    void Statechart_Exit() { TrackCall(__FUNCTION__); }
     void StateFirst_Enter() { TrackCall(__FUNCTION__); }
     void StateFirst_Exit() { TrackCall(__FUNCTION__); }
     void StateFirstSon1_Enter() { TrackCall(__FUNCTION__); }
@@ -64,4 +66,35 @@ TEST(Routes, Test)
         << "CURRENT STATES: " << test::PrintSpan<EState>(gochart->GetCurrentStates());
 
     gochart->Deactivate();
+
+    // clang-format off
+    test::CompareCalls(
+            std::array{
+            std::string("Statechart_Enter"),
+            std::string("StateFirst_Enter"),
+            std::string("StateFirstSon2_Enter"),
+
+            std::string("StateFirstSon2_Exit"),
+            std::string("StateFirst_Exit"),
+            std::string("StateSecond_Enter"),
+            std::string("StateSecondSon1_Enter"),
+
+            std::string("StateSecondSon1_Exit"),
+            std::string("StateSecond_Exit"),
+            std::string("StateFirst_Enter"),
+            std::string("StateFirstSon1_Enter"),
+
+            std::string("StateFirstSon1_Exit"),
+            std::string("StateFirst_Exit"),
+            std::string("StateThird_Enter"),
+
+            std::string("StateThird_Exit"),
+            std::string("StateFirst_Enter"),
+            std::string("StateFirstSon2_Enter"),
+
+            std::string("StateFirstSon2_Exit"),
+            std::string("StateFirst_Exit"),
+            std::string("Statechart_Exit"),
+            }, delegate.GetCalls());
+    // clang-format on
 }

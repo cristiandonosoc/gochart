@@ -77,14 +77,14 @@ public:
     {{- range $_, $reactionType := $reactionTypes }}
 
     {{- if $state.HasDefaultReaction $reactionType }}
-    void State{{$state.Name}}_{{$reactionType}}() { Owner->State{{$state.Name}}_{{$reactionType}}(); }
+    void {{$state.DisplayName}}_{{$reactionType}}() { Owner->{{$state.DisplayName}}_{{$reactionType}}(); }
     {{- end }}
 
     {{- range $_, $trigger := $sc.Triggers }}
     {{- if $state.HasReaction $reactionType $trigger }}
     {{- $args := $trigger.ArgsStringList | join ", " }}
     {{- $argsNames := $trigger.ArgsNameList | join ", " }}
-    void State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$args}}) { Owner->State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$argsNames}}); }
+    void {{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}({{$args}}) { Owner->{{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}({{$argsNames}}); }
     {{- end }}
     {{- end }}{{/* range $sc.Triggers */}}
 

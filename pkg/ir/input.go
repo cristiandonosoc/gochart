@@ -41,12 +41,8 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 
 	// We create the base root state.
 	root := &State{
-		Name: scdata.Root.Name,
-		// We pass in the statechart file position, to "make it look" like it's the statechart.
-		frontendData: &frontend_common.StateData{
-			Frontend_KeywordPos: scdata.Root.Frontend_KeywordPos,
-			Frontend_NamePos:    scdata.Root.Frontend_NamePos,
-		},
+		Name:         scdata.Root.Name,
+		frontendData: scdata.Root,
 	}
 
 	// We create the base state object (will be filled more later).

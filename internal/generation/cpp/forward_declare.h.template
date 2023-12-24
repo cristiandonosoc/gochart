@@ -18,13 +18,13 @@
 {{- range $_, $reactionType := $reactionTypes }}
 
 {{- if $state.HasDefaultReaction $reactionType }}
-void State{{$state.Name}}_{{$reactionType}}();
+void {{$state.DisplayName}}_{{$reactionType}}();
 {{- end }}
 
 {{- range $_, $trigger := $sc.Triggers }}
 {{- if $state.HasReaction $reactionType $trigger }}
 {{- $args := $trigger.ArgsStringList | join ", " }}
-void State{{$state.Name}}_{{$reactionType}}{{$trigger.Name}}({{$args}});
+void {{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}({{$args}});
 {{- end }}
 {{- end }}{{/* range $sc.Triggers */}}
 
