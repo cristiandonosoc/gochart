@@ -4,7 +4,7 @@
 //  11:
 //  12: statechart mumu {
 //  13: 	statechart mumu2 {
-//      	^---> expected token to be in [trigger state], got "statechart"
+//      	^---> expected token to be in [trigger enter exit transition capture state], got "statechart"
 //  14:
 //  15: 	}
 // --- ERROR END

@@ -3,6 +3,13 @@ statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 	trigger Update(float dt)
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
 
+	enter
+	enter Execute
+	exit Execute
+	exit
+
+	transition Execute > First do { owner->Foo(); }
+
 	state First {
 		enter
 		enter Execute

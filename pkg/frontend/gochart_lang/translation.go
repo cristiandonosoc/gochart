@@ -25,14 +25,17 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *commo
 	// Collect states.
 	var states []*common.StateData
 	var transitions []*common.TransitionData
-	for _, ns := range nsc.States {
-		states, transitions = ft.translateState(ns, states, transitions)
+
+	states, transitions = ft.translateState(nsc.Root, states, transitions)
+	if states[0].Name != common.RootStateName {
+		panic("root state is not the first one!")
 	}
 
 	return &common.StatechartData{
 		Name:                nsc.Name,
 		Options:             ft.translateOptions(nsc.Options),
 		Triggers:            triggers,
+		Root:                states[0],
 		States:              states,
 		Transitions:         transitions,
 		Frontend_KeywordPos: tokenToPosition(ft.lf, nsc.keywordToken),

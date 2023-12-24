@@ -9,18 +9,13 @@ import (
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
-const (
-	kRootStateName = "__Root__"
-)
-
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
 	scdata *frontend_common.StatechartData
 
-	triggers   []*Trigger
-	root       *State
-	rootStates []*State
-	states     []*State
+	triggers []*Trigger
+	root     *State
+	states   []*State
 
 	nextConcurrentGroup int
 	concurrentHeads     []*ConcurrentHead
@@ -46,11 +41,11 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 
 	// We create the base root state.
 	root := &State{
-		Name: kRootStateName,
+		Name: scdata.Root.Name,
 		// We pass in the statechart file position, to "make it look" like it's the statechart.
 		frontendData: &frontend_common.StateData{
-			Frontend_KeywordPos: scdata.Frontend_KeywordPos,
-			Frontend_NamePos:    scdata.Frontend_NamePos,
+			Frontend_KeywordPos: scdata.Root.Frontend_KeywordPos,
+			Frontend_NamePos:    scdata.Root.Frontend_NamePos,
 		},
 	}
 
@@ -137,16 +132,19 @@ func (ih *inputHandler) createTrigger(tdata *frontend_common.TriggerData) (*Trig
 
 func (ih *inputHandler) collectStates(rootState *State) error {
 	// We first create all the states and track its associated data.
-	states := []*State{
-		rootState,
-	}
-	stateMap := map[string]*State{
-		rootState.Name: rootState,
-	}
+	states := []*State{}
+	stateMap := map[string]*State{}
 	for _, statedata := range ih.scdata.States {
 		// The state should not exist.
 		if _, ok := stateMap[statedata.Name]; ok {
 			return errors.Errorf(statedata.Frontend_NamePos, "Semantic", "state %q already exists", statedata.Name)
+		}
+
+		// We special case the root.
+		if statedata.Name == rootState.Name {
+			states = append(states, rootState)
+			stateMap[statedata.Name] = rootState
+			continue
 		}
 
 		// For now, we simply create the state. Parenthood will be set on a second pass.
@@ -159,19 +157,9 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 	}
 
 	// Now we check for parenthood.
-	var roots []*State
 	for _, state := range states {
 		// We skip the root we just added.
-		if state.Name == kRootStateName {
-			continue
-		}
-
-		// If the parent name is null, it means that this is a root state and we appending it to our
-		// artificial root.
-		if state.frontendData.Parent == "" {
-			roots = append(roots, state)
-			rootState.Children = append(rootState.Children, state)
-			state.Parent = rootState
+		if state.Name == rootState.Name {
 			continue
 		}
 
@@ -230,14 +218,6 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 		}
 	}
 
-	// Perform some setup at the root level as well.
-	{
-		prefix := fmt.Sprintf("statechart %q", ih.scdata.Name)
-		if err := ih.determineDefaultChild(prefix, ih.scdata.Frontend_NamePos, roots); err != nil {
-			return fmt.Errorf("determining default child: %w", err)
-		}
-	}
-
 	// Calculate concurrent-ness.
 	// This is better if calculated top down.
 	rootState.ConcurrentGroup = 0
@@ -250,7 +230,7 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 	}
 
 	ih.root = rootState
-	ih.rootStates = roots
+	// ih.rootStates = roots
 	ih.states = states
 	ih.stateMap = stateMap
 

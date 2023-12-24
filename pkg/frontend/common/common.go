@@ -7,6 +7,10 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
+const (
+	RootStateName = "__Root__"
+)
+
 type OptionValueKind int
 
 const (
@@ -44,6 +48,7 @@ type StatechartData struct {
 	Options []*OptionData
 
 	Triggers    []*TriggerData
+	Root        *StateData
 	States      []*StateData
 	Transitions []*TransitionData
 

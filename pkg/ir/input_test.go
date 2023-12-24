@@ -3,10 +3,12 @@ package ir
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
+	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
 
@@ -41,7 +43,7 @@ func TestReadSimpleYaml(t *testing.T) {
 
 	wantStates := []*State{
 		{
-			Name: kRootStateName,
+			Name: frontend_common.RootStateName,
 		},
 		{
 			Name: "StateA",
@@ -61,7 +63,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	}
 
 	// StateA
-	ith.setParenthood(t, kRootStateName, "StateA")
+	ith.setParenthood(t, frontend_common.RootStateName, "StateA")
 	ith.setEnterReaction(t, "StateA", "Trigger1")
 	ith.setEnterReaction(t, "StateA", "")
 	ith.setExitReaction(t, "StateA", "Trigger1")
@@ -91,7 +93,10 @@ func TestReadSimpleYaml(t *testing.T) {
 	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States)+1) // Root doesn't exists in frontend.
+	require.Equal(t, len(wantStates), len(scdata.States),
+		"WANT:", printStates(wantStates), "GOT:", printFrontendStates(scdata.States))
+
+	t.Log(printFrontendStates(scdata.States))
 
 	sc, err := ProcessStatechartData(scdata)
 	require.NoError(t, err)
@@ -107,7 +112,7 @@ func TestReadSimpleYaml(t *testing.T) {
 		}
 	}
 
-	want := ith.findState(t, kRootStateName)
+	want := ith.findState(t, frontend_common.RootStateName)
 	compareState(t, want, sc.Root)
 }
 
@@ -120,7 +125,7 @@ func TestConcurrentGroups(t *testing.T) {
 
 	wantStates := []*State{
 		{
-			Name:            kRootStateName,
+			Name:            frontend_common.RootStateName,
 			ConcurrentGroup: 0,
 		},
 		{
@@ -199,7 +204,7 @@ func TestConcurrentGroups(t *testing.T) {
 		states:   wantStates,
 	}
 
-	ith.setParenthood(t, kRootStateName, "A")
+	ith.setParenthood(t, frontend_common.RootStateName, "A")
 	ith.setParenthood(t, "A", "B", "C")
 	ith.setParenthood(t, "B", "D")
 	ith.setParenthood(t, "C", "E", "F", "G")
@@ -229,7 +234,7 @@ func TestConcurrentGroups(t *testing.T) {
 	scdata, err := yf.Process(lf)
 	require.NoError(t, err)
 	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States)+1) // Root doesn't exit in frontend.
+	require.Equal(t, len(wantStates), len(scdata.States))
 
 	sc, err := ProcessStatechartData(scdata)
 	require.NoError(t, err)
@@ -245,7 +250,7 @@ func TestConcurrentGroups(t *testing.T) {
 		}
 	}
 
-	want := ith.findState(t, kRootStateName)
+	want := ith.findState(t, frontend_common.RootStateName)
 	compareState(t, want, sc.Root)
 }
 
@@ -488,4 +493,28 @@ func (ith *inputTestHelper) appendCapture(t *testing.T, captures []*StateCapture
 	}
 
 	return captures
+}
+
+func printStates(states []*State) string {
+	var sb strings.Builder
+
+	sb.WriteString("[\n")
+	for _, state := range states {
+		sb.WriteString(fmt.Sprintf("\t%s\n", state.Name))
+	}
+	sb.WriteString("]")
+
+	return sb.String()
+}
+
+func printFrontendStates(states []*frontend_common.StateData) string {
+	var sb strings.Builder
+
+	sb.WriteString("[\n")
+	for _, state := range states {
+		sb.WriteString(fmt.Sprintf("\t%s, Parent: %s\n", state.Name, state.Parent))
+	}
+	sb.WriteString("]")
+
+	return sb.String()
 }

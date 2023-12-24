@@ -60,188 +60,222 @@ func TestReadSimple(t *testing.T) {
 						entryIndex: 2,
 					},
 				},
-				States: []*ASTNodeState{
-					{
-						Name:       "First",
-						entryIndex: 3,
-						EnterReactions: []*ASTNodeStateReaction{
-							{
-								Trigger:    "",
-								entryIndex: 0,
-							},
-							{
-								Trigger:    "Execute",
-								entryIndex: 1,
-							},
+				Root: &ASTNodeState{
+					Name: common.RootStateName,
+					EnterReactions: []*ASTNodeStateReaction{
+						{
+							Trigger:    "",
+							entryIndex: 3,
 						},
-						ExitReactions: []*ASTNodeStateReaction{
-							{
-								Trigger:    "Execute",
-								entryIndex: 2,
-							},
-							{
-								Trigger:    "",
-								entryIndex: 3,
-							},
-						},
-						Transitions: []*ASTNodeStateTransition{
-							{
-								Trigger:     "",
-								TargetState: "Third",
-								Action:      " owner->SomeNullAction(); ",
-								entryIndex:  4,
-							},
-							{
-								Trigger:     "Execute",
-								TargetState: "Second",
-								entryIndex:  5,
-							},
-						},
-						Captures: []*ASTNodeStateCapture{
-							{
-								Trigger:    "Update",
-								Condition:  " owner->SomeCondition ",
-								entryIndex: 6,
-							},
+						{
+							Trigger:    "Execute",
+							entryIndex: 4,
 						},
 					},
-					{
-						Name:       "Second",
-						entryIndex: 4,
-						Options: []*ASTNodeOption{
-							{
-								Name:      "Option1",
-								ValueKind: common.OptionValueKind_Boolean,
-								Value:     "true",
-							},
+					ExitReactions: []*ASTNodeStateReaction{
+						{
+							Trigger:    "Execute",
+							entryIndex: 5,
 						},
-						Transitions: []*ASTNodeStateTransition{
-							{
-								Trigger:     "Execute",
-								TargetState: "First",
-								Condition:   "\r\n\t\t\treturn owner->SomeCondition();\r\n\t\t",
-								Action:      "\r\n\t\t\towner->ExecuteSomeAction();\r\n\t\t",
-								entryIndex:  0,
-							},
+						{
+							Trigger:    "",
+							entryIndex: 6,
 						},
 					},
-					{
-						Name:       "Third",
-						entryIndex: 5,
-						Options: []*ASTNodeOption{
-							{
-								Name:      "Opt1",
-								ValueKind: common.OptionValueKind_Boolean,
-								Value:     "true",
-							},
-							{
-								Name:      "Opt2",
-								ValueKind: common.OptionValueKind_Boolean,
-								Value:     "true",
-							},
-							{
-								Name:      "Opt3",
-								ValueKind: common.OptionValueKind_String,
-								Value:     "Identifier",
-							},
-							{
-								Name:      "Opt4",
-								ValueKind: common.OptionValueKind_String,
-								Value:     "String",
-							},
-							{
-								Name:      "Opt5",
-								ValueKind: common.OptionValueKind_Integer,
-								Value:     "2123",
-							},
-							{
-								Name:      "Opt6",
-								ValueKind: common.OptionValueKind_Boolean,
-								Value:     "true",
-							},
-							{
-								Name:      "Opt7",
-								ValueKind: common.OptionValueKind_Boolean,
-								Value:     "false",
-							},
-							{
-								Name:      "Opt8",
-								ValueKind: common.OptionValueKind_Integer,
-								Value:     "22",
-							},
+					Transitions: []*ASTNodeStateTransition{
+						{
+							Trigger:     "Execute",
+							TargetState: "First",
+							Action:      " owner->Foo(); ",
+							entryIndex:  7,
 						},
-						Transitions: []*ASTNodeStateTransition{
-							{
-								Trigger:     "SomeMessage",
-								TargetState: "Second",
-								entryIndex:  0,
-							},
-						},
-						Children: []*ASTNodeState{
-							{
-								Name:       "ThirdChild1",
-								entryIndex: 1,
-								ParentName: "Third",
-								Options: []*ASTNodeOption{
-									{
-										Name:      "OptChild1",
-										ValueKind: common.OptionValueKind_Boolean,
-										Value:     "true",
-									},
-									{
-										Name:      "OptChild2",
-										ValueKind: common.OptionValueKind_String,
-										Value:     "IdentifierChild",
-									},
+					},
+					Children: []*ASTNodeState{
+						{
+							Name:       "First",
+							ParentName: common.RootStateName,
+							entryIndex: 8,
+							EnterReactions: []*ASTNodeStateReaction{
+								{
+									Trigger:    "",
+									entryIndex: 0,
 								},
-								Children: []*ASTNodeState{
-									{
-										Name:       "ThirdGrandChild",
-										entryIndex: 0,
-										ParentName: "ThirdChild1",
-										Options: []*ASTNodeOption{
-											{
-												Name:      "OptGrandChild",
-												ValueKind: common.OptionValueKind_Boolean,
-												Value:     "false",
-											},
-										},
-										EnterReactions: []*ASTNodeStateReaction{
-											{
-												Trigger:    "",
-												entryIndex: 1,
-											},
-										},
-										ExitReactions: []*ASTNodeStateReaction{
-											{
-												Trigger:    "Update",
-												entryIndex: 2,
-											},
-										},
-										Transitions: []*ASTNodeStateTransition{
-											{
-												Trigger:     "Execute",
-												TargetState: "Second",
-												entryIndex:  0,
-											},
-										},
-										Captures: []*ASTNodeStateCapture{
-											{
-												Trigger:    "Execute",
-												entryIndex: 3,
-											},
-										},
-									},
+								{
+									Trigger:    "Execute",
+									entryIndex: 1,
 								},
 							},
-							{
-								Name:       "ThirdChild2",
-								entryIndex: 2,
-								ParentName: "Third",
-								Transitions: []*ASTNodeStateTransition{
-									{
-										Trigger:     "",
-										TargetState: "ThirdGrandChild",
+							ExitReactions: []*ASTNodeStateReaction{
+								{
+									Trigger:    "Execute",
+									entryIndex: 2,
+								},
+								{
+									Trigger:    "",
+									entryIndex: 3,
+								},
+							},
+							Transitions: []*ASTNodeStateTransition{
+								{
+									Trigger:     "",
+									TargetState: "Third",
+									Action:      " owner->SomeNullAction(); ",
+									entryIndex:  4,
+								},
+								{
+									Trigger:     "Execute",
+									TargetState: "Second",
+									entryIndex:  5,
+								},
+							},
+							Captures: []*ASTNodeStateCapture{
+								{
+									Trigger:    "Update",
+									Condition:  " owner->SomeCondition ",
+									entryIndex: 6,
+								},
+							},
+						},
+						{
+							Name:       "Second",
+							ParentName: common.RootStateName,
+							entryIndex: 9,
+							Options: []*ASTNodeOption{
+								{
+									Name:      "Option1",
+									ValueKind: common.OptionValueKind_Boolean,
+									Value:     "true",
+								},
+							},
+							Transitions: []*ASTNodeStateTransition{
+								{
+									Trigger:     "Execute",
+									TargetState: "First",
+									Condition:   "\r\n\t\t\treturn owner->SomeCondition();\r\n\t\t",
+									Action:      "\r\n\t\t\towner->ExecuteSomeAction();\r\n\t\t",
+									entryIndex:  0,
+								},
+							},
+						},
+						{
+							Name:       "Third",
+							ParentName: common.RootStateName,
+							entryIndex: 10,
+							Options: []*ASTNodeOption{
+								{
+									Name:      "Opt1",
+									ValueKind: common.OptionValueKind_Boolean,
+									Value:     "true",
+								},
+								{
+									Name:      "Opt2",
+									ValueKind: common.OptionValueKind_Boolean,
+									Value:     "true",
+								},
+								{
+									Name:      "Opt3",
+									ValueKind: common.OptionValueKind_String,
+									Value:     "Identifier",
+								},
+								{
+									Name:      "Opt4",
+									ValueKind: common.OptionValueKind_String,
+									Value:     "String",
+								},
+								{
+									Name:      "Opt5",
+									ValueKind: common.OptionValueKind_Integer,
+									Value:     "2123",
+								},
+								{
+									Name:      "Opt6",
+									ValueKind: common.OptionValueKind_Boolean,
+									Value:     "true",
+								},
+								{
+									Name:      "Opt7",
+									ValueKind: common.OptionValueKind_Boolean,
+									Value:     "false",
+								},
+								{
+									Name:      "Opt8",
+									ValueKind: common.OptionValueKind_Integer,
+									Value:     "22",
+								},
+							},
+							Transitions: []*ASTNodeStateTransition{
+								{
+									Trigger:     "SomeMessage",
+									TargetState: "Second",
+									entryIndex:  0,
+								},
+							},
+							Children: []*ASTNodeState{
+								{
+									Name:       "ThirdChild1",
+									entryIndex: 1,
+									ParentName: "Third",
+									Options: []*ASTNodeOption{
+										{
+											Name:      "OptChild1",
+											ValueKind: common.OptionValueKind_Boolean,
+											Value:     "true",
+										},
+										{
+											Name:      "OptChild2",
+											ValueKind: common.OptionValueKind_String,
+											Value:     "IdentifierChild",
+										},
+									},
+									Children: []*ASTNodeState{
+										{
+											Name:       "ThirdGrandChild",
+											entryIndex: 0,
+											ParentName: "ThirdChild1",
+											Options: []*ASTNodeOption{
+												{
+													Name:      "OptGrandChild",
+													ValueKind: common.OptionValueKind_Boolean,
+													Value:     "false",
+												},
+											},
+											EnterReactions: []*ASTNodeStateReaction{
+												{
+													Trigger:    "",
+													entryIndex: 1,
+												},
+											},
+											ExitReactions: []*ASTNodeStateReaction{
+												{
+													Trigger:    "Update",
+													entryIndex: 2,
+												},
+											},
+											Transitions: []*ASTNodeStateTransition{
+												{
+													Trigger:     "Execute",
+													TargetState: "Second",
+													entryIndex:  0,
+												},
+											},
+											Captures: []*ASTNodeStateCapture{
+												{
+													Trigger:    "Execute",
+													entryIndex: 3,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name:       "ThirdChild2",
+									entryIndex: 2,
+									ParentName: "Third",
+									Transitions: []*ASTNodeStateTransition{
+										{
+											Trigger:     "",
+											TargetState: "ThirdGrandChild",
+										},
 									},
 								},
 							},
@@ -285,18 +319,12 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 	}
 
 	statechartName := want.Name
-	if assert.Equal(t, len(want.States), len(got.States), "Not same amount of states") {
-		for i := 0; i < len(want.States); i++ {
-			want := want.States[i]
-			got := got.States[i]
 
-			sc := &stateComparer{
-				index:          i,
-				statechartName: statechartName,
-			}
-			sc.compare(t, want, got)
-		}
+	sc := &stateComparer{
+		index:          0,
+		statechartName: statechartName,
 	}
+	sc.compare(t, want.Root, got.Root)
 }
 
 type triggerComparer struct {

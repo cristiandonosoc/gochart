@@ -32,9 +32,7 @@ func (fp *frontendPrinter) PrintStatechart(sc *common.StatechartData) {
 		fp.printTrigger(trigger)
 	}
 
-	for _, state := range sc.States {
-		fp.printState(state)
-	}
+	fp.printState(sc.Root)
 }
 
 func (fp *frontendPrinter) printTrigger(trigger *common.TriggerData) {

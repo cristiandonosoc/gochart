@@ -61,9 +61,21 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.S
 		transitions = append(transitions, ft.translateTransition(yt))
 	}
 
+	// We create the root state and parent the yaml roots to it.
+	root := &common.StateData{
+		Name: common.RootStateName,
+	}
+	for _, state := range states {
+		if state.Parent == "" {
+			state.Parent = common.RootStateName
+		}
+	}
+	states = append([]*common.StateData{root}, states...)
+
 	return &common.StatechartData{
 		Name:        ysc.Name,
 		Triggers:    triggers,
+		Root:        root,
 		States:      states,
 		Transitions: transitions,
 	}

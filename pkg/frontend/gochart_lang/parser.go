@@ -10,6 +10,29 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
+// When parsing the state body, there are a set of "keywords" that prompt what the next thing will
+// be (a transition, another state, etc.). If we don't find one of those, we would rightfully expect
+// the state body to be over.
+var (
+	expectedStateBodyStmtKeywords = []TokenIdentifier{
+		Token_KeywordEnter,
+		Token_KeywordExit,
+		Token_KeywordTransition,
+		Token_KeywordCapture,
+		Token_KeywordState,
+	}
+
+	expectedStatechartBodyStmtKeywords = []TokenIdentifier{
+		Token_KeywordTrigger,
+		// Plus all the state ones.
+		Token_KeywordEnter,
+		Token_KeywordExit,
+		Token_KeywordTransition,
+		Token_KeywordCapture,
+		Token_KeywordState,
+	}
+)
+
 // Parser is an object capable of taking tokens of the gochart_lang language and parse it against
 // the grammer, returning an Abstract Syntax Tree (AST).
 type Parser struct {
@@ -110,6 +133,7 @@ type ASTNodeStatechart struct {
 	Options []*ASTNodeOption
 
 	Triggers []*ASTNodeTrigger
+	Root     *ASTNodeState
 	States   []*ASTNodeState
 
 	keywordToken *Token
@@ -151,22 +175,17 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		options = opts
 	}
 
-	// Optional ( ).
-	if p.peekToken(Token_LeftParen) {
-		if _, err := p.consumeToken(Token_LeftParen); err != nil {
-			return nil, p.pushErrorf(0, err.Error())
-		}
-
-		if _, err := p.consumeToken(Token_RightParen); err != nil {
-			return nil, p.pushErrorf(0, err.Error())
-		}
-	}
-
 	sc := &ASTNodeStatechart{
 		Name:         name,
 		Options:      options,
 		keywordToken: baseToken,
 		nameToken:    nameToken,
+		// The root state has the position of the statechart.
+		Root: &ASTNodeState{
+			Name:         common.RootStateName,
+			keywordToken: baseToken,
+			nameToken:    nameToken,
+		},
 	}
 
 	{
@@ -317,49 +336,37 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 // StatechartBodyStmt -> Trigger
 //                    -> State
 
-// When parsing the statechart body, there are a set of keywords that are allowed and indicate what
-// it is next (trigger, state, etc.).
-// These are the only things allowed in as a statechart body statement.
-var expectedStatechartBodyStmtKeywords = []TokenIdentifier{
-	Token_KeywordTrigger,
-	Token_KeywordState,
-}
-
 func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart, entryIndex int) (bool, error) {
 	// If we're closing the brace, we simply exit the statement.
 	if peek := p.peek(); peek.id == Token_RightBrace {
 		return false, nil
 	}
 
-	stmtToken := p.advance()
+	peek := p.peek()
 
-	if !slices.Contains(expectedStatechartBodyStmtKeywords, stmtToken.id) {
-		return false, p.pushErrorf(-1, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
+	if !slices.Contains(expectedStatechartBodyStmtKeywords, peek.id) {
+		return false, p.pushErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, peek.id)
 	}
 
-	switch stmtToken.id {
-	case Token_KeywordTrigger:
-		trigger, err := p.parseTrigger(stmtToken)
+	// If we found a trigger, we hook it as such.
+	if peek.id == Token_KeywordTrigger {
+		trigger, err := p.parseTrigger(p.advance())
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
 		trigger.entryIndex = entryIndex
 		sc.Triggers = append(sc.Triggers, trigger)
 		return true, nil
+	}
 
-	case Token_KeywordState:
-		p.debuglog("parsing root state")
-		state, err := p.parseState(nil, stmtToken)
-		if err != nil {
-			return false, fmt.Errorf("parsing root state: %w", err)
-		}
-		state.entryIndex = entryIndex
-		sc.States = append(sc.States, state)
+	// Otherwise all statements go into our root state.
+	if ok, err := p.parseStateBodyStmt(sc.Root, entryIndex); err != nil {
+		return false, fmt.Errorf("parsing root state body statement: %w", err)
+	} else if ok {
 		return true, nil
 	}
 
-	// TODO(cdc): Mark this is parser internal error.
-	return false, p.pushInternalErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, stmtToken.id)
+	return false, p.pushInternalErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, peek.id)
 }
 
 // Trigger -----------------------------------------------------------------------------------------
@@ -536,17 +543,6 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 //               -> StateExitReaction
 //               -> StateTransition
 //               -> State
-
-// When parsing the state body, there are a set of "keywords" that prompt what the next thing will
-// be (a transition, another state, etc.). If we don't find one of those, we would rightfully expect
-// the state body to be over.
-var expectedStateBodyStmtKeywords = []TokenIdentifier{
-	Token_KeywordEnter,
-	Token_KeywordExit,
-	Token_KeywordTransition,
-	Token_KeywordCapture,
-	Token_KeywordState,
-}
 
 func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, error) {
 	stmtToken, ok := p.matchAny(expectedStateBodyStmtKeywords...)

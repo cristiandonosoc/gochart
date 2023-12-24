@@ -12,9 +12,8 @@ import (
 // This means that all options have already been calculated and are certain that the statechart
 // description is not going to change anymore.
 func validate(ih *inputHandler) error {
-	// Validate top level statechart.
-	if err := validateTopLevelStatechart(ih); err != nil {
-		return fmt.Errorf("validating top level statechart: %w", err)
+	if len(ih.states) < 2 {
+		return errors.Errorf(ih.scdata.Frontend_NamePos, "Semantic", "no root states found")
 	}
 
 	// Validate states.
@@ -23,18 +22,6 @@ func validate(ih *inputHandler) error {
 		if err := sv.validate(); err != nil {
 			return fmt.Errorf("validating state %q: %w", state.Name, err)
 		}
-	}
-
-	return nil
-}
-
-func validateTopLevelStatechart(ih *inputHandler) error {
-	if len(ih.rootStates) == 0 {
-		return errors.Errorf(ih.scdata.Frontend_NamePos, "Semantic", "no root states found")
-	}
-
-	if err := validateDefaultChildExists(ih.scdata.Frontend_NamePos, ih.rootStates); err != nil {
-		return fmt.Errorf("validating that default child exists: %w", err)
 	}
 
 	return nil
