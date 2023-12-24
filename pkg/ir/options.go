@@ -18,7 +18,23 @@ type OptionDefinition struct {
 }
 
 var (
-	kStateOption_Default = "default"
+	// Statechart Options ----------------------------------------------------------------------------
+
+	kStatechartOption_Concurrent = "concurrent"
+
+	kStatechartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
+		kStatechartOption_Concurrent: {
+			Name:        kStatechartOption_Concurrent,
+			Kind:        frontend_common.OptionValueKind_Boolean,
+			Description: "Whether the root states of the gochart should be considered concurrent within each other.",
+			Handler:     StatechartOptionHandler(parseStatechartOption_Concurrent),
+		},
+	})
+
+	// State Options ---------------------------------------------------------------------------------
+
+	kStateOption_Default    = "default"
+	kStateOption_Concurrent = "concurrent"
 
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStateOption_Default: {
@@ -27,8 +43,8 @@ var (
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),
 		},
-		"concurrent": {
-			Name:        "concurrent",
+		kStateOption_Concurrent: {
+			Name:        kStateOption_Concurrent,
 			Kind:        frontend_common.OptionValueKind_Boolean,
 			Description: "Whether this state is to be considered a concurrent one.",
 			Handler:     StateOptionHandler(parseStateOption_Concurrent),
@@ -104,6 +120,44 @@ func newOption(od *OptionDefinition, fo *frontend_common.OptionData) (*Option, e
 	return option, nil
 }
 
+func collectOptionsFromDefinitions(level string,
+	definitions map[string]*OptionDefinition,
+	frontendOptions []*frontend_common.OptionData) ([]*Option, error) {
+
+	set := map[string]struct{}{}
+
+	var options []*Option
+
+	for _, fo := range frontendOptions {
+		// See if we can find the option definition.
+		od, ok := definitions[fo.Name]
+		if !ok {
+			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "unrecognized %s option %q", level, fo.Name)
+		}
+
+		// Check if we haven't parsed this option already.
+		if _, ok := set[od.Name]; ok {
+			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "option %q set more than once", od.Name)
+		}
+		set[od.Name] = struct{}{}
+
+		// Try to parse the option.
+		option, err := newOption(od, fo)
+		if err != nil {
+			return nil, fmt.Errorf("parsing state option %q: %w", fo.Name, err)
+		}
+
+		// If it is a testing option, we just need to parse it. No need to call the handler.
+		if od.TestingOption {
+			continue
+		}
+
+		options = append(options, option)
+	}
+
+	return options, nil
+}
+
 func (so *Option) Name() string {
 	return so.Definition.Name
 }
@@ -129,50 +183,57 @@ func (so *Option) BoolValue() bool {
 	return so.boolValue
 }
 
+// Statechart Options ------------------------------------------------------------------------------
+
+type StatechartOptionHandler func(sc *Statechart, option *Option) error
+
+func parseStatechartOptions(sc *Statechart, frontendOptions []*frontend_common.OptionData) error {
+	options, err := collectOptionsFromDefinitions("statechart", kStatechartOptionDefinitions, frontendOptions)
+	if err != nil {
+		return fmt.Errorf("collecting statechart options from definitions: %w", err)
+	}
+
+	for _, option := range options {
+		// Cast the handler.
+		handler, ok := option.Definition.Handler.(StatechartOptionHandler)
+		if !ok {
+			return errors.InternalErrorf("invalid handler type for statechart option %q", option.Definition.Name)
+		}
+
+		if err := handler(sc, option); err != nil {
+			return fmt.Errorf("handling statechart option %q: %w", option.Definition.Name, err)
+		}
+	}
+
+	sc.Options = options
+	return nil
+}
+
+func parseStatechartOption_Concurrent(sc *Statechart, option *Option) error {
+	sc.Root.Concurrent = option.BoolValue()
+	return nil
+}
+
 // State Options -----------------------------------------------------------------------------------
 
 type StateOptionHandler func(state *State, option *Option) error
 
 func parseStateOptions(state *State, frontendOptions []*frontend_common.OptionData) error {
-	set := map[string]struct{}{}
+	options, err := collectOptionsFromDefinitions("state", kStateOptionDefinitions, frontendOptions)
+	if err != nil {
+		return fmt.Errorf("collecting state options from definitions: %w", err)
+	}
 
-	var options []*Option
-
-	for _, fo := range frontendOptions {
-		// See if we can find the option definition.
-		od, ok := kStateOptionDefinitions[fo.Name]
+	for _, option := range options {
+		// Cast the handler.
+		handler, ok := option.Definition.Handler.(StateOptionHandler)
 		if !ok {
-			return errors.Errorf(fo.Frontend_NamePos, "Semantic", "unrecognized state option %q", fo.Name)
-		}
-
-		// Check if we haven't parsed this option already.
-		if _, ok := set[od.Name]; ok {
-			return errors.Errorf(fo.Frontend_NamePos, "Semantic", "option %q set more than once", od.Name)
-		}
-		set[od.Name] = struct{}{}
-
-		// Try to parse the option.
-		option, err := newOption(od, fo)
-		if err != nil {
-			return fmt.Errorf("parsing state option %q: %w", fo.Name, err)
-		}
-
-		// If it is a testing option, we don't need to call a handler.
-		if od.TestingOption {
-			continue
-		}
-
-		// Cast to the handler
-		handler, ok := od.Handler.(StateOptionHandler)
-		if !ok {
-			return errors.InternalErrorf("invalid handler type for state option %q", fo.Name)
+			return errors.InternalErrorf("invalid handler type for state option %q", option.Definition.Name)
 		}
 
 		if err := handler(state, option); err != nil {
-			return fmt.Errorf("handling state option %q: %w", fo.Name, err)
+			return fmt.Errorf("handling state option %q: %w", option.Definition.Name, err)
 		}
-
-		options = append(options, option)
 	}
 
 	state.Options = options

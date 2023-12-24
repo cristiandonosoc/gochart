@@ -38,6 +38,7 @@ bool GetIsConcurrent(EState state);
 size_t GetConcurrentGroup(EState state);
 size_t GetChildCount(EState state);
 bool IsChildOf(EState parent, EState child);
+bool IsLeafState(EState state);
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -312,7 +313,7 @@ void Gochart<T>::Activate()
     ProcessingState = &processing_state;
 
     // As an initialization, we enter the default root state.
-    EState default_root = EState::{{$sc.DefaultRootState.Name}};
+    EState default_root = EState::{{$sc.Root.Name}};
     EnterState(default_root, ETrigger::__Invalid__, nullptr);
 
     // Now we do the default enter for this step.
@@ -793,7 +794,7 @@ void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_
 
 	// If we have no more children, we know that we are the last enter of this route, so we can
 	// evaluate leaf conditions.
-	if ({{$internal}}::GetChildCount(state) == 0)
+	if ({{$internal}}::IsLeafState(state))
 	{
 		EvaluateLeafConditions(state, trigger, trigger_data);
 	}
@@ -1168,6 +1169,10 @@ bool IsChildOf(EState parent, EState child)
 	return false;
 }
 
+bool IsLeafState(EState state)
+{
+	return GetChildCount(state) == 0;
+}
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -1251,10 +1256,26 @@ void Route::SwapEnterStates()
 
 void Route::AppendDefaultEnters(EState state, Route* out)
 {
+	// If the state is concurrent, there is no default enters to evaluate (it is somewhat similar to
+	// a leaf state for this concurrent group).
+	if ({{$internal}}::GetIsConcurrent(state))
+	{
+		return;
+	}
+
     EState default_child = GetDefaultChild(state);
     while (default_child != EState::__Invalid__)
     {
         out->AppendEnterState(default_child);
+
+		// If the child we just entered is concurrent, we don't continue iterating, as their enter
+		// take care of continuing the enter of their respective child concurrent groups.
+		if ({{$internal}}::GetIsConcurrent(default_child))
+		{
+			break;
+		}
+
+		// Otherwise we continue going down the default enter route.
         default_child = GetDefaultChild(default_child);
     }
 }
@@ -1274,8 +1295,9 @@ void Route::Compute(EState from, EState to, Route* out)
 {
     assert(from != EState::__Invalid__);
 
-    // Special case of when we are just entering a state without a target.
-    // The main case is when activating the statechart, in which we enter the root state.
+    // Special case of when we are just doing a route to the invalid state.
+	// This is basically "exit the state as much as you can".
+    // The main case is deactivating the statechart, in which we need to exit the whol state stack.
     if (to == EState::__Invalid__)
     {
         out->AppendDefaultExits(from, out);

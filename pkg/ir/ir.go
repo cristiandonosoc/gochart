@@ -23,6 +23,8 @@ type ConcurrentHead struct {
 type Statechart struct {
 	Name string
 
+	Options []*Option
+
 	Triggers []*Trigger
 
 	// Root is the base state of the complete statechart.
@@ -40,16 +42,6 @@ type Statechart struct {
 
 func (sc *Statechart) ClassName() string {
 	return sc.Name
-}
-
-func (sc *Statechart) DefaultRootState() *State {
-	for _, state := range sc.States {
-		if state.Default {
-			return state
-		}
-	}
-
-	panic("No default root state found. This should've been caught in validation")
 }
 
 func (sc *Statechart) ConcurrentGroupCount() int {

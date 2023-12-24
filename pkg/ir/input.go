@@ -44,10 +44,6 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 		stateMap:   make(map[string]*State),
 	}
 
-	if err := ih.collectTriggers(); err != nil {
-		return nil, fmt.Errorf("collecting triggers: %w", err)
-	}
-
 	// We create the base root state.
 	root := &State{
 		Name: kRootStateName,
@@ -57,6 +53,21 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 			Frontend_NamePos:    scdata.Frontend_NamePos,
 		},
 	}
+
+	// We create the base state object (will be filled more later).
+	statechart := &Statechart{
+		Name:         scdata.Name,
+		Root:         root,
+		frontendData: scdata,
+	}
+	if err := parseStatechartOptions(statechart, scdata.Options); err != nil {
+		return nil, fmt.Errorf("statechart %q: parsing options: %w", scdata.Name, err)
+	}
+
+	if err := ih.collectTriggers(); err != nil {
+		return nil, fmt.Errorf("collecting triggers: %w", err)
+	}
+
 	if err := ih.collectStates(root); err != nil {
 		return nil, fmt.Errorf("collecting states: %w", err)
 	}
@@ -69,16 +80,11 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 		return nil, fmt.Errorf("validating input: %w", err)
 	}
 
-	statechart := &Statechart{
-		Name:            scdata.Name,
-		Root:            ih.root,
-		ConcurrentHeads: ih.concurrentHeads,
-		Triggers:        ih.triggers,
-		States:          ih.states,
-		TriggerMap:      ih.triggerMap,
-		StateMap:        ih.stateMap,
-		frontendData:    scdata,
-	}
+	statechart.ConcurrentHeads = ih.concurrentHeads
+	statechart.Triggers = ih.triggers
+	statechart.States = ih.states
+	statechart.TriggerMap = ih.triggerMap
+	statechart.StateMap = ih.stateMap
 
 	// Now that we have the statechart, we go over each state creating the back pointer.
 	for _, state := range statechart.States {

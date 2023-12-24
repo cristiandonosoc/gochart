@@ -9,7 +9,7 @@ cc_test(
     ],
     deps = [
         ":gochart",
-				"//test/support/cpp:test_support",
+        "//test/support/cpp:test_support",
         "@com_google_googletest//:gtest_main",
     ],
 )
