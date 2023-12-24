@@ -1,0 +1,11 @@
+cc_test(
+    name = "swap_test",
+    size = "small",
+    srcs = ["swap_test.cpp"],
+    deps = [
+        "//test/support/cpp:test_support",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+

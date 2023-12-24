@@ -1248,10 +1248,7 @@ void Route::AppendExitState(EState exit)
 void Route::SwapEnterStates()
 {
     // We swap the enter states in so they in the furthers from the |from| state first.
-    for (size_t i = 0; i <= EnterEnd; i++)
-    {
-        std::swap(EnterStates[i], EnterStates[EnterEnd - i]);
-    }
+	std::reverse(EnterStates.begin(), EnterStates.begin() + EnterEnd);
 }
 
 void Route::AppendDefaultEnters(EState state, Route* out)
@@ -1338,11 +1335,13 @@ void Route::Compute(EState from, EState to, Route* out)
         // At this point we're ready to try again.
     }
 
+    // We need to reverse the valid enter states, as they are in the wrong order, given on how the
+	// algorithm operates from the leaves up.
+    out->SwapEnterStates();
+
     // Now it could be that the destination state is not a leaf state, so we get the default enters.
     out->AppendDefaultEnters(original_to, out);
 
-    // We need to reverse the valid enter states, as they are in the wrong order.
-    out->SwapEnterStates();
 }
 
 // TriggerRingBufferQueue Implementation -----------------------------------------------------------

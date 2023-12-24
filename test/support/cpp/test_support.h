@@ -26,7 +26,7 @@ std::string ToString(const T& t)
 std::string ToString(const std::source_location& location);
 
 template <typename T>
-std::string PrintSpan(std::span<T> things)
+std::string PrintSpan(std::span<const T> things)
 {
     std::stringstream ss;
     ss << "[" << std::endl;
@@ -41,7 +41,7 @@ std::string PrintSpan(std::span<T> things)
 }
 
 template <typename T>
-std::string PrintContext(std::span<T> want, std::span<T> got, const std::source_location& location)
+std::string PrintContext(std::span<const T> want, std::span<const T> got, const std::source_location& location)
 {
     std::stringstream ss;
     ss << std::endl

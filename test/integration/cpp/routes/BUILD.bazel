@@ -1,0 +1,32 @@
+
+load("//:defs.bzl", "generate_gochart_cpp")
+
+cc_test(
+    name = "routes_test",
+    size = "small",
+    srcs = [
+        "routes_test.cpp",
+    ],
+    deps = [
+        ":gochart",
+        "//test/support/cpp:test_support",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "gochart",
+    hdrs = [
+        "routes.declare.h",
+        "routes.define.h",
+        "routes.forward_declare.h",
+    ],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart"],
+)
+
+generate_gochart_cpp(
+    name = "gen_gochart",
+    src = "routes.gochart",
+    file_prefix = "routes",
+)

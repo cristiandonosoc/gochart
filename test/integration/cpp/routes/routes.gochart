@@ -1,0 +1,44 @@
+statechart Routes {
+	trigger GoToFirst()
+	trigger GoToSecond()
+	trigger GoToThird()
+
+	enter
+	exit
+
+	transition GoToFirst > First
+	transition GoToSecond > Second
+	transition GoToThird > Third
+
+	state First {
+		enter
+		exit
+
+		state FirstSon1 {
+			enter
+			exit
+		}
+
+		state FirstSon2(default) {
+			enter
+			exit
+		}
+	}
+
+	state Second {
+		enter
+		exit
+
+		transition GoToFirst > FirstSon1
+
+		state SecondSon1 {
+			enter
+			exit
+		}
+	}
+
+	state Third {
+		enter
+		exit
+	}
+}
