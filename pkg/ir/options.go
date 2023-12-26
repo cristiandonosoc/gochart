@@ -21,6 +21,7 @@ var (
 	// Statechart Options ----------------------------------------------------------------------------
 
 	kStatechartOption_Concurrent = "concurrent"
+	kStatechartOption_Namespace  = "namespace"
 
 	kStatechartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStatechartOption_Concurrent: {
@@ -28,6 +29,12 @@ var (
 			Kind:        frontend_common.OptionValueKind_Boolean,
 			Description: "Whether the root states of the gochart should be considered concurrent within each other.",
 			Handler:     StatechartOptionHandler(parseStatechartOption_Concurrent),
+		},
+		kStatechartOption_Namespace: {
+			Name:        kStatechartOption_Namespace,
+			Kind:        frontend_common.OptionValueKind_String,
+			Description: "The name of the namespace to generate. Otherwise the name of gochart will be used.",
+			Handler:     StatechartOptionHandler(parseStatechartOption_Namespace),
 		},
 	})
 
@@ -211,6 +218,11 @@ func parseStatechartOptions(sc *Statechart, frontendOptions []*frontend_common.O
 
 func parseStatechartOption_Concurrent(sc *Statechart, option *Option) error {
 	sc.Root.Concurrent = option.BoolValue()
+	return nil
+}
+
+func parseStatechartOption_Namespace(sc *Statechart, option *Option) error {
+	sc.Namespace = option.StringValue()
 	return nil
 }
 

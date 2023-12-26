@@ -5,9 +5,9 @@
 
 {{- $root := . -}}
 {{- $sc := $root.Statechart }}
-{{- $namespace := printf "gochart::%s" $sc.ClassName }}
+{{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
-{{- $impl := printf "%s_Impl" $sc.ClassName }}
+{{- $impl := "Gochart_Impl" }}
 
 #include "{{$root.DeclareInclude}}"
 

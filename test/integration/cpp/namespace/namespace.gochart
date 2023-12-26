@@ -1,0 +1,6 @@
+statechart OriginalName(namespace = "ChangedName") {
+	state Foo {
+		enter
+		exit
+	}
+}

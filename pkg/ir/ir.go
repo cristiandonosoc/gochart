@@ -21,7 +21,8 @@ type ConcurrentHead struct {
 
 // Statechart represents a single statechart state machine.
 type Statechart struct {
-	Name string
+	Name      string
+	Namespace string
 
 	Options []*Option
 
@@ -38,10 +39,6 @@ type Statechart struct {
 	TriggerMap   map[string]*Trigger
 	StateMap     map[string]*State
 	frontendData *frontend_common.StatechartData
-}
-
-func (sc *Statechart) ClassName() string {
-	return sc.Name
 }
 
 func (sc *Statechart) ConcurrentGroupCount() int {

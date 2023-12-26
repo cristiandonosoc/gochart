@@ -47,7 +47,9 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 
 	// We create the base state object (will be filled more later).
 	statechart := &Statechart{
-		Name:         scdata.Name,
+		Name: scdata.Name,
+		// By default the namespace is same as the name. This might be override by an option.
+		Namespace:    scdata.Name,
 		Root:         root,
 		frontendData: scdata,
 	}
