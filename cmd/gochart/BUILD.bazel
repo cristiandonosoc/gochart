@@ -16,7 +16,6 @@ go_library(
         "//pkg/backend/cpp",
         "//pkg/frontend",
         "//pkg/gochart",
-        "//pkg/unreal",
         "@com_github_urfave_cli_v2//:cli",
     ],
 )

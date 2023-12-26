@@ -1,6 +1,8 @@
 // Package unreal is an utlity package to integrate gochart with Unreal projects.
 package unreal
 
+/*
+
 import (
 	"bytes"
 	"context"
@@ -296,3 +298,4 @@ func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform Unr
 
 	return header, cpp, nil
 }
+*/

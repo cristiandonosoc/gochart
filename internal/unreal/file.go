@@ -1,0 +1,122 @@
+package unreal
+
+import (
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+)
+
+const (
+	UnrealBuildFileExtension = ".build.cs"
+)
+
+// We hackily search for a ModuleRules class definition.
+var identifier = "[a-zA-Z0-9_]"
+var moduleRulesRegex = regexp.MustCompile(fmt.Sprintf(`public\s+class\s+(%s+)\s+:\s+ModuleRules`, identifier))
+
+// IsUnrealBuildFile returns whether the path points to an unreal build file.
+// These are normally C# files that end with the .Build.cs extension.
+// We search for a common regex pattern than we should find.
+// Returns the defined module name when found.
+func IsUnrealBuildFile(path string) (string, bool, error) {
+	if !strings.HasSuffix(strings.ToLower(path), UnrealBuildFileExtension) {
+		return "", false, nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", false, fmt.Errorf("reading file %q: %w", path, err)
+	}
+
+	// If it doesn't match the regex, it means that we don't consider this to be a module file.
+	matches := moduleRulesRegex.FindSubmatch(data)
+	if len(matches) == 0 {
+		return "", false, nil
+	}
+
+	moduleName := matches[1]
+	return string(moduleName), true, nil
+}
+
+// UnrealFile represents a file within an Unreal project.
+type UnrealFile struct {
+	Path         string
+	Module       *UnrealModule
+	FileInfo     fs.FileInfo
+	Intermediate bool
+}
+
+// func (ui *unrealIntegrator) NewUnrealFile(path string) (*UnrealFile, error) {
+// 	intermediate := strings.Contains(path, "Intermediate")
+
+// 	stat, err := os.Stat(path)
+// 	if err != nil {
+// 		if os.IsNotExist(err) {
+// 			stat = nil
+// 		} else {
+// 			return nil, fmt.Errorf("stat %q: %w", path, err)
+// 		}
+// 	}
+
+// 	var module *UnrealModule
+// 	if !intermediate {
+// 		m, err := ui.identifyModule(path)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("identifying module for %q: %w", path, err)
+// 		}
+// 		module = m
+// 	}
+
+// 	return &UnrealFile{
+// 		Path:         path,
+// 		Module:       module,
+// 		FileInfo:     stat,
+// 		Intermediate: intermediate,
+// 	}, nil
+// }
+
+func (uf *UnrealFile) String() string {
+	var sb strings.Builder
+	sb.WriteString(uf.Name())
+
+	if uf.Module != nil {
+		sb.WriteString(fmt.Sprintf(" [module:%s]", uf.Module.Name))
+	}
+
+	if uf.FileInfo != nil {
+		sb.WriteString(fmt.Sprintf(" [mod:%v]", uf.FileInfo.ModTime()))
+	}
+
+	sb.WriteString(fmt.Sprintf(" [path:%s]", uf.Path))
+
+	return sb.String()
+}
+
+// Name is just the filename of the file (akin to filepath.Base).
+func (uf *UnrealFile) Name() string {
+	return filepath.Base(uf.Path)
+}
+
+// InternalPath is the path of the file _within_ the module (basically stripping the module path).
+func (uf *UnrealFile) InternalPath() string {
+	return strings.TrimPrefix(uf.Path, uf.Module.BaseDir)
+}
+
+// Exists returns whether the given file exists in disk or not.
+func (uf *UnrealFile) Exists() bool {
+	return uf.FileInfo != nil
+}
+
+// ModTime returns the latest modification time of the file.
+// If the file does not exist, returns the earliest time possible.
+func (uf *UnrealFile) ModTime() time.Time {
+	if !uf.Exists() {
+		return time.Time{}
+	}
+
+	return uf.FileInfo.ModTime()
+}

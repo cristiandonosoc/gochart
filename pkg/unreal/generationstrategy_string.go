@@ -2,6 +2,8 @@
 
 package unreal
 
+/*
+
 import "strconv"
 
 func _() {
@@ -23,3 +25,4 @@ func (i GenerationStrategy) String() string {
 	}
 	return _GenerationStrategy_name[_GenerationStrategy_index[i]:_GenerationStrategy_index[i+1]]
 }
+*/
