@@ -2,6 +2,7 @@
 package cpp
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -81,7 +82,7 @@ func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	}, nil
 }
 
-func (cpp *cppGochartBackend) Generate(sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error) {
+func (cpp *cppGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error) {
 	for _, opt := range opts {
 		opt(cpp.options)
 	}

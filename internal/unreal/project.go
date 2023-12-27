@@ -58,11 +58,6 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*UnrealMo
 		return nil, fmt.Errorf("collecting files in %q: %w", sourceDir, err)
 	}
 
-	// fmt.Println("BUILD FILES:")
-	// for _, bfd := range buildFileDescriptions {
-	// 	fmt.Printf("- %s (%s)\n", bfd.ModuleName, bfd.Path)
-	// }
-
 	// For each build file, we generate a worker that will collect all the files to it.
 	g, ctx := errgroup.WithContext(ctx)
 

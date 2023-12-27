@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -47,7 +48,10 @@ func backendCommands() []*cli.Command {
 									return fmt.Errorf("No input file set. Usage: %s", cliCtx.Command.Usage)
 								}
 
-								outputs, err := gc.Generate(cliCtx.Args().Get(0))
+								// TODO(cdc): Define a better context strategy.
+								ctx := context.Background()
+
+								outputs, err := gc.Generate(ctx, cliCtx.Args().Get(0))
 								if err != nil {
 									return fmt.Errorf("generating C++ output files: %w", err)
 								}
@@ -93,7 +97,10 @@ func backendCommands() []*cli.Command {
 									cpp.WithFilePrefix(args.Get(2)),
 								}
 
-								outputs, err := gc.Generate(args.Get(0), options...)
+								// TODO(cdc): Define a better context strategy.
+								ctx := context.Background()
+
+								outputs, err := gc.Generate(ctx, args.Get(0), options...)
 								if err != nil {
 									return fmt.Errorf("generating C++ output files: %w", err)
 								}

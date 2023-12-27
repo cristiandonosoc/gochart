@@ -3,6 +3,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -19,7 +20,7 @@ import (
 // they are meant to generate for. This is to decouple generated languages from the input (frontend)
 // language defined to specify them.
 type GochartBackend interface {
-	Generate(sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error)
+	Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error)
 }
 
 type backendFactory func(*cli.Context) (GochartBackend, error)

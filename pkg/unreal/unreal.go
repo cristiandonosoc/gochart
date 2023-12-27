@@ -68,20 +68,6 @@ func (ui *unrealIntegrator) Index(ctx context.Context, projectDir string) error 
 }
 
 //go:generate stringer -type=GenerationStrategy
-type GenerationStrategy int
-
-const (
-	// Intermediate means generating files into the project's intermediate files.
-	GenerationStrategy_Intermediate GenerationStrategy = iota
-
-	// Inline means generating the files right next to the gochart file.
-	GenerationStrategy_Inline
-
-	// ModuleGeneratedDir creates a Generated directory in the module root and append the internal
-	// route to it.
-	GenerationStrategy_ModuleGeneratedDir
-)
-
 func (ui *unrealIntegrator) Generate(platformId string, strategy GenerationStrategy) []error {
 	if len(ui.Gocharts) == 0 {
 		return []error{fmt.Errorf("No gocharts listed. Did you call Index?")}
@@ -264,38 +250,4 @@ func (gfc *GochartFileContext) writeIfDifferent(uf *UnrealFile, r io.Reader) err
 	return nil
 }
 
-// gochartOutputPaths gets the output paths belonging to this particular gochart.
-// Intermediate/Build/<PLATFORM>/UnrealEditor/Inc/Gochart/<MODULE>/<INTERNAL_PATH>/<NAME>.gochart.(h|cpp)
-func (ui *unrealIntegrator) gochartOutputPaths(gochart *UnrealFile, platform UnrealPlatform, strategy GenerationStrategy) (_header string, _cpp string, _err error) {
-	if ui.ProjectDir == "" {
-		return "", "", fmt.Errorf("project dir is empty. Did you call Index?")
-	}
-
-	var base string
-	switch strategy {
-	case GenerationStrategy_Intermediate:
-		// First it's built by the intermediate platform location.
-		base = filepath.Join(ui.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc", "Gochart")
-
-		// Then we get to the per module place and internal path.
-		base = filepath.Join(base, gochart.Module.Name, filepath.Dir(gochart.InternalPath()))
-	case GenerationStrategy_Inline:
-		base = filepath.Dir(gochart.Path)
-	case GenerationStrategy_ModuleGeneratedDir:
-		base = filepath.Join(gochart.Module.BaseDir, "Generated")
-		base = filepath.Join(base, filepath.Dir(gochart.InternalPath()))
-	default:
-		return "", "", fmt.Errorf("unknown generation strategy: %s", strategy)
-	}
-
-	// Now we return the output paths for the C++ backend.
-	gochartName := gochart.Name()
-	ext := filepath.Ext(gochartName)
-	name := gochartName[0 : len(gochartName)-len(ext)]
-
-	header := filepath.Join(base, fmt.Sprintf("%s.gochart.generated.h", name))
-	cpp := filepath.Join(base, fmt.Sprintf("%s.gochart.generated.cpp", name))
-
-	return header, cpp, nil
-}
 */

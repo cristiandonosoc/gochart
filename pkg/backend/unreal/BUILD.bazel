@@ -2,7 +2,17 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "unreal",
-    srcs = ["unreal.go"],
+    srcs = [
+        "generation.go",
+        "unreal.go",
+    ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/unreal",
     visibility = ["//visibility:public"],
+    deps = [
+        "//internal/option",
+        "//internal/unreal",
+        "//pkg/backend/common",
+        "//pkg/ir",
+        "@org_golang_x_sync//errgroup",
+    ],
 )

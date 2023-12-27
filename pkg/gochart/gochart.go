@@ -3,6 +3,7 @@
 package gochart
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -70,7 +71,7 @@ type BackendOutput struct {
 	Content io.Reader
 }
 
-func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*backend_common.BackendOutput, error) {
+func (gc *GochartCompiler) Generate(ctx context.Context, path string, opts ...option.Option) ([]*backend_common.BackendOutput, error) {
 	lf, err := files.LoadFileFromPath(path)
 	if err != nil {
 		return nil, fmt.Errorf("loading file: %w", err)
@@ -86,7 +87,7 @@ func (gc *GochartCompiler) Generate(path string, opts ...option.Option) ([]*back
 		return nil, fmt.Errorf("processing frontend: %w", err)
 	}
 
-	outputs, err := gc.Backend.Generate(irData, opts...)
+	outputs, err := gc.Backend.Generate(ctx, irData, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("generating files: %w", err)
 	}
