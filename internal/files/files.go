@@ -4,6 +4,7 @@ package files
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -21,6 +22,21 @@ func DirExists(path string) (bool, error) {
 	}
 
 	return info.IsDir(), nil
+}
+
+// StatFile returns the file info of the file if it can be done.
+// If the file does not exists, the returned file info will be nil.
+func StatFile(path string) (fs.FileInfo, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			stat = nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return stat, nil
 }
 
 func WriteToFile(path string, r io.Reader) error {

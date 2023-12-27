@@ -11,6 +11,12 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
+const (
+	kOutputName_ForwardDeclare = "forward_declare"
+	kOutputName_Declare        = "declare"
+	kOutputName_Define         = "define"
+)
+
 type Config struct {
 	Version           string
 	Time              time.Time
@@ -45,13 +51,14 @@ func (c *Config) validate() error {
 }
 
 type Output struct {
-	Name    string
-	Content io.Reader
+	Name string
 	// ExpectedPath is where this file should be.
 	ExpectedPath string
+
+	Content io.Reader
 }
 
-func Generate(config *Config, sc *ir.Statechart) ([]*Output, error) {
+func Generate(sc *ir.Statechart, config *Config) ([]*Output, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
@@ -66,23 +73,49 @@ func Generate(config *Config, sc *ir.Statechart) ([]*Output, error) {
 		return nil, fmt.Errorf("generating templates: %w", err)
 	}
 
+	outputs, err := CalculateExpectedPaths(config)
+	if err != nil {
+		return nil, fmt.Errorf("calculating expected output paths: %w", err)
+	}
+
+	for _, output := range outputs {
+		switch output.Name {
+		case kOutputName_ForwardDeclare:
+			output.Content = forwardDeclare
+		case kOutputName_Declare:
+			output.Content = declare
+		case kOutputName_Define:
+			output.Content = define
+		default:
+			return nil, fmt.Errorf("unknown output %q", output.Name)
+		}
+	}
+
+	return outputs, nil
+}
+
+// CalculateExpectedPaths will return some outputs without content, just predicting where the
+// output files are going to be. This can be useful to compare with the existing paths, for example
+// to see if any generation has to occur.
+func CalculateExpectedPaths(config *Config) ([]*Output, error) {
+	if err := config.validate(); err != nil {
+		return nil, fmt.Errorf("validating config: %w", err)
+	}
+
 	outputs := []*Output{
 		{
-			Name:         "forward_declare",
-			Content:      forwardDeclare,
+			Name:         kOutputName_ForwardDeclare,
 			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.forward_declare.h", config.FilePrefix)),
 		},
 		{
-			Name:         "declare",
-			Content:      declare,
+			Name:         kOutputName_Declare,
 			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.declare.h", config.FilePrefix)),
 		},
 		{
-			Name:         "define",
-			Content:      define,
+			Name:         kOutputName_Define,
 			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.define.h", config.FilePrefix)),
 		},
 	}
-	return outputs, nil
 
+	return outputs, nil
 }

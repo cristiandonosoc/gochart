@@ -50,35 +50,6 @@ type UnrealFile struct {
 	Intermediate bool
 }
 
-// func (ui *unrealIntegrator) NewUnrealFile(path string) (*UnrealFile, error) {
-// 	intermediate := strings.Contains(path, "Intermediate")
-
-// 	stat, err := os.Stat(path)
-// 	if err != nil {
-// 		if os.IsNotExist(err) {
-// 			stat = nil
-// 		} else {
-// 			return nil, fmt.Errorf("stat %q: %w", path, err)
-// 		}
-// 	}
-
-// 	var module *UnrealModule
-// 	if !intermediate {
-// 		m, err := ui.identifyModule(path)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("identifying module for %q: %w", path, err)
-// 		}
-// 		module = m
-// 	}
-
-// 	return &UnrealFile{
-// 		Path:         path,
-// 		Module:       module,
-// 		FileInfo:     stat,
-// 		Intermediate: intermediate,
-// 	}, nil
-// }
-
 func (uf *UnrealFile) String() string {
 	var sb strings.Builder
 	sb.WriteString(uf.Name())
@@ -96,9 +67,11 @@ func (uf *UnrealFile) String() string {
 	return sb.String()
 }
 
-// Name is just the filename of the file (akin to filepath.Base).
+// Name is just the filename of the file (akin to filepath.Base), without the extension.
 func (uf *UnrealFile) Name() string {
-	return filepath.Base(uf.Path)
+	base := filepath.Base(uf.Path)
+	extension := filepath.Ext(base)
+	return strings.TrimSuffix(base, extension)
 }
 
 // InternalPath is the path of the file _within_ the module (basically stripping the module path).

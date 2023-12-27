@@ -10,9 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
+	"github.com/cristiandonosoc/gochart/pkg/frontend"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 
 	"golang.org/x/sync/errgroup"
@@ -113,7 +116,8 @@ func WithStrategy(strategy GenerationStrategy) option.Option {
 // Backend -----------------------------------------------------------------------------------------
 
 type unrealGochartBackend struct {
-	options *Options
+	gochartFrontend frontend.GochartFrontend
+	options         *Options
 }
 
 func NewUnrealGochartBackend(opts ...option.Option) (*unrealGochartBackend, error) {
@@ -122,13 +126,19 @@ func NewUnrealGochartBackend(opts ...option.Option) (*unrealGochartBackend, erro
 		opt(options)
 	}
 
+	gf, err := gochart_lang.NewGochartLangFrontend()
+	if err != nil {
+		return nil, fmt.Errorf("creating gochart lang frontend: %w", err)
+	}
+
 	return &unrealGochartBackend{
-		options: options,
+		gochartFrontend: gf,
+		options:         options,
 	}, nil
 }
 
 type gochartOutput struct {
-	Gochart string
+	Gochart *unreal.UnrealFile
 	Outputs []*common.BackendOutput
 }
 
@@ -136,6 +146,10 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart
 	// Override options.
 	for _, opt := range opts {
 		opt(ugb.options)
+	}
+
+	if err := ugb.validate(); err != nil {
+		return nil, fmt.Errorf("validating: %w", err)
 	}
 
 	if ugb.options.ProjectDir == "" {
@@ -158,6 +172,16 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart
 	}
 
 	return outputs, nil
+}
+
+func (ugb *unrealGochartBackend) validate() error {
+	if ok, err := files.DirExists(ugb.options.ProjectDir); err != nil {
+		return fmt.Errorf("checking if dir %q exists: %w", ugb.options.ProjectDir, err)
+	} else if !ok {
+		return fmt.Errorf("dir %q does not exists (or is not a directory): %w", ugb.options.ProjectDir, err)
+	}
+
+	return nil
 }
 
 func (ugb *unrealGochartBackend) searchGochartFiles(ctx context.Context,

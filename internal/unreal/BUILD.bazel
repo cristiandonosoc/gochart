@@ -4,6 +4,7 @@ go_library(
     name = "unreal",
     srcs = [
         "file.go",
+        "indexing.go",
         "module.go",
         "platform.go",
         "project.go",
