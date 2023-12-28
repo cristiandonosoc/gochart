@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
@@ -60,9 +59,8 @@ type Options struct {
 	Version string
 	Time    time.Time
 
-	ProjectDir string
-	Platform   unreal.UnrealPlatform
-	Strategy   GenerationStrategy
+	Platform unreal.UnrealPlatform
+	Strategy GenerationStrategy
 }
 
 func defaultOptions() *Options {
@@ -95,12 +93,6 @@ func WithTime(t time.Time) option.Option {
 	})
 }
 
-func WithProjectDir(projectDir string) option.Option {
-	return optWrapper(func(options *Options) {
-		options.ProjectDir = projectDir
-	})
-}
-
 func WithPlatform(platform unreal.UnrealPlatform) option.Option {
 	return optWrapper(func(options *Options) {
 		options.Platform = platform
@@ -116,14 +108,19 @@ func WithStrategy(strategy GenerationStrategy) option.Option {
 // Backend -----------------------------------------------------------------------------------------
 
 type unrealGochartBackend struct {
+	Project         *unreal.UnrealProject
 	gochartFrontend frontend.GochartFrontend
 	options         *Options
 }
 
-func NewUnrealGochartBackend(opts ...option.Option) (*unrealGochartBackend, error) {
-	options := defaultOptions()
-	for _, opt := range opts {
-		opt(options)
+func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGochartBackend, error) {
+	if projectDir == "" {
+		return nil, fmt.Errorf("missing project dir")
+	}
+
+	project, err := unreal.IndexUnrealProject(ctx, projectDir)
+	if err != nil {
+		return nil, fmt.Errorf("indexing unreal project: %w", err)
 	}
 
 	gf, err := gochart_lang.NewGochartLangFrontend()
@@ -132,8 +129,8 @@ func NewUnrealGochartBackend(opts ...option.Option) (*unrealGochartBackend, erro
 	}
 
 	return &unrealGochartBackend{
+		Project:         project,
 		gochartFrontend: gf,
-		options:         options,
 	}, nil
 }
 
@@ -143,30 +140,22 @@ type gochartOutput struct {
 }
 
 func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*gochartOutput, error) {
-	// Override options.
+	options := defaultOptions()
 	for _, opt := range opts {
-		opt(ugb.options)
+		opt(options)
 	}
+	ugb.options = options
 
 	if err := ugb.validate(); err != nil {
 		return nil, fmt.Errorf("validating: %w", err)
 	}
 
-	if ugb.options.ProjectDir == "" {
-		return nil, fmt.Errorf("missing project dir")
-	}
-
-	project, err := unreal.IndexUnrealProject(ctx, ugb.options.ProjectDir)
-	if err != nil {
-		return nil, fmt.Errorf("indexing unreal project: %w", err)
-	}
-
-	gocharts, err := ugb.searchGochartFiles(ctx, project)
+	gocharts, err := ugb.SearchGochartFiles(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
 	}
 
-	outputs, err := ugb.generateGocharts(ctx, project, gocharts)
+	outputs, err := ugb.generateGocharts(ctx, ugb.Project, gocharts)
 	if err != nil {
 		return nil, fmt.Errorf("generating gocharts: %w", err)
 	}
@@ -175,17 +164,11 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart
 }
 
 func (ugb *unrealGochartBackend) validate() error {
-	if ok, err := files.DirExists(ugb.options.ProjectDir); err != nil {
-		return fmt.Errorf("checking if dir %q exists: %w", ugb.options.ProjectDir, err)
-	} else if !ok {
-		return fmt.Errorf("dir %q does not exists (or is not a directory): %w", ugb.options.ProjectDir, err)
-	}
-
 	return nil
 }
 
-func (ugb *unrealGochartBackend) searchGochartFiles(ctx context.Context,
-	project *unreal.UnrealProject) ([]string, error) {
+// TODO(cdc): Extract this to the project and search by extension.
+func (ugb *unrealGochartBackend) SearchGochartFiles(ctx context.Context) ([]string, error) {
 
 	// We search the gocharts in a parallel fashion.
 	g, ctx := errgroup.WithContext(ctx)
@@ -196,7 +179,7 @@ func (ugb *unrealGochartBackend) searchGochartFiles(ctx context.Context,
 		g.Go(func() error {
 			defer close(modulesCh)
 
-			for _, module := range project.Modules {
+			for _, module := range ugb.Project.Modules {
 				select {
 				case modulesCh <- module:
 					continue
