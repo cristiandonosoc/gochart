@@ -1,14 +1,61 @@
-statechart GochartTest
+statechart GochartTest(concurrent)
 {
+    trigger ToggleActuator(EActuatorType actuator)
     trigger Update(float dt)
-
-    state Forward
-    {
+    
+    state MainActuator {
         capture Update
     }
-
-    state Backward
-    {
-        capture Update
+    
+    state TranslationActuator {
+        state TranslationInactive {
+            transition ToggleActuator > TranslationActive if {
+                return actuator == EActuatorType::Translation;
+            }
+        }
+    
+        state TranslationActive {
+            enter
+            
+            capture Update
+            
+            transition ToggleActuator > TranslationInactive if {
+                return actuator == EActuatorType::Translation;
+            }
+        }
+    }
+    
+    state RotationActuator {
+        state RotationInactive {
+            transition ToggleActuator > RotationActive if {
+                return actuator == EActuatorType::Rotation;
+            }
+        }
+        
+        state RotationActive {
+            enter
+            capture Update
+            
+            transition ToggleActuator > RotationInactive if {
+                return actuator == EActuatorType::Rotation;
+            }
+        }
+    }
+    
+    state ScaleActuator {
+        state ScaleInactive {
+            transition ToggleActuator > ScaleActive if {
+                return actuator == EActuatorType::Scale;
+            }
+        }
+        
+        state ScaleActive {
+            enter
+            capture Update
+            
+            transition ToggleActuator > ScaleInactive if {
+                return actuator == EActuatorType::Scale;
+            }
+        }
     }
 }
