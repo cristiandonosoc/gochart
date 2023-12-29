@@ -96,14 +96,9 @@ func (cpp *cppGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, o
 		Verbose:           cpp.options.Verbose,
 	}
 
-	gens, err := cpp_gen.Generate(sc, config)
+	outputs, err := cpp_gen.Generate(sc, config)
 	if err != nil {
 		return nil, fmt.Errorf("Generating files: %w", err)
-	}
-
-	outputs := make([]*common.BackendOutput, 0, len(gens))
-	for _, gen := range gens {
-		outputs = append(outputs, common.NewBackendOutputFromCppOutput(gen))
 	}
 
 	return outputs, nil

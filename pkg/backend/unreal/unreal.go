@@ -5,9 +5,6 @@ package unreal
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"sort"
-	"sync"
 	"time"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
@@ -15,8 +12,6 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -148,6 +143,42 @@ func (o *GochartOutput) UpToDate() bool {
 	return true
 }
 
+// List goes over and encounters all the gocharts and the generated files, without generating them.
+func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
+	// TODO(cdc): Don't make the options global to the backend as it is now.
+	options := defaultOptions()
+	for _, opt := range opts {
+		opt(options)
+	}
+	ugb.options = options
+
+	if err := ugb.validate(); err != nil {
+		return nil, fmt.Errorf("validating: %w", err)
+	}
+
+	gochartPaths, err := ugb.Project.SearchForFilesByExtension(ctx, ".gochart")
+	if err != nil {
+		return nil, fmt.Errorf("searching for gochart files: %w", err)
+	}
+
+	if len(gochartPaths) == 0 {
+		fmt.Println("No gocharts found.")
+		return nil, nil
+	}
+
+	goutputs := make([]*GochartOutput, 0, len(gochartPaths))
+	for _, gochartPath := range gochartPaths {
+		goutput, _, err := ugb.calculateGochartExpectedOutputs(gochartPath)
+		if err != nil {
+			return nil, fmt.Errorf("calculating gochart expected outputs: %w", err)
+		}
+
+		goutputs = append(goutputs, goutput)
+	}
+
+	return goutputs, nil
+}
+
 func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
@@ -159,13 +190,13 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Op
 		return nil, fmt.Errorf("validating: %w", err)
 	}
 
-	gocharts, err := ugb.SearchGochartFiles(ctx)
+	gocharts, err := ugb.Project.SearchForFilesByExtension(ctx, ".gochart")
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
 	}
 
 	if len(gocharts) == 0 {
-		fmt.Println("No gocharts found. Nothing to do.")
+		fmt.Println("No gocharts found.")
 		return nil, nil
 	}
 
@@ -184,97 +215,4 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Op
 
 func (ugb *unrealGochartBackend) validate() error {
 	return nil
-}
-
-// TODO(cdc): Extract this to the project and search by extension.
-func (ugb *unrealGochartBackend) SearchGochartFiles(ctx context.Context) ([]string, error) {
-
-	// We search the gocharts in a parallel fashion.
-	g, ctx := errgroup.WithContext(ctx)
-
-	// Produce: all the modules to check.
-	modulesCh := make(chan *unreal.UnrealModule)
-	{
-		g.Go(func() error {
-			defer close(modulesCh)
-
-			for _, module := range ugb.Project.Modules {
-				select {
-				case modulesCh <- module:
-					continue
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			}
-
-			return nil
-		})
-	}
-
-	// Map: for each module, search for gochart files.
-	gochartsCh := make(chan string)
-	{
-		var wg sync.WaitGroup
-
-		// Make sure the channel will be closed.
-		g.Go(func() error {
-			wg.Wait()
-			close(gochartsCh)
-			return nil
-		})
-
-		for i := 0; i < kModuleSearcherWorkerCount; i++ {
-			wg.Add(1)
-			g.Go(func() error {
-				defer wg.Done()
-
-				for module := range modulesCh {
-					for _, file := range module.Files {
-						ext := filepath.Ext(file)
-						if ext != ".gochart" {
-							continue
-						}
-
-						select {
-						case gochartsCh <- file:
-							continue
-						case <-ctx.Done():
-							return ctx.Err()
-						}
-					}
-				}
-
-				return nil
-			})
-		}
-	}
-
-	// Reduce: collect gochart files.
-	gochartSet := map[string]struct{}{}
-	{
-		g.Go(func() error {
-			for gochart := range gochartsCh {
-				if _, ok := gochartSet[gochart]; ok {
-					return fmt.Errorf("gochart %q found more than once", gochart)
-				}
-
-				gochartSet[gochart] = struct{}{}
-			}
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	// Collect the results in an array and sort it because sorting is cool.
-	gocharts := make([]string, 0, len(gochartSet))
-	for gochart := range gochartSet {
-		gocharts = append(gocharts, gochart)
-	}
-	sort.Strings(gocharts)
-
-	return gocharts, nil
 }

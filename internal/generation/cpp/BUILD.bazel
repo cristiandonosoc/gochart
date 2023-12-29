@@ -15,6 +15,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/files",
+        "//pkg/backend/common",
         "//pkg/ir",
         "@com_github_masterminds_sprig_v3//:sprig",
     ],

@@ -3,11 +3,11 @@ package cpp
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 	"time"
 
 	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -50,15 +50,7 @@ func (c *Config) validate() error {
 	return nil
 }
 
-type Output struct {
-	Name string
-	// ExpectedPath is where this file should be.
-	ExpectedPath string
-
-	Content io.Reader
-}
-
-func Generate(sc *ir.Statechart, config *Config) ([]*Output, error) {
+func Generate(sc *ir.Statechart, config *Config) ([]*common.BackendOutput, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
@@ -97,12 +89,12 @@ func Generate(sc *ir.Statechart, config *Config) ([]*Output, error) {
 // CalculateExpectedPaths will return some outputs without content, just predicting where the
 // output files are going to be. This can be useful to compare with the existing paths, for example
 // to see if any generation has to occur.
-func CalculateExpectedPaths(config *Config) ([]*Output, error) {
+func CalculateExpectedPaths(config *Config) ([]*common.BackendOutput, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
-	outputs := []*Output{
+	outputs := []*common.BackendOutput{
 		{
 			Name:         kOutputName_ForwardDeclare,
 			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.forward_declare.h", config.FilePrefix)),

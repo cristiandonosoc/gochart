@@ -3,12 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 
 	"github.com/urfave/cli/v2"
 )
+
+func relFilePath(projectPath, filePath string) string {
+	rel, err := filepath.Rel(projectPath, filePath)
+	if err != nil {
+		return filePath
+	}
+	return rel
+}
 
 func unrealInvocationFlags() []cli.Flag {
 	return []cli.Flag{}
@@ -37,15 +46,26 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("creating unreal backend: %w", err)
 						}
 
-						gocharts, err := ugb.SearchGochartFiles(ctx)
+						goutputs, err := ugb.List(ctx)
 						if err != nil {
-							return fmt.Errorf("searching for gochart files: %w", err)
+							return fmt.Errorf("listing project: %w", err)
 						}
 
 						fmt.Printf("Listing gocharts at Unreal project at %s\n", ugb.Project.ProjectDir)
-						fmt.Printf("Found %v gocharts:\n", len(gocharts))
-						for _, gochart := range gocharts {
-							fmt.Printf("- %s\n", gochart)
+						fmt.Printf("Found %v gocharts:\n", len(goutputs))
+						for _, goutput := range goutputs {
+							fmt.Println("-----------------------------------------------------------------------")
+							uptodate := ""
+							if !goutput.UpToDate() {
+								uptodate = "*WILL REGENERATE*"
+							}
+
+							fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
+							fmt.Printf("- PATH: %s\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
+							fmt.Printf("- EXPECTED OUTPUTS:\n")
+							for _, output := range goutput.Outputs {
+								fmt.Printf("  > %s\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+							}
 						}
 
 						return nil

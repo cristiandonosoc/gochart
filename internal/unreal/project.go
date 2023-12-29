@@ -6,9 +6,13 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/cristiandonosoc/gochart/internal/files"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -69,6 +73,104 @@ func (up *UnrealProject) NewUnrealFile(path string) (*UnrealFile, error) {
 		FileInfo:     stat,
 		Intermediate: isIntermediate,
 	}, nil
+}
+
+// SearchForFilesByExtension goes over all the loaded modules in parallel and finds all the found
+// files with that extension. Useful for things like finding all gochart files.
+// |extension| should be akin to the result of a filepath.Ext call, which includes the dot.
+func (up *UnrealProject) SearchForFilesByExtension(ctx context.Context, extension string) ([]string, error) {
+	if len(up.Modules) == 0 {
+		return nil, fmt.Errorf("no modules loaded. Is the project indexed?")
+	}
+
+	// We search the gocharts in a parallel fashion.
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Produce: all the modules to check.
+	modulesCh := make(chan *UnrealModule)
+	{
+		g.Go(func() error {
+			defer close(modulesCh)
+
+			for _, module := range up.Modules {
+				select {
+				case modulesCh <- module:
+					continue
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+
+			return nil
+		})
+	}
+
+	// Map: for each module, search for gochart files.
+	gochartsCh := make(chan string)
+	{
+		var wg sync.WaitGroup
+
+		// Make sure the channel will be closed.
+		g.Go(func() error {
+			wg.Wait()
+			close(gochartsCh)
+			return nil
+		})
+
+		for i := 0; i < kModuleSearcherWorkerCount; i++ {
+			wg.Add(1)
+			g.Go(func() error {
+				defer wg.Done()
+
+				for module := range modulesCh {
+					for _, file := range module.Files {
+						ext := filepath.Ext(file)
+						if ext != extension {
+							continue
+						}
+
+						select {
+						case gochartsCh <- file:
+							continue
+						case <-ctx.Done():
+							return ctx.Err()
+						}
+					}
+				}
+
+				return nil
+			})
+		}
+	}
+
+	// Reduce: collect gochart files.
+	gochartSet := map[string]struct{}{}
+	{
+		g.Go(func() error {
+			for gochart := range gochartsCh {
+				if _, ok := gochartSet[gochart]; ok {
+					return fmt.Errorf("gochart %q found more than once", gochart)
+				}
+
+				gochartSet[gochart] = struct{}{}
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Collect the results in an array and sort it because sorting is cool.
+	gocharts := make([]string, 0, len(gochartSet))
+	for gochart := range gochartSet {
+		gocharts = append(gocharts, gochart)
+	}
+	sort.Strings(gocharts)
+
+	return gocharts, nil
 }
 
 func (up *UnrealProject) identifyModule(path string) (*UnrealModule, error) {

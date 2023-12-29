@@ -3,8 +3,6 @@ package common
 
 import (
 	"io"
-
-	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 )
 
 // BackendOutput represents an output file as calculated by a backend.
@@ -18,13 +16,4 @@ type BackendOutput struct {
 	UpToDate bool
 	// The content of the file if it was generated.
 	Content io.Reader
-}
-
-// Helper function since it is so common.
-func NewBackendOutputFromCppOutput(cppOutput *cpp_gen.Output) *BackendOutput {
-	return &BackendOutput{
-		Name:         cppOutput.Name,
-		ExpectedPath: cppOutput.ExpectedPath,
-		Content:      cppOutput.Content,
-	}
 }

@@ -108,14 +108,40 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 		return nil, fmt.Errorf("context is not longer valid: %w", err)
 	}
 
-	gochart, err := project.NewUnrealFile(gochartPath)
+	expectedGoutput, cppGenConfig, err := ugb.calculateGochartExpectedOutputs(gochartPath)
 	if err != nil {
-		return nil, fmt.Errorf("getting gochart unreal file: %w", err)
+		return nil, fmt.Errorf("calculating gochart expected output paths: %w", err)
 	}
 
-	outputDir, err := calculateGochartOutputDir(project, ugb.options.Platform, ugb.options.Strategy, gochart)
+	// If the existing files are valid, there is nothing to generate.
+	// We simply generated the cached outputs.
+	if expectedGoutput.UpToDate() {
+		return expectedGoutput, nil
+	}
+
+	outputs, err := ugb.generateGochart(ctx, expectedGoutput.Gochart, cppGenConfig)
 	if err != nil {
-		return nil, fmt.Errorf("calculating output directory: %w", err)
+		return nil, fmt.Errorf("generting files for gochart: %w", err)
+	}
+
+	return &GochartOutput{
+		Gochart: expectedGoutput.Gochart,
+		Outputs: outputs,
+	}, nil
+}
+
+// calculateGochartExpectedOutputs returns the expected gochart output as if it were to be
+// generated. This also returns the cpp_gen.Config used, so it the same can be used if the indeed
+// we want to generate the files.
+func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath string) (*GochartOutput, *cpp_gen.Config, error) {
+	gochart, err := ugb.Project.NewUnrealFile(gochartPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting gochart unreal file: %w", err)
+	}
+
+	outputDir, err := calculateGochartOutputDir(ugb.Project, ugb.options.Platform, ugb.options.Strategy, gochart)
+	if err != nil {
+		return nil, nil, fmt.Errorf("calculating output directory: %w", err)
 	}
 
 	// Get where the files would be generated.
@@ -128,58 +154,30 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 	}
 	expectedOutputs, err := cpp_gen.CalculateExpectedPaths(cppGenConfig)
 	if err != nil {
-		return nil, fmt.Errorf("calculating expected outputs: %w", err)
+		return nil, nil, fmt.Errorf("calculating expected outputs: %w", err)
 	}
 
-	// Now we check if we need to generate the output files.
-	// They get generated all or nothing.
-	valid := true
-	for _, output := range expectedOutputs {
-		stat, err := files.StatFile(output.ExpectedPath)
+	for _, expectedOutput := range expectedOutputs {
+		stat, err := files.StatFile(expectedOutput.ExpectedPath)
 		if err != nil {
-			return nil, fmt.Errorf("stating %q: %w", output.ExpectedPath, err)
+			return nil, nil, fmt.Errorf("stating %q: %w", expectedOutput.ExpectedPath, err)
 		}
 
-		// If the file doens't exist, it is invalid.
 		if stat == nil {
-			valid = false
-			break
+			continue
 		}
 
-		// We check if the source gochart file is newer.
-		// If so, the existing statechart files are invalid and need to be regenerated.
 		if gochart.FileInfo.ModTime().After(stat.ModTime()) {
-			valid = false
-			break
+			expectedOutput.UpToDate = true
 		}
 	}
 
-	// If the existing files are valid, there is nothing to generat.
-	// We simply generated the cached outputs.
-	if valid {
-		outputs := make([]*common.BackendOutput, 0, len(expectedOutputs))
-		for _, expectedOutput := range expectedOutputs {
-			output := common.NewBackendOutputFromCppOutput(expectedOutput)
-			output.UpToDate = true
-			outputs = append(outputs, output)
-		}
-
-		return &GochartOutput{
-			Gochart: gochart,
-			Outputs: outputs,
-		}, nil
-	}
-
-	// Here we need to generate the files.
-	outputs, err := ugb.generateGochart(ctx, gochart, cppGenConfig)
-	if err != nil {
-		return nil, fmt.Errorf("generting files for gochart: %w", err)
-	}
-
-	return &GochartOutput{
+	goutput := &GochartOutput{
 		Gochart: gochart,
-		Outputs: outputs,
-	}, nil
+		Outputs: expectedOutputs,
+	}
+
+	return goutput, cppGenConfig, nil
 }
 
 func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
@@ -204,16 +202,13 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		return nil, fmt.Errorf("processing IR data: %w", err)
 	}
 
-	cppOutputs, err := cpp_gen.Generate(sc, cppGenConfig)
+	outputs, err := cpp_gen.Generate(sc, cppGenConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Generating gochart output files: %w", err)
 	}
 
 	// Now that we have the files generated, we check if we need to write them to disk.
-	outputs := make([]*common.BackendOutput, 0, len(cppOutputs))
-	for _, cppOutput := range cppOutputs {
-		output := common.NewBackendOutputFromCppOutput(cppOutput)
-
+	for _, output := range outputs {
 		written, err := ugb.writeOutputIfDifferentOnDisk(ctx, output)
 		if err != nil {
 			return nil, fmt.Errorf("writing gochart output to disk: %w", err)
@@ -225,8 +220,6 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		if !written {
 			output.UpToDate = true
 		}
-
-		outputs = append(outputs, common.NewBackendOutputFromCppOutput(cppOutput))
 	}
 
 	return outputs, nil
