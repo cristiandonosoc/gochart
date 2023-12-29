@@ -167,7 +167,8 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 			continue
 		}
 
-		if gochart.FileInfo.ModTime().After(stat.ModTime()) {
+		// If the gochart file was modified before this file, we consider it to be up to date.
+		if gochart.FileInfo.ModTime().Before(stat.ModTime()) {
 			expectedOutput.UpToDate = true
 		}
 	}
@@ -234,10 +235,10 @@ func calculateGochartOutputDir(project *unreal.UnrealProject, platform unreal.Un
 	switch strategy {
 	case GenerationStrategy_Intermediate:
 		// First it's built by the intermediate platform location.
-		dir = filepath.Join(project.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc", "Gochart")
+		dir = filepath.Join(project.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc")
 
 		// Then we get to the per module place and internal path.
-		dir = filepath.Join(dir, gochart.Module.Name, filepath.Dir(gochart.InternalPath()))
+		dir = filepath.Join(dir, gochart.Module.Name, "UHT", filepath.Dir(gochart.InternalPath()))
 	case GenerationStrategy_Inline:
 		dir = filepath.Dir(gochart.Path)
 	case GenerationStrategy_ModuleGeneratedDir:

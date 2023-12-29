@@ -1,5 +1,7 @@
 ﻿#include <GochartTest/GochartTestActor.h>
 
+#include "GochartTestActor.define.h"
+
 // Sets default values
 AGochartTestActor::AGochartTestActor()
 {
@@ -8,8 +10,23 @@ AGochartTestActor::AGochartTestActor()
     PrimaryActorTick.bCanEverTick = true;
 }
 
+AGochartTestActor::~AGochartTestActor() = default;
+
 // Called when the game starts or when spawned
-void AGochartTestActor::BeginPlay() { Super::BeginPlay(); }
+void AGochartTestActor::BeginPlay()
+{
+    Super::BeginPlay();
+    Gochart = gochart::GochartTest::Create(this);
+    Gochart->Activate();
+}
+
+void AGochartTestActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Gochart->Deactivate();
+    Gochart.reset();
+
+    Super::EndPlay(EndPlayReason);
+}
 
 // Called every frame
 void AGochartTestActor::Tick(float DeltaTime)

@@ -7,8 +7,8 @@ statechart GochartTest
         capture Update
     }
 
-		state Backward
-		{
-			capture Update
-		}
+    state Backward
+    {
+        capture Update
+    }
 }

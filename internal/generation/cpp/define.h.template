@@ -849,6 +849,9 @@ void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const vo
 		}
 		{{- end }}{{/* if gt (len $state.GetNullTransitions) 0 */}}
 		{{- end }}{{/* range $sc.States */}}
+		case EState::__Invalid__:
+			GOCHART_DEBUG_BREAK;
+			break;
 		default:
 			break;
 	}
