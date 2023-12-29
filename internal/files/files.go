@@ -15,7 +15,7 @@ func DirExists(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return false, fmt.Errorf("stating path %q", path)
+			return false, fmt.Errorf("stating path %q: %w", path, err)
 		}
 
 		return false, nil

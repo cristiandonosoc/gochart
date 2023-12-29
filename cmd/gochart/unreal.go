@@ -51,44 +51,45 @@ func unrealCommands() []*cli.Command {
 						return nil
 					},
 				},
-				// {
-				// 	Name:        "generate",
-				// 	Usage:       "generate (OPTIONS) [SOURCE_DIR]",
-				// 	Description: "Generate all the gochart files for an Unreal project",
-				// 	Flags:       unrealInvocationFlags(),
-				// 	Action: func(cliCtx *cli.Context) error {
-				// 		if cliCtx.Args().Len() != 1 {
-				// 			return fmt.Errorf("No source dir set. Usage: %s", cliCtx.Command.Usage)
-				// 		}
+				{
+					Name:        "generate",
+					Usage:       "generate (OPTIONS) [SOURCE_DIR]",
+					Description: "Generate all the gochart files for an Unreal project",
+					Flags:       unrealInvocationFlags(),
+					Action: func(cliCtx *cli.Context) error {
+						if cliCtx.Args().Len() != 1 {
+							return fmt.Errorf("No source dir set. Usage: %s", cliCtx.Command.Usage)
+						}
 
-				// 		gc, err := getGochartCompiler("cpp", cliCtx)
-				// 		if err != nil {
-				// 			return fmt.Errorf("getting gochart compiler: %w", err)
-				// 		}
+						projectDir := cliCtx.Args().Get(0)
 
-				// 		sourceDir := cliCtx.Args().Get(0)
-				// 		ui, err := unreal.NewUnrealIntegrator(gc.Frontend, gc.Backend)
-				// 		if err != nil {
-				// 			return fmt.Errorf("creating unreal integrator: %w", err)
-				// 		}
+						ctx := context.Background()
+						ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, projectDir)
+						if err != nil {
+							return fmt.Errorf("creating unreal backend: %w", err)
+						}
 
-				// 		ctx, cancel := context.WithTimeout(context.Background(), 10000*time.Second)
-				// 		defer cancel()
+						goutputs, err := ugb.Generate(ctx)
+						if err != nil {
+							return fmt.Errorf("generating gocharts: %w", err)
+						}
 
-				// 		if err := ui.Index(ctx, sourceDir); err != nil {
-				// 			return fmt.Errorf("indexing %q: %w", sourceDir, err)
-				// 		}
+						fmt.Println("Generation result:")
+						for _, goutput := range goutputs {
+							if goutput.UpToDate() {
+								fmt.Printf("- %s UP TO DATE\n", goutput.Gochart.Name())
+								continue
+							}
 
-				// 		if errors := ui.Generate("Win64", unreal.GenerationStrategy_ModuleGeneratedDir); len(errors) != 0 {
-				// 			for _, err := range errors {
-				// 				fmt.Printf("generating gocharts: %v\n", err)
-				// 			}
-				// 			return fmt.Errorf("FAILED")
-				// 		}
+							fmt.Printf("- %s:\n", goutput.Gochart.Name())
+							for _, output := range goutput.Outputs {
+								fmt.Printf("  > Generated %s\n", output.ExpectedPath)
+							}
+						}
 
-				// 		return nil
-				// 	},
-				// },
+						return nil
+					},
+				},
 			},
 		},
 	}

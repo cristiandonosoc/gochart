@@ -15,7 +15,6 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-	"github.com/cristiandonosoc/gochart/pkg/ir"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -68,7 +67,7 @@ func defaultOptions() *Options {
 		Version:  "DEVELOPMENT",
 		Time:     time.Now(),
 		Platform: unreal.UnrealPlatform_Windows,
-		Strategy: GenerationStrategy_ModuleGeneratedDir,
+		Strategy: GenerationStrategy_Intermediate,
 	}
 
 	return options
@@ -134,12 +133,22 @@ func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGoc
 	}, nil
 }
 
-type gochartOutput struct {
+type GochartOutput struct {
 	Gochart *unreal.UnrealFile
 	Outputs []*common.BackendOutput
 }
 
-func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*gochartOutput, error) {
+func (o *GochartOutput) UpToDate() bool {
+	for _, output := range o.Outputs {
+		if !output.UpToDate {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -153,6 +162,16 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, sc *ir.Statechart
 	gocharts, err := ugb.SearchGochartFiles(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
+	}
+
+	if len(gocharts) == 0 {
+		fmt.Println("No gocharts found. Nothing to do.")
+		return nil, nil
+	}
+
+	fmt.Printf("Found %v gocharts:\n", len(gocharts))
+	for _, gochart := range gocharts {
+		fmt.Printf("- %s\n", gochart)
 	}
 
 	outputs, err := ugb.generateGocharts(ctx, ugb.Project, gocharts)

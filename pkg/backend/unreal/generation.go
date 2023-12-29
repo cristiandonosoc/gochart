@@ -20,7 +20,7 @@ import (
 )
 
 func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
-	project *unreal.UnrealProject, gocharts []string) ([]*gochartOutput, error) {
+	project *unreal.UnrealProject, gocharts []string) ([]*GochartOutput, error) {
 
 	// We generate the gocharts in a parallel fashion.
 	g, ctx := errgroup.WithContext(ctx)
@@ -45,7 +45,7 @@ func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
 	}
 
 	// Map: for each gochart, generate the backend files.
-	outputsCh := make(chan *gochartOutput)
+	outputsCh := make(chan *GochartOutput)
 	{
 		var wg sync.WaitGroup
 
@@ -80,7 +80,7 @@ func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
 	}
 
 	// Reduce: collect gochart outputs.
-	var outputs []*gochartOutput
+	var outputs []*GochartOutput
 	{
 		g.Go(func() error {
 			for output := range outputsCh {
@@ -102,7 +102,7 @@ func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
 }
 
 func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
-	project *unreal.UnrealProject, gochartPath string) (*gochartOutput, error) {
+	project *unreal.UnrealProject, gochartPath string) (*GochartOutput, error) {
 
 	if err := checkIfContextIsValid(ctx); err != nil {
 		return nil, fmt.Errorf("context is not longer valid: %w", err)
@@ -164,7 +164,7 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 			outputs = append(outputs, output)
 		}
 
-		return &gochartOutput{
+		return &GochartOutput{
 			Gochart: gochart,
 			Outputs: outputs,
 		}, nil
@@ -176,7 +176,7 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 		return nil, fmt.Errorf("generting files for gochart: %w", err)
 	}
 
-	return &gochartOutput{
+	return &GochartOutput{
 		Gochart: gochart,
 		Outputs: outputs,
 	}, nil
