@@ -44,6 +44,9 @@ const char* ToString(EState state)
     case EState::State7:
         return "State7";
     }
+
+    assert(false);
+    return "<unknown>";
 }
 
 void SwapList(std::vector<EState>& list, size_t first_invalid_index)

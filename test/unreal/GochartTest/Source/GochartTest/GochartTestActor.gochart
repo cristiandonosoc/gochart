@@ -4,6 +4,11 @@ statechart GochartTest
 
     state Forward
     {
-        capture(Update)
+        capture Update
     }
+
+		state Backward
+		{
+			capture Update
+		}
 }
