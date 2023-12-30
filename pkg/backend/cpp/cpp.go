@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cristiandonosoc/gochart/internal/build"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
@@ -70,7 +71,7 @@ type cppGochartBackend struct {
 func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	// Get options.
 	options := &Options{
-		Version: "DEVELOPMENT",
+		Version: build.BuildVersion(),
 		Time:    time.Now(),
 	}
 	for _, opt := range opts {

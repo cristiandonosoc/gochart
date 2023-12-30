@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cristiandonosoc/gochart/internal/build"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
@@ -59,7 +60,7 @@ type Options struct {
 
 func defaultOptions() *Options {
 	options := &Options{
-		Version:  "DEVELOPMENT",
+		Version:  build.BuildVersion(),
 		Time:     time.Now(),
 		Platform: unreal.UnrealPlatform_Windows,
 		Strategy: GenerationStrategy_Intermediate,
