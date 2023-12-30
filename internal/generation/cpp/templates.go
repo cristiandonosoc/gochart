@@ -12,12 +12,15 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
-//go:embed forward_declare.h.template declare.h.template define.h.template
+//go:embed header.template footer.template forward_declare.h.template declare.h.template define.h.template
 var embeddedFS embed.FS
 
 type embedPath string
 
 const (
+	kHeaderFilename embedPath = "header.template"
+	kFooterFilename embedPath = "footer.template"
+
 	kForwardDeclareFilename embedPath = "forward_declare.h.template"
 	kDeclareFilename        embedPath = "declare.h.template"
 	kDefineFilename         embedPath = "define.h.template"
@@ -74,6 +77,18 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading embedded template %q: %w", epstr, err)
 	}
+
+	// Add the header template
+	headerstr := string(kHeaderFilename)
+	if _, err := tmpl.New(headerstr).ParseFS(embeddedFS, headerstr); err != nil {
+		return nil, fmt.Errorf("embedding header template: %w", err)
+	}
+
+	footerstr := string(kFooterFilename)
+	if _, err = tmpl.New(footerstr).ParseFS(embeddedFS, footerstr); err != nil {
+		return nil, fmt.Errorf("embedding footer template: %w", err)
+	}
+
 	return tmpl, nil
 }
 

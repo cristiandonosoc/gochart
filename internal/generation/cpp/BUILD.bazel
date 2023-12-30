@@ -10,6 +10,8 @@ go_library(
         "declare.h.template",
         "define.h.template",
         "forward_declare.h.template",
+        "header.template",
+        "footer.template",
     ],
     importpath = "github.com/cristiandonosoc/gochart/internal/generation/cpp",
     visibility = ["//:__subpackages__"],
