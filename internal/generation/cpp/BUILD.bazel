@@ -4,6 +4,7 @@ go_library(
     name = "cpp",
     srcs = [
         "cpp.go",
+        "metadata.go",
         "templates.go",
     ],
     embedsrcs = [

@@ -10,6 +10,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/cristiandonosoc/gochart/internal/build"
 	"github.com/cristiandonosoc/gochart/internal/files"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/unreal"
@@ -163,7 +164,20 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 			return nil, nil, fmt.Errorf("stating %q: %w", expectedOutput.ExpectedPath, err)
 		}
 
+		// If the file doesn't exist, it must be regenerated.
 		if stat == nil {
+			continue
+		}
+
+		// Since the file is in disk, we check if it was made by the same version.
+		if expectedOutput.Metadata == nil {
+			if err := cpp_gen.LoadMetadata(expectedOutput); err != nil {
+				return nil, nil, fmt.Errorf("loading metadata for %q: %w", expectedOutput.ExpectedPath, err)
+			}
+		}
+
+		// If they were n ot made by the same version, we know it must be regenerated.
+		if expectedOutput.Metadata.Version != build.BuildVersion() {
 			continue
 		}
 

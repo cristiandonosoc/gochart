@@ -2,8 +2,16 @@
 package common
 
 import (
+	"fmt"
 	"io"
+
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
+
+type Metadata struct {
+	// What version of Gochart was used to generate this file.
+	Version string
+}
 
 // BackendOutput represents an output file as calculated by a backend.
 // Has all the information needed so that callers can take appropiate actions, such as printing
@@ -14,6 +22,27 @@ type BackendOutput struct {
 	ExpectedPath string
 	// Whether this file is already up to date in disk, so it was not generated.
 	UpToDate bool
-	// The content of the file if it was generated.
-	Content io.Reader
+
+	Metadata *Metadata
+
+	Content     io.Reader
+	DiskContent *files.LoadedFile
+}
+
+func (bo *BackendOutput) IsLoadedFromDisk() bool {
+	return bo.DiskContent != nil
+}
+
+func (bo *BackendOutput) LoadFromDisk() error {
+	if bo.IsLoadedFromDisk() {
+		return nil
+	}
+
+	lf, err := files.LoadFileFromPath(bo.ExpectedPath)
+	if err != nil {
+		return fmt.Errorf("loading file from path %q: %w", bo.ExpectedPath, err)
+	}
+
+	bo.DiskContent = lf
+	return nil
 }
