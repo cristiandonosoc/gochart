@@ -7,7 +7,6 @@
 {{- $sc := $root.Statechart }}
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
-{{- $impl := "Gochart_Impl" }}
 
 #include "{{$root.DeclareInclude}}"
 
@@ -403,343 +402,17 @@ void Gochart<T>::Trigger{{$trigger.Name}}({{$args}})
 
 {{- end }}
 
-
-// Transition Conditions ---------------------------------------------------------------------------
-
-namespace {{$internal}} {
-
-class {{$impl}}
-{
-public:
-
-{{- range $sc.States }}
-{{- $state := . }}
-{{- range $sc.Triggers }}
-{{- $trigger := . }}
-
-{{- if $state.HasTransition $trigger }}
-{{- $transition := $state.GetTransition $trigger }}
-
-{{- if $transition.HasCondition }}
-
-{{- $args := $trigger.ArgsStringList | join ", " }}
+// PRIVATE CALLBACK API ============================================================================
 
 template <typename T>
-static bool {{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}(const Gochart<T>& gochart, {{$args}})
-{
-    {{$transition.Condition}};
-}
-
-{{- end }}{{/* $transition.HasCondition */}}
-{{- end }}{{/* $state.HasTransition */}}
-
-{{- end }}{{/* range $sc.Triggers */}}
-{{- end }}{{/* range $sc.States */}}
-
-// Transition Actions ------------------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{- $state := . }}
-{{- range $sc.Triggers }}
-{{- $trigger := . }}
-
-{{- if $state.HasTransition $trigger }}
-{{- $transition := $state.GetTransition $trigger }}
-
-{{- if $transition.HasAction }}
-
-{{- $args := $trigger.ArgsStringList | join ", " }}
-
-template <typename T>
-static void {{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}(Gochart<T>& gochart, {{$args}})
-{
-	{{$transition.Action}};
-}
-
-{{- end }}{{/* $transition.HasAction */}}
-{{- end }}{{/* $state.HasTransition */}}
-
-{{- end }}{{/* range $sc.Triggers */}}
-{{- end }}{{/* range $sc.States */}}
-
-// Null Transition Conditions ----------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{- $state := . }}
-
-{{- $nullTransitions := $state.GetNullTransitions }}
-{{- if gt (len $nullTransitions) 0 }}
-
-{{- range $nullTransitions }}
-{{- $nullTransition := . }}
-
-{{- if $nullTransition.HasCondition }}
-
-template <typename T>
-static bool {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(const Gochart<T>& gochart)
-{
-	{{$nullTransition.Condition}};
-}
-
-{{- end }}{{/* if $nullTransition.HasCondition */}}
-{{- end }}{{/* range $nullTransitions */}}
-
-template <typename T>
-static bool {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting(const Gochart<T>& gochart, EState target_state)
-{
-	switch (target_state)
-	{
-		{{- range $nullTransitions }}
-		{{- $nullTransition := . }}
-		{{- if $nullTransition.HasCondition }}
-
-		case EState::{{$nullTransition.To.Name}}:
-		{
-			return {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}(gochart);
-		}
-
-		{{- end }}{{/* if $nullTransition.HasCondition */}}
-		{{- end }}{{/* range $nullTransitions */}}
-		default:
-			break;
-	}
-
-	// If there is no condition, we simply return true.
-	return true;
-}
-
-{{- end }}{{/* if gt (len $nullTransitions) 0 */}}
-{{- end }}{{/* range $sc.States */}}
-
-// Null Transition Actions -------------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{- $state := . }}
-
-{{- $nullTransitions := $state.GetNullTransitions }}
-{{- if gt (len $nullTransitions) 0 }}
-
-{{- range $nullTransitions }}
-{{- $nullTransition := . }}
-{{- if $nullTransition.HasAction }}
-
-template <typename T>
-static void {{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(Gochart<T>& gochart)
-{
-	{{$nullTransition.Action}};
-}
-
-{{- end }}{{/* if $nullTransition.HasAction */}}
-{{- end }}{{/* range $nullTransitions */}}
-
-template <typename T>
-static void {{$state.DisplayName}}_EvaluateNullTransitionActionTargeting(Gochart<T>& gochart, EState target_state)
-{
-	switch (target_state)
-	{
-		{{- range $nullTransitions }}
-		{{- $nullTransition := . }}
-		{{- if $nullTransition.HasAction }}
-
-		case EState::{{$nullTransition.To.Name}}:
-		{
-			{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}(gochart);
-			return;
-		}
-
-		{{- end }}{{/* if $nullTransition.HasAction */}}
-		{{- end }}{{/* range $nullTransitions */}}
-		default:
-			break;
-	}
-}
-
-{{- end }}{{/* if gt (len $nullTransitions) 0 */}}
-{{- end }}{{/* range $sc.States */}}
-
-// Capture Conditions ------------------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{- $state := . }}
-{{- range $sc.Triggers }}
-{{- $trigger := . }}
-
-{{- if $state.HasCapture $trigger }}
-{{- $capture := $state.GetCapture $trigger }}
-
-{{- if $capture.HasCondition }}
-
-{{- $args := $trigger.ArgsStringList | join ", " }}
-
-template <typename T>
-static bool {{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}(const Gochart<T>& gochart, {{$args}})
-{
-    {{$capture.Condition}};
-}
-
-{{- end }}{{/* $capture.HasCondition */}}
-{{- end }}{{/* $state.HasCapture */}}
-
-{{- end }}{{/* range $sc.Triggers */}}
-{{- end }}{{/* range $sc.States */}}
-
-
-// State Reactions ---------------------------------------------------------------------------------
-
-{{ $reactionTypes := list "Enter" "Exit" "Capture" }}
-{{- range $reactionTypes }}
-{{ $reactionType := . }}
-
-{{- range $sc.States }}
-{{- $state := . }}
-
-template <typename T>
-static void {{$state.DisplayName}}_Call{{$reactionType}}Reaction(Gochart<T>& gochart,
-                                            ETrigger trigger,
-                                            const void* trigger_data)
-{
-    switch (trigger)
-    {
-        {{- range $sc.Triggers }}
-        {{- $trigger := . }}
-        case ETrigger::{{$trigger.Name}}:
-        {{- if $state.HasReaction $reactionType $trigger }}
-            {
-                // We cast the trigger data to the correct type.
-                assert(trigger_data != nullptr);
-                auto* data = reinterpret_cast<const {{$internal}}::{{$trigger.Name}}Data*>(trigger_data);
-
-                // Now we call the handler with the arguments.
-                gochart.GetOwner().{{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}(
-                    {{ TriggerCallArgs $trigger "data->" | join ", " }}
-                );
-                return;
-            }
-        {{- else }}
-            // State {{$state.Name}} does not have an {{$reactionType}} reaction for trigger {{$trigger.Name}}.
-            return;
-        {{- end }}
-        {{- end }}
-        case ETrigger::__Invalid__:
-		{
-            {{- if $state.HasDefaultReaction $reactionType }}
-            // Default {{$reactionType}}.
-            gochart.GetOwner().{{$state.DisplayName}}_{{$reactionType}}();
-            {{- else }}
-            // No default {{$reactionType}} reaction for state {{$state.SafeName}}.
-            {{- end }}
-            return;
-		}
-    }
-
-    GOCHART_DEBUG_BREAK;
-}
-
-{{- end }}{{/* range $sc.States */}}
-
-template <typename T>
-static void Call{{$reactionType}}Reaction(Gochart<T>& gochart,
-                       EState state,
-                       ETrigger trigger,
-                       const void* trigger_data)
+bool Gochart<T>::HandleTrigger(EState state, const {{$internal}}::TriggerEntry& trigger_entry)
 {
     switch (state)
     {
         {{- range $sc.States }}
         {{- $state := . }}
         case EState::{{$state.Name}}:
-            {{$state.DisplayName}}_Call{{$reactionType}}Reaction(gochart, trigger, trigger_data);
-            return;
-        {{- end }}
-        case EState::__Invalid__:
-            break;
-    }
-
-    GOCHART_DEBUG_BREAK;
-}
-
-{{- end }}{{/* range $reactionTypes */}}
-
-// Triggers ----------------------------------------------------------------------------------------
-
-{{- range $sc.States }}
-{{ $state := . }}
-
-template <typename T>
-static bool {{$state.DisplayName}}_HandleTrigger(Gochart<T>& gochart, const TriggerEntry& trigger_entry)
-{
-    switch (trigger_entry.Trigger)
-    {
-        {{- range $sc.Triggers }}
-        {{- $trigger := . }}
-        case ETrigger::{{$trigger.Name}}:
-            {{- if $state.HasTransition $trigger }}
-            {
-                // Get the trigger data.
-                const auto& data = std::get<{{$internal}}::{{$trigger.Name}}Data>(trigger_entry.Data);
-
-				{{- $transition := $state.GetTransition $trigger }}
-
-				{{- if $transition.HasCondition }}
-				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-				if (!{{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}(gochart, {{$callArgs}}))
-				{
-					return false;
-				}
-				{{- end }}{{/* if $trasition.HasCondition */}}
-
-				{{- if $transition.HasAction }}
-				{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-				{{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}(gochart, {{$callArgs}});
-				{{- end }}{{/* if $transition.HasAction */}}
-
-                gochart.ProcessTransition(EState::{{$transition.From.Name}},
-										  EState::{{$transition.To.Name}},
-										  ETrigger::{{$transition.Trigger.Name}},
-										  &data);
-                return true;
-            }
-            {{- else if $state.HasCapture $trigger }}
-            {
-                // Get the trigger data.
-                const auto& data = std::get<{{$internal}}::{{$trigger.Name}}Data>(trigger_entry.Data);
-
-                {{- $capture := $state.GetCapture $trigger }}
-                {{- if $capture.HasCondition }}
-                {{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
-                if (!{{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}(gochart, {{$callArgs}}))
-                {
-										return false;
-                }
-                {{- end }}
-
-                gochart.CaptureTrigger(EState::{{$state.Name}}, ETrigger::{{$trigger.Name}}, &data);
-                return true;
-            }
-            {{- else }}
-            // State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.
-            return false;
-            {{- end }}
-        {{- end }}
-        case ETrigger::__Invalid__:
-            break;
-    }
-
-    GOCHART_DEBUG_BREAK;
-    return false;
-}
-
-{{- end }}{{/* range $sc.States */}}
-
-template <typename T>
-static bool HandleTrigger(Gochart<T>& gochart, EState state, const TriggerEntry& trigger_entry)
-{
-    switch (state)
-    {
-        {{- range $sc.States }}
-        {{- $state := . }}
-        case EState::{{$state.Name}}:
-            return {{$state.DisplayName}}_HandleTrigger(gochart, trigger_entry);
+            return {{$state.DisplayName}}_HandleTrigger(trigger_entry);
         {{- end }}
         case EState::__Invalid__:
             break;
@@ -750,13 +423,13 @@ static bool HandleTrigger(Gochart<T>& gochart, EState state, const TriggerEntry&
 }
 
 template <typename T>
-static void ProcessTrigger(Gochart<T>& gochart, EState state, const TriggerEntry& trigger_entry)
+void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry& trigger_entry)
 {
     // We go over each state starting from the current to see if they would handle the state.
     while (state != EState::__Invalid__)
     {
         // If this particular state handles the trigger, we stop bubbling up.
-        if (HandleTrigger(gochart, state, trigger_entry))
+        if (HandleTrigger(state, trigger_entry))
         {
             break;
         }
@@ -764,9 +437,263 @@ static void ProcessTrigger(Gochart<T>& gochart, EState state, const TriggerEntry
     }
 }
 
-}; // class {{$impl}}
+{{- range $sc.States }}
+	{{- $state := . }}
 
-} // namespace {{$internal}}
+	{{/***** TRIGGERS ***************************************************************************/}}
+
+	template <typename T>
+	bool Gochart<T>::{{$state.DisplayName}}_HandleTrigger(const {{$internal}}::TriggerEntry& trigger_entry)
+	{
+		switch (trigger_entry.Trigger)
+		{
+			{{- range $sc.Triggers }}
+			{{- $trigger := . }}
+			case ETrigger::{{$trigger.Name}}:
+				{{- if $state.HasTransition $trigger }}
+				{
+					// Get the trigger data.
+					const auto& data = std::get<{{$internal}}::{{$trigger.Name}}Data>(trigger_entry.Data);
+
+					{{- $transition := $state.GetTransition $trigger }}
+
+					{{- if $transition.HasCondition }}
+					{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+					if (!{{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}({{$callArgs}}))
+					{
+						return false;
+					}
+					{{- end }}{{/* if $trasition.HasCondition */}}
+
+					{{- if $transition.HasAction }}
+					{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+					{{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}({{$callArgs}});
+					{{- end }}{{/* if $transition.HasAction */}}
+
+					ProcessTransition(EState::{{$transition.From.Name}},
+											  EState::{{$transition.To.Name}},
+											  ETrigger::{{$transition.Trigger.Name}},
+											  &data);
+					return true;
+				}
+				{{- else if $state.HasCapture $trigger }}
+				{
+					// Get the trigger data.
+					const auto& data = std::get<{{$internal}}::{{$trigger.Name}}Data>(trigger_entry.Data);
+
+					{{- $capture := $state.GetCapture $trigger }}
+					{{- if $capture.HasCondition }}
+					{{- $callArgs := TriggerCallArgs $trigger "data." | join ", " }}
+					if (!{{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}({{$callArgs}}))
+					{
+											return false;
+					}
+					{{- end }}
+
+					CaptureTrigger(EState::{{$state.Name}}, ETrigger::{{$trigger.Name}}, &data);
+					return true;
+				}
+				{{- else }}
+				// State {{$state.Name}} doesn't handle trigger {{$trigger.Name}}.
+				return false;
+				{{- end }}
+			{{- end }}
+			case ETrigger::__Invalid__:
+				break;
+		}
+
+		GOCHART_DEBUG_BREAK;
+		return false;
+	}
+
+	{{/***** NULL TRANSITIONS ***************************************************************/}}
+
+	template <typename T>
+	bool Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting(EState target_state) const
+	{
+		switch (target_state)
+		{
+			{{- range $state.GetNullTransitions }}
+			{{- $nullTransition := . }}
+			{{- if $nullTransition.HasCondition }}
+
+			case EState::{{$nullTransition.To.Name}}:
+			{
+				return {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}();
+			}
+
+			{{- end }}{{/* if $nullTransition.HasCondition */}}
+			{{- end }}{{/* range $state.GetNullTransitions */}}
+			default:
+				break;
+		}
+
+		// If there is no condition, we simply return true.
+		return true;
+	}
+
+	template <typename T>
+	void Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting(EState target_state)
+	{
+		switch (target_state)
+		{
+			{{- range $state.GetNullTransitions }}
+			{{- $nullTransition := . }}
+			{{- if $nullTransition.HasAction }}
+
+			case EState::{{$nullTransition.To.Name}}:
+			{
+				{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}();
+				return;
+			}
+
+			{{- end }}{{/* if $nullTransition.HasAction */}}
+			{{- end }}{{/* range $state.GetNullTransitions */}}
+			default:
+				break;
+		}
+	}
+
+	{{- range $state.GetNullTransitions }}
+		{{- $nullTransition := . }}
+
+		{{- if $nullTransition.HasCondition }}
+			template <typename T>
+			bool Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}() const
+			{
+				const auto& gochart = *this;
+				{{$nullTransition.Condition}};
+			}
+		{{- end }}{{/* if $nullTransition.HasCondition */}}
+
+		{{- if $nullTransition.HasAction }}
+			template <typename T>
+			void Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}()
+			{
+				auto& gochart = *this;
+				{{$nullTransition.Action}};
+			}
+		{{- end }}{{/* if $nullTransition.HasAction */}}
+	{{- end }}{{/* range $state.GetNullTransitions */}}
+
+	{{- range $sc.Triggers }}
+		{{- $trigger := . }}
+
+		{{/***** TRANSITIONS ****************************************************************/}}
+
+		{{- if $state.HasTransition $trigger }}
+			{{- $transition := $state.GetTransition $trigger }}
+
+			{{/***** TRANSITION CONDITIONS *******/}}
+			{{- if $transition.HasCondition }}
+				{{- $args := $trigger.ArgsStringList | join ", " }}
+				template <typename T>
+				bool Gochart<T>::{{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}({{$args}}) const
+				{
+					const auto& gochart = *this;
+					{{$transition.Condition}};
+				}
+			{{- end }}{{/* $transition.HasCondition */}}
+
+			{{/***** TRANSITION ACTIONS *******/}}
+			{{- if $transition.HasAction }}
+				{{- $args := $trigger.ArgsStringList | join ", " }}
+				template <typename T>
+				void Gochart<T>::{{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}({{$args}})
+				{
+					auto& gochart = *this;
+					{{$transition.Action}};
+				}
+			{{- end }}{{/* if $transition.HasAction */}}
+		{{- end }}{{/* $state.HasTransition */}}
+
+		{{/***** CAPTURES *******************************************************************/}}
+
+		{{- if $state.HasCapture $trigger }}
+			{{- $capture := $state.GetCapture $trigger }}
+			{{- if $capture.HasCondition }}
+				{{- $args := $trigger.ArgsStringList | join ", " }}
+				template <typename T>
+				bool Gochart<T>::{{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}({{$args}}) const
+				{
+					const auto& gochart = *this;
+					{{$capture.Condition}};
+				}
+			{{- end }}{{/* if $capture.HasCondition */}}
+		{{- end }}{{/* if $state.HasCapture $trigger */}}
+	{{- end }}{{/* range $sc.Triggers */}}
+{{- end }}{{/* range $sc.States */}}
+
+// State Reactions ---------------------------------------------------------------------------------
+
+{{- $reactionTypes := list "Enter" "Exit" "Capture" }}
+{{- range $reactionTypes }}
+	{{- $reactionType := . }}
+
+	template <typename T>
+	void Gochart<T>::Call{{$reactionType}}Reaction(EState state, ETrigger trigger, const void* trigger_data)
+	{
+		switch (state)
+		{
+			{{- range $sc.States }}
+			{{- $state := . }}
+			case EState::{{$state.Name}}:
+				{{$state.DisplayName}}_Call{{$reactionType}}Reaction(trigger, trigger_data);
+				return;
+			{{- end }}
+			case EState::__Invalid__:
+				break;
+		}
+
+		GOCHART_DEBUG_BREAK;
+	}
+
+	{{- range $sc.States }}
+		{{- $state := . }}
+
+		template <typename T>
+		void Gochart<T>::{{$state.DisplayName}}_Call{{$reactionType}}Reaction(ETrigger trigger, const void* trigger_data)
+		{
+			switch (trigger)
+			{
+				{{- range $sc.Triggers }}
+				{{- $trigger := . }}
+				case ETrigger::{{$trigger.Name}}:
+				{{- if $state.HasReaction $reactionType $trigger }}
+					{
+						// We cast the trigger data to the correct type.
+						assert(trigger_data != nullptr);
+						auto* data = reinterpret_cast<const {{$internal}}::{{$trigger.Name}}Data*>(trigger_data);
+
+						// Now we call the handler with the arguments.
+						GetOwner().{{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}(
+							{{ TriggerCallArgs $trigger "data->" | join ", " }}
+						);
+						return;
+					}
+				{{- else }}
+					// State {{$state.Name}} does not have an {{$reactionType}} reaction for trigger {{$trigger.Name}}.
+					return;
+				{{- end }}
+				{{- end }}
+				case ETrigger::__Invalid__:
+				{
+					{{- if $state.HasDefaultReaction $reactionType }}
+					// Default {{$reactionType}}.
+					GetOwner().{{$state.DisplayName}}_{{$reactionType}}();
+					{{- else }}
+					// No default {{$reactionType}} reaction for state {{$state.SafeName}}.
+					{{- end }}
+					return;
+				}
+			}
+
+			GOCHART_DEBUG_BREAK;
+		}
+	{{- end }}{{/* range $sc.States */}}
+{{- end }}{{/* range $reactionTypes */}}
+
+
 
 // Enter/Exit/Capture ------------------------------------------------------------------------------
 
@@ -783,13 +710,13 @@ void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_
     if (trigger != ETrigger::__Invalid__ && {{$internal}}::HasEnterReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
-        {{$internal}}::{{$impl}}::CallEnterReaction(*this, state, trigger, trigger_data);
+        CallEnterReaction(state, trigger, trigger_data);
     }
 
     // Now we check if we need to also call the default enter reaction.
     if ({{$internal}}::HasEnterReaction(state, ETrigger::__Invalid__))
     {
-        {{$internal}}::{{$impl}}::CallEnterReaction(*this, state, ETrigger::__Invalid__, nullptr);
+        CallEnterReaction(state, ETrigger::__Invalid__, nullptr);
     }
 
 	// If we have no more children, we know that we are the last enter of this route, so we can
@@ -826,13 +753,13 @@ void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const vo
 			for (EState target_state : {{$internal}}::k{{$state.DisplayName}}NullTransitionTargetsArray)
 			{
 				// Check if this null transition has a condition.
-				if (!{{$internal}}::{{$impl}}::{{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting(*this, target_state))
+				if (!{{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting(target_state))
 				{
 					continue;
 				}
 
 				// Check if this null transition has an embedded action.
-				{{$internal}}::{{$impl}}::{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting(*this, target_state);
+				{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting(target_state);
 
 				// Trigger immediatelly the transition.
 				ProcessTransition(state, target_state, ETrigger::__Invalid__, nullptr);
@@ -900,13 +827,13 @@ void Gochart<T>::ExitState(EState state, ETrigger trigger, const void* trigger_d
     if (trigger != ETrigger::__Invalid__ && {{$internal}}::HasExitReaction(state, trigger))
     {
         assert(trigger_data != nullptr);
-        {{$internal}}::{{$impl}}::CallExitReaction(*this, state, trigger, trigger_data);
+        CallExitReaction(state, trigger, trigger_data);
     }
 
     // Then we call the default exit.
     if ({{$internal}}::HasExitReaction(state, ETrigger::__Invalid__))
     {
-        {{$internal}}::{{$impl}}::CallExitReaction(*this, state, ETrigger::__Invalid__, nullptr);
+        CallExitReaction(state, ETrigger::__Invalid__, nullptr);
     }
 
 	// If the parent is concurrent, then we mark this concurrent group as invalid (stopped).
@@ -954,7 +881,7 @@ void Gochart<T>::CaptureTrigger(EState state, ETrigger trigger, const void* trig
 {
     assert(state != EState::__Invalid__);
 
-    {{$internal}}::{{$impl}}::CallCaptureReaction(*this, state, trigger, trigger_data);
+    CallCaptureReaction(state, trigger, trigger_data);
 }
 
 // ProcessTriggerQueue -----------------------------------------------------------------------------
@@ -987,7 +914,7 @@ void Gochart<T>::ProcessTriggerQueue()
 				continue;
 			}
 
-			{{$internal}}::{{$impl}}::ProcessTrigger(*this, state, entry);
+			ProcessTrigger(state, entry);
 		}
 
         ProcessingState->TriggerQueue.Dequeue();
@@ -1068,6 +995,9 @@ const char* ToString(EState state)
 	GOCHART_DEBUG_BREAK;
 	return "<unknown>";
 }
+
+
+
 
 namespace {{$internal}}
 {
@@ -1176,6 +1106,10 @@ bool IsLeafState(EState state)
 {
 	return GetChildCount(state) == 0;
 }
+
+
+
+
 
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $reactionTypes }}
@@ -1341,7 +1275,7 @@ void Route::Compute(EState from, EState to, Route* out)
 
 // TriggerRingBufferQueue Implementation -----------------------------------------------------------
 
-void TriggerRingBufferQueue::Enqueue(TriggerEntry&& entry)
+void TriggerRingBufferQueue::Enqueue({{$internal}}::TriggerEntry&& entry)
 {
     assert(!IsFull());
     RingBuffer[WriteIndex] = std::move(entry);

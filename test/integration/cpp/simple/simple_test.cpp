@@ -11,19 +11,6 @@
 class Delegate
 {
 public:
-    // Statechart begin.
-    void StateDoor_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
-    void StateDoorInactive_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
-    void StateDoorOpened_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
-    void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { TrackCall(__FUNCTION__); }
-    void StateWindowInitial_Enter() { TrackCall(__FUNCTION__); }
-    void StateWindowInitial_Exit() { TrackCall(__FUNCTION__); }
-    void StateWindowIdle_Enter() { TrackCall(__FUNCTION__); }
-
-    void ActionFunction(bool active) { TrackCall(__FUNCTION__); }
-    void NullTransitionCall() { TrackCall(__FUNCTION__); }
-    // Statechart end.
-
     const std::vector<std::string>& GetCalls() const { return Calls; }
 
     size_t GetCallCount(const char* function_name) const
@@ -41,6 +28,22 @@ public:
     }
 
 private:
+    using GochartType = gochart::Door::Gochart<Delegate>;
+    friend GochartType;
+
+    // Statechart begin.
+    void StateDoor_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorInactive_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorOpened_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
+    void StateDoorMoving_EnterToggleDoor(bool open, bool fast) { TrackCall(__FUNCTION__); }
+    void StateWindowInitial_Enter() { TrackCall(__FUNCTION__); }
+    void StateWindowInitial_Exit() { TrackCall(__FUNCTION__); }
+    void StateWindowIdle_Enter() { TrackCall(__FUNCTION__); }
+
+    void ActionFunction(bool active) { TrackCall(__FUNCTION__); }
+    void NullTransitionCall() { TrackCall(__FUNCTION__); }
+    // Statechart end.
+
     void TrackCall(const std::string& function_name)
     {
         auto extracted = test::ExtractFunctionName(function_name);
@@ -50,6 +53,7 @@ private:
     }
 
     std::vector<std::string> Calls;
+
 };
 
 TEST(SimpleTest, BasicAssertions)

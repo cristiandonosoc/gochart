@@ -7,7 +7,6 @@
 {{- $sc := $root.Statechart }}
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
-{{- $impl := "Gochart_Impl" }}
 
 #include "{{$root.ForwardDeclareInclude}}"
 
@@ -22,8 +21,8 @@ namespace {{$namespace}}
 namespace {{$internal}}
 {
 
+struct TriggerEntry; // Forward declare.
 struct TriggerProcessingState; // Forward declare.
-class {{$impl}};	  // Forward declare.
 
 constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
 
@@ -69,29 +68,6 @@ public:
     {{- end }}
     // **** TRIGGER API END ****
 
-public:
-    // **** CALLBACK API BEGIN ****
-    {{- $reactionTypes := list "Enter" "Exit" "Capture" }}
-    {{- range $_, $state := $sc.States }}
-    // State {{$state.Name}}.
-    {{- range $_, $reactionType := $reactionTypes }}
-
-    {{- if $state.HasDefaultReaction $reactionType }}
-    void {{$state.DisplayName}}_{{$reactionType}}() { Owner->{{$state.DisplayName}}_{{$reactionType}}(); }
-    {{- end }}
-
-    {{- range $_, $trigger := $sc.Triggers }}
-    {{- if $state.HasReaction $reactionType $trigger }}
-    {{- $args := $trigger.ArgsStringList | join ", " }}
-    {{- $argsNames := $trigger.ArgsNameList | join ", " }}
-    void {{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}({{$args}}) { Owner->{{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}({{$argsNames}}); }
-    {{- end }}
-    {{- end }}{{/* range $sc.Triggers */}}
-
-    {{- end }}{{/* range $reactionTypes */}}
-    {{- end }}{{/* range $sc.States */}}
-    // **** CALLBACK API END ****
-
 private:
 	Gochart() = delete;
 
@@ -104,6 +80,7 @@ private:
 	Gochart& operator=(Gochart&&) = delete;
 
 private:
+	// Functional runtime.
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateLeafConditions(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data);
@@ -112,6 +89,69 @@ private:
     void CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data);
     void ProcessTriggerQueue();
     void ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data);
+
+private:
+	// **** PRIVATE CALLBACK API BEGIN ****
+
+	bool HandleTrigger(EState state, const {{$internal}}::TriggerEntry& trigger_entry);
+	void ProcessTrigger(EState state, const {{$internal}}::TriggerEntry& trigger_entry);
+
+	{{- range $sc.States }}
+		{{- $state := . }}
+
+		bool {{$state.DisplayName}}_HandleTrigger(const {{$internal}}::TriggerEntry& trigger_entry);
+		bool {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting(EState target_state) const;
+		void {{$state.DisplayName}}_EvaluateNullTransitionActionTargeting(EState target_state);
+
+		{{- range $state.GetNullTransitions }}
+			{{- $nullTransition := . }}
+			{{- if $nullTransition.HasCondition }}
+				bool {{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}() const;
+			{{- end }}{{/* if $nullTransition.HasCondition */}}
+			{{- if $nullTransition.HasAction }}
+				void {{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}();
+			{{- end }}{{/* if $nullTransition.HasAction */}}
+		{{- end }}{{/* range $state.GetNullTransitions */}}
+
+		{{- range $sc.Triggers }}
+			{{- $trigger := . }}
+			{{- if $state.HasTransition $trigger }}
+				{{- $transition := $state.GetTransition $trigger }}
+				{{- if $transition.HasCondition }}
+					{{- $args := $trigger.ArgsStringList | join ", " }}
+					bool {{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}({{$args}}) const;
+				{{- end }}{{/* if $transition.HasCondition */}}
+
+				{{- if $transition.HasAction }}
+					{{- $args := $trigger.ArgsStringList | join ", " }}
+					void {{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}({{$args}});
+				{{- end }}{{/* if $transition.HasAction */}}
+			{{- end }}{{/* $state.HasTransition */}}
+
+			{{- if $state.HasCapture $trigger }}
+				{{- $capture := $state.GetCapture $trigger }}
+				{{- if $capture.HasCondition }}
+					{{- $args := $trigger.ArgsStringList | join ", " }}
+					bool {{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}({{$args}}) const;
+				{{- end }}{{/* if $capture.HasCondition */}}
+			{{- end }}{{/* if $state.HasCapture $trigger */}}
+		{{- end }}{{/* range $sc.Triggers */}}
+
+	{{- end }}{{/* range $sc.States */}}
+
+	{{/****** STATE REACTIONS *******************************************************************/}}
+
+	{{- $reactionTypes := list "Enter" "Exit" "Capture" }}
+	{{- range $reactionTypes }}
+		{{- $reactionType := . }}
+		void Call{{$reactionType}}Reaction(EState state, ETrigger trigger, const void* trigger_data);
+		{{- range $sc.States }}
+			{{- $state := . }}
+			void {{$state.DisplayName}}_Call{{$reactionType}}Reaction(ETrigger trigger, const void* trigger_data);
+		{{- end }}{{/* range $sc.States */}}
+	{{- end }}{{/* range $reactionTypes */}}
+
+	// **** PRIVATE CALLBACK API END ****
 
 private:
 	ConcurrentGroupStateArray CurrentStates;
@@ -132,8 +172,6 @@ private: \
     GOCHART_DEFINE_STATE_FLAG(ProcessingTriggerQueue, 3);
 
 #undef GOCHART_DEFINE_STATE_FLAG
-
-	friend class {{$internal}}::{{$impl}};
 };
 
 } // namespace {{$namespace}}

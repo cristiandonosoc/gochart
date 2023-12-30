@@ -7,7 +7,6 @@
 {{- $sc := $root.Statechart }}
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
-{{- $impl := "Gochart_Impl" }}
 
 /***************************************************************************************************
  *
