@@ -35,12 +35,15 @@ capture capture if {
 `
 
 	want := []*Token{
+		{id: Token_Comment, literal: "This is a comment.", line: 2, char: 1},
+
 		{id: Token_LeftParen, literal: "(", line: 3, char: 1},
 		{id: Token_LeftParen, literal: "(", line: 3, char: 2},
 		{id: Token_RightParen, literal: ")", line: 3, char: 4},
 		{id: Token_RightParen, literal: ")", line: 3, char: 5},
 		{id: Token_LeftBrace, literal: "{", line: 3, char: 6},
 		{id: Token_RightBrace, literal: "}", line: 3, char: 7},
+		{id: Token_Comment, literal: "Grouping stuff.", line: 3, char: 9},
 
 		{id: Token_LeftAngleBracket, literal: "<", line: 4, char: 1},
 		{id: Token_LeftAngleBracket, literal: "<", line: 4, char: 2},

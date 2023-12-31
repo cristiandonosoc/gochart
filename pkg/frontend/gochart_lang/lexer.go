@@ -76,6 +76,8 @@ const (
 
 	Token_Identifier // Any string that is not quoted.
 
+	Token_Comment // A code comment.
+
 	Token_EOF
 )
 
@@ -135,6 +137,8 @@ func (t TokenIdentifier) String() string {
 		return "<code>"
 	case Token_Identifier:
 		return "<identifier>"
+	case Token_Comment:
+		return "<comment>"
 	case Token_EOF:
 		return "<EOF>"
 	default:

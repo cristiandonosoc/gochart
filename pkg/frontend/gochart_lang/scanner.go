@@ -5,6 +5,7 @@ package gochart_lang
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -150,8 +151,10 @@ NEXT_TOKEN_LOOP:
 		// We consume the tokens until the end of line and then return to the processing of the next
 		// token as if we had never found the comment.
 		if peek == '/' {
-			if err := s.handleComment(); err != nil {
+			if commentToken, err := s.handleComment(); err != nil {
 				return nil, fmt.Errorf("handling comment: %w", err)
+			} else {
+				tokens = append(tokens, commentToken)
 			}
 			// Comment consumed. We go to scan for the next token.
 			continue NEXT_TOKEN_LOOP
@@ -807,25 +810,30 @@ func (s *Scanner) globRunes(openRune rune, closeRune rune, allowNested bool, all
 	return runes, nil
 }
 
-func (s *Scanner) handleComment() error {
+func (s *Scanner) handleComment() (*Token, error) {
+	startLine := s.line
+	startChar := s.currentRuneCountInLine + 1
+
 	// We assume the caller called us with a '/' peek.
 	if r, err := s.pop(); err != nil {
-		return fmt.Errorf("popping rune: %w", err)
+		return nil, fmt.Errorf("popping rune: %w", err)
 	} else if r != '/' {
-		return fmt.Errorf("comment handling expected a '/' first character, got %q", r)
+		return nil, fmt.Errorf("comment handling expected a '/' first character, got %q", r)
 	}
 
+	var commentRunes []rune
 	if isSlash, err := s.match('/'); err != nil {
-		return fmt.Errorf("matching '/': %w", err)
+		return nil, fmt.Errorf("matching '/': %w", err)
 	} else if isSlash {
 		// We found a comment! It goes until the end of line.
 		for !s.atEnd() {
 			peek, err := s.peek()
 			if err != nil {
-				return fmt.Errorf("peeking: %w", err)
+				return nil, fmt.Errorf("peeking: %w", err)
 			}
 
 			if peek != '\n' && !s.atEnd() {
+				commentRunes = append(commentRunes, peek)
 				s.advance(peek)
 				continue
 			}
@@ -834,10 +842,16 @@ func (s *Scanner) handleComment() error {
 		}
 	} else {
 		// Single slash doesn't mean anything in our language.
-		return fmt.Errorf("single '/' token found")
+		return nil, fmt.Errorf("single '/' token found")
 	}
 
-	return nil
+	comment := strings.TrimSpace(string(commentRunes))
+	return &Token{
+		id:      Token_Comment,
+		literal: comment,
+		line:    startLine,
+		char:    startChar,
+	}, nil
 }
 
 // eatWhitespace is a helper function meant to simply ignore whitespace characters.
