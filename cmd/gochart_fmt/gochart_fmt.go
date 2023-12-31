@@ -78,7 +78,7 @@ func internalMain() error {
 					if err != nil {
 						return fmt.Errorf("reading all content: %w", err)
 					}
-					fmt.Println(content)
+					fmt.Println(string(content))
 
 					return nil
 				},

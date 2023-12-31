@@ -113,25 +113,25 @@ func newFormatStatechart(sc *ir.Statechart) *formatStatechart {
 		return entries[i].FrontendEntry().Index() < entries[j].FrontendEntry().Index()
 	})
 
+	f.entries = entries
 	return f
 }
 
 func (f *formatStatechart) FrontendEntry() frontend_common.FrontendEntry { return f.sc.FrontendData }
 
 func (f *formatStatechart) Name() string                   { return fmt.Sprintf("statechart:%s", f.sc.Name) }
-func (f *formatStatechart) Indents() bool                  { return false }
+func (f *formatStatechart) Indents() bool                  { return true }
 func (f *formatStatechart) ChildEntries() []formatterEntry { return f.entries }
 
 func (f *formatStatechart) Write(w io.Writer) {}
 func (f *formatStatechart) DebugWrite(w io.Writer) {
-
+	writeStringf(w, "%s\n", f.Name())
 }
 
 // Trigger -----------------------------------------------------------------------------------------
 
 type formatTrigger struct {
 	trigger *ir.Trigger
-	entries []formatterEntry
 }
 
 func newFormatTrigger(trigger *ir.Trigger) *formatTrigger {
@@ -148,7 +148,7 @@ func (f *formatTrigger) Name() string {
 	return fmt.Sprintf("trigger:%s(index=%d)", f.trigger.Name, f.FrontendEntry().Index())
 }
 func (f *formatTrigger) Indents() bool                  { return false }
-func (f *formatTrigger) ChildEntries() []formatterEntry { return f.entries }
+func (f *formatTrigger) ChildEntries() []formatterEntry { return nil }
 
 func (f *formatTrigger) Write(w io.Writer) {}
 func (f *formatTrigger) DebugWrite(w io.Writer) {
@@ -158,7 +158,8 @@ func (f *formatTrigger) DebugWrite(w io.Writer) {
 // State -------------------------------------------------------------------------------------------
 
 type formatState struct {
-	state *ir.State
+	state   *ir.State
+	entries []formatterEntry
 }
 
 func newFormatState(state *ir.State) *formatState {
@@ -166,6 +167,7 @@ func newFormatState(state *ir.State) *formatState {
 		state: state,
 	}
 
+	f.entries = collectChildrenFromState(state)
 	return f
 }
 
@@ -174,8 +176,8 @@ func (f *formatState) FrontendEntry() frontend_common.FrontendEntry { return f.s
 func (f *formatState) Name() string {
 	return fmt.Sprintf("state:%s(index=%d)", f.state.Name, f.FrontendEntry().Index())
 }
-func (f *formatState) Indents() bool                  { return false }
-func (f *formatState) ChildEntries() []formatterEntry { return nil }
+func (f *formatState) Indents() bool                  { return true }
+func (f *formatState) ChildEntries() []formatterEntry { return f.entries }
 
 func (f *formatState) Write(w io.Writer) {}
 func (f *formatState) DebugWrite(w io.Writer) {
@@ -283,7 +285,7 @@ func (f *formatTransition) FrontendEntry() frontend_common.FrontendEntry {
 }
 
 func (f *formatTransition) Name() string {
-	return fmt.Sprintf("transition:%s->%d(index=%d)", f.transition.Trigger.SafeName(), f.transition.To.SafeName(), f.FrontendEntry().Index())
+	return fmt.Sprintf("transition:%s->%s(index=%d)", f.transition.Trigger.SafeName(), f.transition.To.SafeName(), f.FrontendEntry().Index())
 }
 func (f *formatTransition) Indents() bool                  { return false }
 func (f *formatTransition) ChildEntries() []formatterEntry { return nil }

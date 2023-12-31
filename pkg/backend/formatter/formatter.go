@@ -8,7 +8,6 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
-	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -63,11 +62,8 @@ func (fgb *formatterGochartBackend) Generate(ctx context.Context, sc *ir.Statech
 		opt(fgb.options)
 	}
 
-	var fe frontend_common.FrontendEntry = sc.FrontendData
+	f := newFormatterEntry(sc)
 	iw := NewIndentedWriter()
-
-	f := newFormatterEntry(fe)
-
 	if err := fgb.formatEntry(ctx, f, iw, fgb.options.Debug); err != nil {
 		return nil, fmt.Errorf("formatting entries: %w", err)
 	}
@@ -88,14 +84,14 @@ func (fgb *formatterGochartBackend) formatEntry(ctx context.Context, f formatter
 		// Continue.
 	}
 
-	if f.Indents() {
-		iw.MustIncreaseIndent()
-	}
-
 	if !debug {
 		f.Write(iw)
 	} else {
 		f.DebugWrite(iw)
+	}
+
+	if f.Indents() {
+		iw.MustIncreaseIndent()
 	}
 
 	for _, cfe := range f.ChildEntries() {
