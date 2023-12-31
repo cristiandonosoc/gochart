@@ -60,7 +60,7 @@ type TriggerData struct {
 	Name       string
 	ArgsString string
 
-	Frontend_EntryIndex int
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 	Frontend_ArgsPos    *files.LoadedFilePosition
@@ -77,7 +77,7 @@ type StateData struct {
 
 	Captures []*CaptureData
 
-	Frontend_EntryIndex int
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 }
@@ -87,7 +87,7 @@ type StateData struct {
 type ReactionData struct {
 	Trigger string
 
-	Frontend_EntryIndex int
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
@@ -97,7 +97,7 @@ type CaptureData struct {
 	Trigger   string
 	Condition string
 
-	Frontend_EntryIndex int
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
@@ -111,7 +111,7 @@ type TransitionData struct {
 	Condition string
 	Action    string
 
-	Frontend_EntryIndex int
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 	Frontend_TargetPos  *files.LoadedFilePosition

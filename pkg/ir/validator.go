@@ -108,7 +108,7 @@ func (tbt *triggerBasedTracker) appendTransition(transition *Transition) {
 	}
 
 	tbt.entries[transition.Trigger] = append(tbt.entries[transition.Trigger], &triggerBasedEntry{
-		index:       transition.frontendData.Frontend_EntryIndex,
+		index:       transition.frontendData.Frontend_Index,
 		conditional: transition.HasCondition(),
 		kind:        "transition",
 		position:    transition.frontendData.Frontend_TriggerPos,
@@ -123,7 +123,7 @@ func (tbt *triggerBasedTracker) appendCapture(capture *StateCapture) {
 	}
 
 	tbt.entries[capture.Trigger] = append(tbt.entries[capture.Trigger], &triggerBasedEntry{
-		index:       capture.frontendData.Frontend_EntryIndex,
+		index:       capture.frontendData.Frontend_Index,
 		conditional: capture.HasCondition(),
 		kind:        "capture",
 		position:    capture.frontendData.Frontend_TriggerPos,

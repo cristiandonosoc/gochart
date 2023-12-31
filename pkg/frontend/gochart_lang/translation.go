@@ -47,7 +47,7 @@ func (ft *frontendTranslator) translateTrigger(nt *ASTNodeTrigger) *common.Trigg
 	return &common.TriggerData{
 		Name:                nt.Name,
 		ArgsString:          nt.ArgsString,
-		Frontend_EntryIndex: nt.entryIndex,
+		Frontend_Index:      nt.entryIndex,
 		Frontend_KeywordPos: tokenToPosition(ft.lf, nt.keywordToken),
 		Frontend_NamePos:    tokenToPosition(ft.lf, nt.nameToken),
 		Frontend_ArgsPos:    tokenToPosition(ft.lf, nt.argsToken),
@@ -59,7 +59,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 		Name:                ns.Name,
 		Parent:              ns.ParentName,
 		Options:             ft.translateOptions(ns.Options),
-		Frontend_EntryIndex: ns.entryIndex,
+		Frontend_Index:      ns.entryIndex,
 		Frontend_KeywordPos: tokenToPosition(ft.lf, ns.keywordToken),
 		Frontend_NamePos:    tokenToPosition(ft.lf, ns.nameToken),
 	}
@@ -67,7 +67,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 	for _, er := range ns.EnterReactions {
 		state.EnterReactions = append(state.EnterReactions, &common.ReactionData{
 			Trigger:             er.Trigger,
-			Frontend_EntryIndex: er.entryIndex,
+			Frontend_Index:      er.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, er.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, er.triggerToken),
 		})
@@ -76,7 +76,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 	for _, er := range ns.ExitReactions {
 		state.ExitReactions = append(state.ExitReactions, &common.ReactionData{
 			Trigger:             er.Trigger,
-			Frontend_EntryIndex: er.entryIndex,
+			Frontend_Index:      er.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, er.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, er.triggerToken),
 		})
@@ -87,7 +87,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 		state.Captures = append(state.Captures, &common.CaptureData{
 			Trigger:             c.Trigger,
 			Condition:           c.Condition,
-			Frontend_EntryIndex: c.entryIndex,
+			Frontend_Index:      c.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, c.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, c.triggerToken),
 		})
@@ -101,7 +101,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 			Trigger:             t.Trigger,
 			Condition:           t.Condition,
 			Action:              t.Action,
-			Frontend_EntryIndex: t.entryIndex,
+			Frontend_Index:      t.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, t.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, t.triggerToken),
 			Frontend_TargetPos:  tokenToPosition(ft.lf, t.targetToken),
