@@ -38,7 +38,7 @@ type Statechart struct {
 
 	TriggerMap   map[string]*Trigger
 	StateMap     map[string]*State
-	frontendData *frontend_common.StatechartData
+	FrontendData *frontend_common.StatechartData
 }
 
 func (sc *Statechart) ConcurrentGroupCount() int {
@@ -51,7 +51,7 @@ type Trigger struct {
 	Name string
 	Args []*TriggerArgument
 
-	frontendData *frontend_common.TriggerData
+	FrontendData *frontend_common.TriggerData
 }
 
 func (t *Trigger) SafeName() string {
@@ -114,7 +114,7 @@ type State struct {
 	Parent *State
 
 	statechart   *Statechart
-	frontendData *frontend_common.StateData
+	FrontendData *frontend_common.StateData
 }
 
 func (s *State) IsRoot() bool {
@@ -320,7 +320,7 @@ type StateReaction struct {
 	Trigger *Trigger
 	Kind    StateReactionKind
 
-	frontendData *frontend_common.ReactionData
+	FrontendData *frontend_common.ReactionData
 }
 
 func (sr *StateReaction) String() string {
@@ -338,7 +338,7 @@ type StateCapture struct {
 	Trigger   *Trigger
 	Condition string
 
-	frontendData *frontend_common.CaptureData
+	FrontendData *frontend_common.CaptureData
 }
 
 func (sc *StateCapture) String() string {
@@ -359,7 +359,7 @@ type Transition struct {
 	Condition string
 	Action    string
 
-	frontendData *frontend_common.TransitionData
+	FrontendData *frontend_common.TransitionData
 }
 
 func (t *Transition) IsNullTransition() bool {

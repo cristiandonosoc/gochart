@@ -42,7 +42,7 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 	// We create the base root state.
 	root := &State{
 		Name:         scdata.Root.Name,
-		frontendData: scdata.Root,
+		FrontendData: scdata.Root,
 	}
 
 	// We create the base state object (will be filled more later).
@@ -51,7 +51,7 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 		// By default the namespace is same as the name. This might be override by an option.
 		Namespace:    scdata.Name,
 		Root:         root,
-		frontendData: scdata,
+		FrontendData: scdata,
 	}
 	if err := parseStatechartOptions(statechart, scdata.Options); err != nil {
 		return nil, fmt.Errorf("statechart %q: parsing options: %w", scdata.Name, err)
@@ -124,7 +124,7 @@ func (ih *inputHandler) createTrigger(tdata *frontend_common.TriggerData) (*Trig
 	return &Trigger{
 		Name:         tdata.Name,
 		Args:         args,
-		frontendData: tdata,
+		FrontendData: tdata,
 	}, nil
 }
 
@@ -148,7 +148,7 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 		// For now, we simply create the state. Parenthood will be set on a second pass.
 		state := &State{
 			Name:         statedata.Name,
-			frontendData: statedata,
+			FrontendData: statedata,
 		}
 		states = append(states, state)
 		stateMap[statedata.Name] = state
@@ -162,9 +162,9 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 		}
 
 		// Search for the parent and mark it as a child of the other.
-		parent, ok := stateMap[state.frontendData.Parent]
+		parent, ok := stateMap[state.FrontendData.Parent]
 		if !ok {
-			return errors.InternalErrorf("state %q has unexistent parent state %q", state.Name, state.frontendData.Parent)
+			return errors.InternalErrorf("state %q has unexistent parent state %q", state.Name, state.FrontendData.Parent)
 		}
 
 		// The parent should not have have this state already.
@@ -180,26 +180,26 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 	// Collect extra data from the states.
 	for name, state := range stateMap {
 		// Parse the options for this state.
-		if err := parseStateOptions(state, state.frontendData.Options); err != nil {
+		if err := parseStateOptions(state, state.FrontendData.Options); err != nil {
 			return fmt.Errorf("state %q: parsing options: %w", state.Name, err)
 		}
 
 		// Collect the enter reactions.
-		enters, err := ih.collectReactions(state.frontendData.EnterReactions, StateReactionKind_Enter)
+		enters, err := ih.collectReactions(state.FrontendData.EnterReactions, StateReactionKind_Enter)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting enter reactions: %w", name, err)
 		}
 		state.EnterReactions = enters
 
 		// Collect the exit reactions.
-		exits, err := ih.collectReactions(state.frontendData.ExitReactions, StateReactionKind_Exit)
+		exits, err := ih.collectReactions(state.FrontendData.ExitReactions, StateReactionKind_Exit)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting exit reactions: %w", name, err)
 		}
 		state.ExitReactions = exits
 
 		// Collect the captures.
-		captures, err := ih.collectCaptures(state.frontendData.Captures)
+		captures, err := ih.collectCaptures(state.FrontendData.Captures)
 		if err != nil {
 			return fmt.Errorf("state %q: collecting captures: %w", name, err)
 		}
@@ -211,7 +211,7 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 		// For each state, if there is no default child, the first child should be default.
 		// TODO(cdc): Make the first-child-as-default heuristic toggable via options.
 		prefix := fmt.Sprintf("state %q", state.Name)
-		if err := ih.determineDefaultChild(prefix, state.frontendData.Frontend_NamePos, state.Children); err != nil {
+		if err := ih.determineDefaultChild(prefix, state.FrontendData.Frontend_NamePos, state.Children); err != nil {
 			return fmt.Errorf("determining default child: %w", err)
 		}
 	}
@@ -293,7 +293,7 @@ func (ih *inputHandler) collectReactions(frontendReactions []*frontend_common.Re
 		reactions = append(reactions, &StateReaction{
 			Trigger:      trigger,
 			Kind:         kind,
-			frontendData: fr,
+			FrontendData: fr,
 		})
 	}
 
@@ -312,7 +312,7 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*frontend_common.Capt
 		captures = append(captures, &StateCapture{
 			Trigger:      trigger,
 			Condition:    fc.Condition,
-			frontendData: fc,
+			FrontendData: fc,
 		})
 	}
 
@@ -361,7 +361,7 @@ func (ih *inputHandler) createTransition(tdata *frontend_common.TransitionData) 
 		Trigger:      trigger,
 		Condition:    tdata.Condition,
 		Action:       tdata.Action,
-		frontendData: tdata,
+		FrontendData: tdata,
 	}
 
 	return transition, from, nil

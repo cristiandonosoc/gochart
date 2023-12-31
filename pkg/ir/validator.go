@@ -42,7 +42,7 @@ func newStateValidator(ih *inputHandler, state *State) *stateValidator {
 func (sv *stateValidator) validate() error {
 	// If it has children, at least one of them has to be marked default child.
 	if len(sv.state.Children) > 0 {
-		if err := validateDefaultChildExists(sv.state.frontendData.Frontend_NamePos, sv.state.Children); err != nil {
+		if err := validateDefaultChildExists(sv.state.FrontendData.Frontend_NamePos, sv.state.Children); err != nil {
 			return fmt.Errorf("state %q: validating that default child exists: %w", sv.state.Name, err)
 		}
 	}
@@ -66,7 +66,7 @@ func (sv *stateValidator) validateTransitions() error {
 	for _, transition := range sv.state.Transitions {
 		// Validate that the transition has the same concurrent group.
 		if sv.state.ConcurrentGroup != transition.To.ConcurrentGroup {
-			return errors.Errorf(transition.frontendData.Frontend_TargetPos, "Semantic",
+			return errors.Errorf(transition.FrontendData.Frontend_TargetPos, "Semantic",
 				"state %q can only transition to states within its own concurrent group, under %s",
 				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
 		}
@@ -108,10 +108,10 @@ func (tbt *triggerBasedTracker) appendTransition(transition *Transition) {
 	}
 
 	tbt.entries[transition.Trigger] = append(tbt.entries[transition.Trigger], &triggerBasedEntry{
-		index:       transition.frontendData.Frontend_Index,
+		index:       transition.FrontendData.Frontend_Index,
 		conditional: transition.HasCondition(),
 		kind:        "transition",
-		position:    transition.frontendData.Frontend_TriggerPos,
+		position:    transition.FrontendData.Frontend_TriggerPos,
 	})
 	tbt.transitionCount++
 }
@@ -123,10 +123,10 @@ func (tbt *triggerBasedTracker) appendCapture(capture *StateCapture) {
 	}
 
 	tbt.entries[capture.Trigger] = append(tbt.entries[capture.Trigger], &triggerBasedEntry{
-		index:       capture.frontendData.Frontend_Index,
+		index:       capture.FrontendData.Frontend_Index,
 		conditional: capture.HasCondition(),
 		kind:        "capture",
-		position:    capture.frontendData.Frontend_TriggerPos,
+		position:    capture.FrontendData.Frontend_TriggerPos,
 	})
 	tbt.captureCount++
 }
@@ -200,7 +200,7 @@ func validateDefaultChildExists(parentPos *files.LoadedFilePosition, states []*S
 		if state.Default {
 			// There can only be one default child state.
 			if foundDefault {
-				return errors.Errorf(state.frontendData.Frontend_NamePos, "Semantic",
+				return errors.Errorf(state.FrontendData.Frontend_NamePos, "Semantic",
 					"state %q marked as default when a default state already exists",
 					state.Name)
 			}

@@ -52,10 +52,17 @@ type StatechartData struct {
 	States      []*StateData
 	Transitions []*TransitionData
 
+	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 }
 
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (sd *StatechartData) Index() int                          { return sd.Frontend_Index }
+func (sd *StatechartData) Position() *files.LoadedFilePosition { return sd.Frontend_KeywordPos }
+
+// TriggerData is all the information the frontend has about a trigger definition.
 type TriggerData struct {
 	Name       string
 	ArgsString string
@@ -66,6 +73,12 @@ type TriggerData struct {
 	Frontend_ArgsPos    *files.LoadedFilePosition
 }
 
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (td *TriggerData) Index() int                          { return td.Frontend_Index }
+func (td *TriggerData) Position() *files.LoadedFilePosition { return td.Frontend_KeywordPos }
+
+// StateData is all the information the frontend has about a state definition.
 type StateData struct {
 	Name   string
 	Parent string
@@ -82,6 +95,11 @@ type StateData struct {
 	Frontend_NamePos    *files.LoadedFilePosition
 }
 
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (sd *StateData) Index() int                          { return sd.Frontend_Index }
+func (sd *StateData) Position() *files.LoadedFilePosition { return sd.Frontend_KeywordPos }
+
 // ReactionData represents entries for "reactions" to triggers.
 // This is mostly enter/exit statements.
 type ReactionData struct {
@@ -92,6 +110,11 @@ type ReactionData struct {
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (rd *ReactionData) Index() int                          { return rd.Frontend_Index }
+func (rd *ReactionData) Position() *files.LoadedFilePosition { return rd.Frontend_KeywordPos }
+
 // CaptureData represents captures, which "capture" a trigger and do things with them.
 type CaptureData struct {
 	Trigger   string
@@ -101,6 +124,11 @@ type CaptureData struct {
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
+
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (cd *CaptureData) Index() int                          { return cd.Frontend_Index }
+func (cd *CaptureData) Position() *files.LoadedFilePosition { return cd.Frontend_KeywordPos }
 
 // TransitionData represents a transition, which, like captures, hold a trigger and perform a
 // transition to another state within the gochart.
@@ -116,6 +144,11 @@ type TransitionData struct {
 	Frontend_TriggerPos *files.LoadedFilePosition
 	Frontend_TargetPos  *files.LoadedFilePosition
 }
+
+var _ FrontendEntry = (*StatechartData)(nil)
+
+func (td *TransitionData) Index() int                          { return td.Frontend_Index }
+func (td *TransitionData) Position() *files.LoadedFilePosition { return td.Frontend_KeywordPos }
 
 func (tdata *TransitionData) String() string {
 	return fmt.Sprintf("transition %s: %s > %s", tdata.Trigger, tdata.From, tdata.To)
