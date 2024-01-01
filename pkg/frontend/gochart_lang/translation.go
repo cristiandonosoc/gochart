@@ -38,6 +38,7 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *commo
 		Root:                states[0],
 		States:              states,
 		Transitions:         transitions,
+		Comments:            ft.translateComments(nsc.Comments),
 		Frontend_KeywordPos: tokenToPosition(ft.lf, nsc.keywordToken),
 		Frontend_NamePos:    tokenToPosition(ft.lf, nsc.nameToken),
 	}
@@ -114,6 +115,8 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 		states, transitions = ft.translateState(child, states, transitions)
 	}
 
+	state.Comments = ft.translateComments(ns.Comments)
+
 	return states, transitions
 }
 
@@ -129,6 +132,19 @@ func (ft *frontendTranslator) translateOptions(nos []*ASTNodeOption) []*common.O
 	}
 
 	return options
+}
+
+func (ft *frontendTranslator) translateComments(nodes []*ASTNodeComment) []*common.CommentData {
+	comments := make([]*common.CommentData, 0, len(nodes))
+	for _, node := range nodes {
+		comments = append(comments, &common.CommentData{
+			Comment:           node.comment,
+			Frontend_Index:    node.entryIndex,
+			Frontend_Position: tokenToPosition(ft.lf, node.token),
+		})
+	}
+
+	return comments
 }
 
 func tokenToPosition(lf *files.LoadedFile, token *Token) *files.LoadedFilePosition {

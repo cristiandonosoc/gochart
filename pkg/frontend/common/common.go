@@ -51,7 +51,8 @@ type StatechartData struct {
 	Root        *StateData
 	States      []*StateData
 	Transitions []*TransitionData
-	Comments    []*CommentData
+
+	Comments []*CommentData
 
 	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
@@ -160,11 +161,11 @@ func (tdata *TransitionData) String() string {
 type CommentData struct {
 	Comment string
 
-	index    int
-	position *files.LoadedFilePosition
+	Frontend_Index    int
+	Frontend_Position *files.LoadedFilePosition
 }
 
 var _ FrontendEntry = (*CommentData)(nil)
 
-func (cd *CommentData) Index() int                          { return cd.index }
-func (cd *CommentData) Position() *files.LoadedFilePosition { return cd.position }
+func (cd *CommentData) Index() int                          { return cd.Frontend_Index }
+func (cd *CommentData) Position() *files.LoadedFilePosition { return cd.Frontend_Position }
