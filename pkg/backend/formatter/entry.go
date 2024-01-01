@@ -35,6 +35,9 @@ func newFormatterEntry(e any) formatterEntry {
 		return newFormatCapture(v)
 	case *ir.Transition:
 		return newFormatTransition(v)
+	// Comment don't need a IR representation, so we use the frontend directly.
+	case *frontend_common.CommentData:
+		return newFormatComment(v)
 	default:
 		panic(fmt.Sprintf("no formatter for type %q", reflect.TypeOf(v).Name()))
 	}
@@ -57,10 +60,18 @@ func newFormatStatechartWrapper(sc *ir.Statechart) *formatStatechartWrapper {
 	}
 
 	// Create a child with the statechart as a child.
-	// TODO(cdc): Add comments into this wrapper.
+
 	entries := []formatterEntry{
 		newFormatStatechart(sc),
 	}
+
+	for _, entry := range sc.FrontendData.Comments {
+		entries = append(entries, newFormatterEntry(entry))
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].FrontendEntry().Index() < entries[j].FrontendEntry().Index()
+	})
 
 	f.entries = entries
 	return f
@@ -84,12 +95,8 @@ func (f *formatStatechartWrapper) Name() string                                 
 func (f *formatStatechartWrapper) Indents() bool                                { return false }
 func (f *formatStatechartWrapper) ChildEntries() []formatterEntry               { return f.entries }
 
-func (f *formatStatechartWrapper) Write(w io.Writer) {
-	// TODO(cdc): Print out of statechart comments.
-}
-func (f *formatStatechartWrapper) DebugWrite(w io.Writer) {
-	// TODO(cdc): Print out of statechart comments.
-}
+func (f *formatStatechartWrapper) Write(w io.Writer)      {}
+func (f *formatStatechartWrapper) DebugWrite(w io.Writer) {}
 
 type formatStatechart struct {
 	sc      *ir.Statechart
@@ -102,8 +109,9 @@ func newFormatStatechart(sc *ir.Statechart) *formatStatechart {
 	}
 
 	var entries []formatterEntry
-	for _, trigger := range sc.Triggers {
-		entries = append(entries, newFormatterEntry(trigger))
+
+	for _, entry := range sc.Triggers {
+		entries = append(entries, newFormatterEntry(entry))
 	}
 
 	// Go over the root state ang gets the entries from it.
@@ -117,9 +125,13 @@ func newFormatStatechart(sc *ir.Statechart) *formatStatechart {
 	return f
 }
 
-func (f *formatStatechart) FrontendEntry() frontend_common.FrontendEntry { return f.sc.FrontendData }
+func (f *formatStatechart) FrontendEntry() frontend_common.FrontendEntry {
+	return f.sc.Root.FrontendData
+}
 
-func (f *formatStatechart) Name() string                   { return fmt.Sprintf("statechart:%s", f.sc.Name) }
+func (f *formatStatechart) Name() string {
+	return fmt.Sprintf("%d:statechart:%s", f.sc.Root.FrontendData.Index(), f.sc.Name)
+}
 func (f *formatStatechart) Indents() bool                  { return true }
 func (f *formatStatechart) ChildEntries() []formatterEntry { return f.entries }
 
@@ -200,6 +212,9 @@ func collectChildrenFromState(state *ir.State) []formatterEntry {
 		entries = append(entries, newFormatterEntry(entry))
 	}
 	for _, entry := range state.Captures {
+		entries = append(entries, newFormatterEntry(entry))
+	}
+	for _, entry := range state.FrontendData.Comments {
 		entries = append(entries, newFormatterEntry(entry))
 	}
 
@@ -292,5 +307,34 @@ func (f *formatTransition) ChildEntries() []formatterEntry { return nil }
 
 func (f *formatTransition) Write(w io.Writer) {}
 func (f *formatTransition) DebugWrite(w io.Writer) {
+	writeStringf(w, "%s\n", f.Name())
+}
+
+// Comment -----------------------------------------------------------------------------------------
+
+type formatComment struct {
+	comment *frontend_common.CommentData
+}
+
+func newFormatComment(comment *frontend_common.CommentData) *formatComment {
+	f := &formatComment{
+		comment: comment,
+	}
+
+	return f
+}
+
+func (f *formatComment) FrontendEntry() frontend_common.FrontendEntry {
+	return f.comment
+}
+
+func (f *formatComment) Name() string {
+	return fmt.Sprintf("%d:comment:%q", f.FrontendEntry().Index(), f.comment.Comment)
+}
+func (f *formatComment) Indents() bool                  { return false }
+func (f *formatComment) ChildEntries() []formatterEntry { return nil }
+
+func (f *formatComment) Write(w io.Writer) {}
+func (f *formatComment) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }

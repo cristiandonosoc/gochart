@@ -161,16 +161,17 @@ var _ ASTNode = (*ASTNodeStatechart)(nil)
 func (n *ASTNodeStatechart) AppendNode(node ASTNode) {
 	switch v := node.(type) {
 	case *ASTNodeTrigger:
-		v.entryIndex = n.entryCount
+		// We use the indices of the root state.
+		v.entryIndex = n.Root.entryCount
+		n.Root.entryCount++
 		n.Triggers = append(n.Triggers, v)
 	case *ASTNodeComment:
 		v.entryIndex = n.entryCount
+		n.entryCount++
 		n.Comments = append(n.Comments, v)
 	default:
 		panic(fmt.Sprintf("unsupported type being appended %q", reflect.TypeOf(v).Name()))
 	}
-
-	n.entryCount++
 }
 
 func (n *ASTNodeStatechart) NonCommentEntryCount() int {
@@ -181,7 +182,10 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	p.debuglog("parsing statechart node")
 
 	// Create the tentative statechart to be able to track comments.
-	sc := &ASTNodeStatechart{}
+	// We create the root state immediatelly as we use that for the index source.
+	sc := &ASTNodeStatechart{
+		Root: &ASTNodeState{},
+	}
 
 	// See if we get any out of initial comments.
 	for {
@@ -232,12 +236,11 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	sc.keywordToken = baseToken
 	sc.nameToken = nameToken
 	// The root state has the position of the statechart.
-	sc.Root = &ASTNodeState{
-		Name:         common.RootStateName,
-		keywordToken: baseToken,
-		nameToken:    nameToken,
-	}
-	sc.entryCount = 1 // To account for the root state.
+	sc.Root.Name = common.RootStateName
+	sc.Root.keywordToken = baseToken
+	sc.Root.nameToken = nameToken
+	sc.Root.entryIndex = sc.entryCount
+	sc.entryCount++ // To account for the root state.
 
 	{
 		// {

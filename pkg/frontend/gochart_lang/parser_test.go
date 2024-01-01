@@ -55,11 +55,11 @@ func TestReadSimple(t *testing.T) {
 					},
 					{
 						comment:    "Outside Comment 3",
-						entryIndex: 4,
+						entryIndex: 3,
 					},
 					{
 						comment:    "Outside Comment 4",
-						entryIndex: 5,
+						entryIndex: 4,
 					},
 				},
 				Triggers: []*ASTNodeTrigger{
@@ -70,17 +70,17 @@ func TestReadSimple(t *testing.T) {
 					{
 						Name:       "Update",
 						ArgsString: "float dt",
-						entryIndex: 2,
+						entryIndex: 3,
 					},
 					{
 						Name:       "SomeMessage",
 						ArgsString: "const hvn::Message* message, int other, const std::string& another",
-						entryIndex: 3,
+						entryIndex: 4,
 					},
 				},
 				Root: &ASTNodeState{
 					Name:       common.RootStateName,
-					entryIndex: 0,
+					entryIndex: 2,
 					Comments: []*ASTNodeComment{
 						{
 							comment:    "Inside Comment 1",
@@ -88,35 +88,35 @@ func TestReadSimple(t *testing.T) {
 						},
 						{
 							comment:    "Inside Comment 2",
-							entryIndex: 1,
+							entryIndex: 2,
 						},
 						{
 							comment:    "Inside Comment 3",
-							entryIndex: 6,
+							entryIndex: 9,
 						},
 						{
 							comment:    "Inside Comment 4",
-							entryIndex: 8,
+							entryIndex: 11,
 						},
 					},
 					EnterReactions: []*ASTNodeStateReaction{
 						{
 							Trigger:    "",
-							entryIndex: 2,
+							entryIndex: 5,
 						},
 						{
 							Trigger:    "Execute",
-							entryIndex: 3,
+							entryIndex: 6,
 						},
 					},
 					ExitReactions: []*ASTNodeStateReaction{
 						{
 							Trigger:    "Execute",
-							entryIndex: 4,
+							entryIndex: 7,
 						},
 						{
 							Trigger:    "",
-							entryIndex: 5,
+							entryIndex: 8,
 						},
 					},
 					Transitions: []*ASTNodeStateTransition{
@@ -124,14 +124,14 @@ func TestReadSimple(t *testing.T) {
 							Trigger:     "Execute",
 							TargetState: "First",
 							Action:      " owner->Foo(); ",
-							entryIndex:  7,
+							entryIndex:  10,
 						},
 					},
 					Children: []*ASTNodeState{
 						{
 							Name:       "First",
 							ParentName: common.RootStateName,
-							entryIndex: 9,
+							entryIndex: 12,
 							Comments: []*ASTNodeComment{
 								{
 									comment:    "First Comment 1",
@@ -182,7 +182,7 @@ func TestReadSimple(t *testing.T) {
 						{
 							Name:       "Second",
 							ParentName: common.RootStateName,
-							entryIndex: 10,
+							entryIndex: 13,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Option1",
@@ -203,7 +203,7 @@ func TestReadSimple(t *testing.T) {
 						{
 							Name:       "Third",
 							ParentName: common.RootStateName,
-							entryIndex: 11,
+							entryIndex: 14,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Opt1",
