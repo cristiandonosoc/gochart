@@ -145,7 +145,7 @@ func newFormatTrigger(trigger *ir.Trigger) *formatTrigger {
 func (f *formatTrigger) FrontendEntry() frontend_common.FrontendEntry { return f.trigger.FrontendData }
 
 func (f *formatTrigger) Name() string {
-	return fmt.Sprintf("trigger:%s(index=%d)", f.trigger.Name, f.FrontendEntry().Index())
+	return fmt.Sprintf("%d:trigger:%s", f.FrontendEntry().Index(), f.trigger.SafeName())
 }
 func (f *formatTrigger) Indents() bool                  { return false }
 func (f *formatTrigger) ChildEntries() []formatterEntry { return nil }
@@ -174,7 +174,7 @@ func newFormatState(state *ir.State) *formatState {
 func (f *formatState) FrontendEntry() frontend_common.FrontendEntry { return f.state.FrontendData }
 
 func (f *formatState) Name() string {
-	return fmt.Sprintf("state:%s(index=%d)", f.state.Name, f.FrontendEntry().Index())
+	return fmt.Sprintf("%d:state:%s", f.FrontendEntry().Index(), f.state.SafeName())
 }
 func (f *formatState) Indents() bool                  { return true }
 func (f *formatState) ChildEntries() []formatterEntry { return f.entries }
@@ -229,7 +229,7 @@ func (f *formatReaction) FrontendEntry() frontend_common.FrontendEntry {
 }
 
 func (f *formatReaction) Name() string {
-	return fmt.Sprintf("reaction:%s-%s(index=%d)", f.reaction.Kind, f.reaction.Trigger.SafeName(), f.FrontendEntry().Index())
+	return fmt.Sprintf("%d:reaction:%s-%s", f.FrontendEntry().Index(), f.reaction.Kind, f.reaction.Trigger.SafeName())
 }
 func (f *formatReaction) Indents() bool                  { return false }
 func (f *formatReaction) ChildEntries() []formatterEntry { return nil }
@@ -256,7 +256,7 @@ func newFormatCapture(capture *ir.StateCapture) *formatCapture {
 func (f *formatCapture) FrontendEntry() frontend_common.FrontendEntry { return f.capture.FrontendData }
 
 func (f *formatCapture) Name() string {
-	return fmt.Sprintf("capture:%s(index=%d)", f.capture.Trigger.SafeName(), f.FrontendEntry().Index())
+	return fmt.Sprintf("%d:capture:%s", f.FrontendEntry().Index(), f.capture.Trigger.SafeName())
 }
 func (f *formatCapture) Indents() bool                  { return false }
 func (f *formatCapture) ChildEntries() []formatterEntry { return nil }
@@ -285,7 +285,7 @@ func (f *formatTransition) FrontendEntry() frontend_common.FrontendEntry {
 }
 
 func (f *formatTransition) Name() string {
-	return fmt.Sprintf("transition:%s->%s(index=%d)", f.transition.Trigger.SafeName(), f.transition.To.SafeName(), f.FrontendEntry().Index())
+	return fmt.Sprintf("%d:transition:%s->%s", f.FrontendEntry().Index(), f.transition.Trigger.SafeName(), f.transition.To.SafeName())
 }
 func (f *formatTransition) Indents() bool                  { return false }
 func (f *formatTransition) ChildEntries() []formatterEntry { return nil }

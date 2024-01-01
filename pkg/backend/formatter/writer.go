@@ -24,8 +24,10 @@ var _ io.Writer = (*IndentedWriter)(nil)
 func (iw *IndentedWriter) MustIncreaseIndent() {
 	iw.indent++
 
-	// If the current line is empty, we add the indentation.
-	if len(iw.currentLine()) == 0 {
+	// If the current line is empty (or only has tabs), we add the indentation.
+	line := strings.TrimSpace(string(iw.currentLine()))
+	if line == "" {
+		iw.clearLine(iw.linei)
 		iw.appendIndentation()
 	}
 }
@@ -36,8 +38,10 @@ func (iw *IndentedWriter) MustDecreateIndent() {
 		panic("Wrong scoped indent!")
 	}
 
-	// If the current line is empty, we add the indentation.
-	if len(iw.currentLine()) == 0 {
+	// If the current line is empty (or only has tabs), we add the indentation.
+	line := strings.TrimSpace(string(iw.currentLine()))
+	if line == "" {
+		iw.clearLine(iw.linei)
 		iw.appendIndentation()
 	}
 }
@@ -76,6 +80,10 @@ func (iw *IndentedWriter) String() string {
 
 func (iw *IndentedWriter) currentLine() []rune {
 	return iw.lines[iw.linei]
+}
+
+func (iw *IndentedWriter) clearLine(i int) {
+	iw.lines[i] = []rune{}
 }
 
 func (iw *IndentedWriter) handleNewLine() {
