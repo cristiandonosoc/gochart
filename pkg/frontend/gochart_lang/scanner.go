@@ -156,8 +156,7 @@ NEXT_TOKEN_LOOP:
 			} else {
 				tokens = append(tokens, commentToken)
 			}
-			// Comment consumed. We go to scan for the next token.
-			continue NEXT_TOKEN_LOOP
+			break NEXT_TOKEN_LOOP
 		}
 
 		// New lines add to our current line. Also restart our current character counter.

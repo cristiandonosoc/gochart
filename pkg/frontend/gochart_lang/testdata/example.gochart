@@ -14,7 +14,7 @@ statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 
 	// Inside Comment 3
 
-	transition Execute > First do { owner->Foo(); } // Inside Commment 4
+	transition Execute > First do { owner->Foo(); } // Inside Comment 4
 
 	state First {
 		enter

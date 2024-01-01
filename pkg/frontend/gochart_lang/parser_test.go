@@ -44,6 +44,24 @@ func TestReadSimple(t *testing.T) {
 						Value:     "33",
 					},
 				},
+				Comments: []*ASTNodeComment{
+					{
+						comment:    "Outside Comment 1",
+						entryIndex: 0,
+					},
+					{
+						comment:    "Outside Comment 2",
+						entryIndex: 1,
+					},
+					{
+						comment:    "Outside Comment 3",
+						entryIndex: 4,
+					},
+					{
+						comment:    "Outside Comment 4",
+						entryIndex: 5,
+					},
+				},
 				Triggers: []*ASTNodeTrigger{
 					{
 						Name:       "Execute",
@@ -63,24 +81,42 @@ func TestReadSimple(t *testing.T) {
 				Root: &ASTNodeState{
 					Name:       common.RootStateName,
 					entryIndex: 0,
-					EnterReactions: []*ASTNodeStateReaction{
+					Comments: []*ASTNodeComment{
 						{
-							Trigger:    "",
+							comment:    "Inside Comment 1",
 							entryIndex: 0,
 						},
 						{
-							Trigger:    "Execute",
+							comment:    "Inside Comment 2",
 							entryIndex: 1,
+						},
+						{
+							comment:    "Inside Comment 3",
+							entryIndex: 6,
+						},
+						{
+							comment:    "Inside Comment 4",
+							entryIndex: 8,
+						},
+					},
+					EnterReactions: []*ASTNodeStateReaction{
+						{
+							Trigger:    "",
+							entryIndex: 2,
+						},
+						{
+							Trigger:    "Execute",
+							entryIndex: 3,
 						},
 					},
 					ExitReactions: []*ASTNodeStateReaction{
 						{
 							Trigger:    "Execute",
-							entryIndex: 2,
+							entryIndex: 4,
 						},
 						{
 							Trigger:    "",
-							entryIndex: 3,
+							entryIndex: 5,
 						},
 					},
 					Transitions: []*ASTNodeStateTransition{
@@ -88,14 +124,20 @@ func TestReadSimple(t *testing.T) {
 							Trigger:     "Execute",
 							TargetState: "First",
 							Action:      " owner->Foo(); ",
-							entryIndex:  4,
+							entryIndex:  7,
 						},
 					},
 					Children: []*ASTNodeState{
 						{
 							Name:       "First",
 							ParentName: common.RootStateName,
-							entryIndex: 5,
+							entryIndex: 9,
+							Comments: []*ASTNodeComment{
+								{
+									comment:    "First Comment 1",
+									entryIndex: 2,
+								},
+							},
 							EnterReactions: []*ASTNodeStateReaction{
 								{
 									Trigger:    "",
@@ -109,11 +151,11 @@ func TestReadSimple(t *testing.T) {
 							ExitReactions: []*ASTNodeStateReaction{
 								{
 									Trigger:    "Execute",
-									entryIndex: 2,
+									entryIndex: 3,
 								},
 								{
 									Trigger:    "",
-									entryIndex: 3,
+									entryIndex: 4,
 								},
 							},
 							Transitions: []*ASTNodeStateTransition{
@@ -121,26 +163,26 @@ func TestReadSimple(t *testing.T) {
 									Trigger:     "",
 									TargetState: "Third",
 									Action:      " owner->SomeNullAction(); ",
-									entryIndex:  4,
+									entryIndex:  5,
 								},
 								{
 									Trigger:     "Execute",
 									TargetState: "Second",
-									entryIndex:  5,
+									entryIndex:  6,
 								},
 							},
 							Captures: []*ASTNodeStateCapture{
 								{
 									Trigger:    "Update",
 									Condition:  " owner->SomeCondition ",
-									entryIndex: 6,
+									entryIndex: 7,
 								},
 							},
 						},
 						{
 							Name:       "Second",
 							ParentName: common.RootStateName,
-							entryIndex: 6,
+							entryIndex: 10,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Option1",
@@ -161,7 +203,7 @@ func TestReadSimple(t *testing.T) {
 						{
 							Name:       "Third",
 							ParentName: common.RootStateName,
-							entryIndex: 7,
+							entryIndex: 11,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Opt1",
@@ -228,6 +270,12 @@ func TestReadSimple(t *testing.T) {
 											Value:     "IdentifierChild",
 										},
 									},
+									Comments: []*ASTNodeComment{
+										{
+											comment:    "ThirdChild1 Comment 1",
+											entryIndex: 1,
+										},
+									},
 									Children: []*ASTNodeState{
 										{
 											Name:       "ThirdGrandChild",
@@ -240,16 +288,22 @@ func TestReadSimple(t *testing.T) {
 													Value:     "false",
 												},
 											},
+											Comments: []*ASTNodeComment{
+												{
+													comment:    "ThirdGrandChild Comment 1",
+													entryIndex: 1,
+												},
+											},
 											EnterReactions: []*ASTNodeStateReaction{
 												{
 													Trigger:    "",
-													entryIndex: 1,
+													entryIndex: 2,
 												},
 											},
 											ExitReactions: []*ASTNodeStateReaction{
 												{
 													Trigger:    "Update",
-													entryIndex: 2,
+													entryIndex: 3,
 												},
 											},
 											Transitions: []*ASTNodeStateTransition{
@@ -262,7 +316,7 @@ func TestReadSimple(t *testing.T) {
 											Captures: []*ASTNodeStateCapture{
 												{
 													Trigger:    "Execute",
-													entryIndex: 3,
+													entryIndex: 4,
 												},
 											},
 										},
@@ -319,14 +373,17 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 			tc.compare(t, want, got)
 		}
 
-		for i := 0; i < len(want.Comments); i++ {
-			want := want.Comments[i]
-			got := got.Comments[i]
+		parent := fmt.Sprintf("statechart:%s", scName)
+		if assert.Equal(t, len(want.Comments), len(got.Comments), parent) {
+			for i := 0; i < len(want.Comments); i++ {
+				want := want.Comments[i]
+				got := got.Comments[i]
 
-			cc := &commentComparer{
-				parent: fmt.Sprintf("statechart:%s", scName),
+				cc := &commentComparer{
+					parent: parent,
+				}
+				cc.compare(t, want, got)
 			}
-			cc.compare(t, want, got)
 		}
 	}
 
@@ -447,14 +504,17 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 	assert.Equal(t, want.ParentName, got.ParentName, ctxStr)
 
 	// Compare comments.
-	for i := 0; i < len(want.Comments); i++ {
-		want := want.Comments[i]
-		got := got.Comments[i]
+	parent := fmt.Sprintf("state:%s", stateName)
+	if assert.Equal(t, len(want.Comments), len(got.Comments), parent) {
+		for i := 0; i < len(want.Comments); i++ {
+			want := want.Comments[i]
+			got := got.Comments[i]
 
-		cc := &commentComparer{
-			parent: fmt.Sprintf("state:%s", stateName),
+			cc := &commentComparer{
+				parent: parent,
+			}
+			cc.compare(t, want, got)
 		}
-		cc.compare(t, want, got)
 	}
 }
 
