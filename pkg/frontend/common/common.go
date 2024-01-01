@@ -51,6 +51,7 @@ type StatechartData struct {
 	Root        *StateData
 	States      []*StateData
 	Transitions []*TransitionData
+	Comments    []*CommentData
 
 	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
@@ -73,7 +74,7 @@ type TriggerData struct {
 	Frontend_ArgsPos    *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*TriggerData)(nil)
 
 func (td *TriggerData) Index() int                          { return td.Frontend_Index }
 func (td *TriggerData) Position() *files.LoadedFilePosition { return td.Frontend_KeywordPos }
@@ -87,15 +88,15 @@ type StateData struct {
 
 	EnterReactions []*ReactionData
 	ExitReactions  []*ReactionData
-
-	Captures []*CaptureData
+	Captures       []*CaptureData
+	Comments       []*CommentData
 
 	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_NamePos    *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*StateData)(nil)
 
 func (sd *StateData) Index() int                          { return sd.Frontend_Index }
 func (sd *StateData) Position() *files.LoadedFilePosition { return sd.Frontend_KeywordPos }
@@ -110,7 +111,7 @@ type ReactionData struct {
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*ReactionData)(nil)
 
 func (rd *ReactionData) Index() int                          { return rd.Frontend_Index }
 func (rd *ReactionData) Position() *files.LoadedFilePosition { return rd.Frontend_KeywordPos }
@@ -125,7 +126,7 @@ type CaptureData struct {
 	Frontend_TriggerPos *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*CaptureData)(nil)
 
 func (cd *CaptureData) Index() int                          { return cd.Frontend_Index }
 func (cd *CaptureData) Position() *files.LoadedFilePosition { return cd.Frontend_KeywordPos }
@@ -145,7 +146,7 @@ type TransitionData struct {
 	Frontend_TargetPos  *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*TransitionData)(nil)
 
 func (td *TransitionData) Index() int                          { return td.Frontend_Index }
 func (td *TransitionData) Position() *files.LoadedFilePosition { return td.Frontend_KeywordPos }
@@ -153,3 +154,17 @@ func (td *TransitionData) Position() *files.LoadedFilePosition { return td.Front
 func (tdata *TransitionData) String() string {
 	return fmt.Sprintf("transition %s: %s > %s", tdata.Trigger, tdata.From, tdata.To)
 }
+
+// CommentData represents a comment line within the code.
+// Note that comments can be inlined in the same line as another entry.
+type CommentData struct {
+	Comment string
+
+	index    int
+	position *files.LoadedFilePosition
+}
+
+var _ FrontendEntry = (*CommentData)(nil)
+
+func (cd *CommentData) Index() int                          { return cd.index }
+func (cd *CommentData) Position() *files.LoadedFilePosition { return cd.position }

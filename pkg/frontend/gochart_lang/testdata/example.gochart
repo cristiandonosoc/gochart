@@ -1,5 +1,9 @@
+// Outside Comment 1
+// Outside Comment 2
+
 statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
-	trigger Execute()
+	// Inside Comment 1
+	trigger Execute() // Inside Comment 2
 	trigger Update(float dt)
 	trigger SomeMessage(const hvn::Message* message, int other, const std::string& another)
 
@@ -8,11 +12,15 @@ statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 	exit Execute
 	exit
 
-	transition Execute > First do { owner->Foo(); }
+	// Inside Comment 3
+
+	transition Execute > First do { owner->Foo(); } // Inside Commment 4
 
 	state First {
 		enter
 		enter Execute
+
+		// First Comment 1
 
 		exit Execute
 		exit
@@ -38,11 +46,15 @@ statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 			state ThirdGrandChild(OptGrandChild = false) {
 				transition Execute > Second
 
+				// ThirdGrandChild Comment 1
+
 				enter
 				exit Update
 
 				capture Execute
 			}
+
+			// ThirdChild1 Comment 1
 		}
 
 		state ThirdChild2 {
@@ -50,3 +62,6 @@ statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 		}
 	}
 }
+
+// Outside Comment 3
+// Outside Comment 4

@@ -47,39 +47,40 @@ func TestReadSimple(t *testing.T) {
 				Triggers: []*ASTNodeTrigger{
 					{
 						Name:       "Execute",
-						entryIndex: 0,
+						entryIndex: 1,
 					},
 					{
 						Name:       "Update",
 						ArgsString: "float dt",
-						entryIndex: 1,
+						entryIndex: 2,
 					},
 					{
 						Name:       "SomeMessage",
 						ArgsString: "const hvn::Message* message, int other, const std::string& another",
-						entryIndex: 2,
+						entryIndex: 3,
 					},
 				},
 				Root: &ASTNodeState{
-					Name: common.RootStateName,
+					Name:       common.RootStateName,
+					entryIndex: 0,
 					EnterReactions: []*ASTNodeStateReaction{
 						{
 							Trigger:    "",
-							entryIndex: 3,
+							entryIndex: 0,
 						},
 						{
 							Trigger:    "Execute",
-							entryIndex: 4,
+							entryIndex: 1,
 						},
 					},
 					ExitReactions: []*ASTNodeStateReaction{
 						{
 							Trigger:    "Execute",
-							entryIndex: 5,
+							entryIndex: 2,
 						},
 						{
 							Trigger:    "",
-							entryIndex: 6,
+							entryIndex: 3,
 						},
 					},
 					Transitions: []*ASTNodeStateTransition{
@@ -87,14 +88,14 @@ func TestReadSimple(t *testing.T) {
 							Trigger:     "Execute",
 							TargetState: "First",
 							Action:      " owner->Foo(); ",
-							entryIndex:  7,
+							entryIndex:  4,
 						},
 					},
 					Children: []*ASTNodeState{
 						{
 							Name:       "First",
 							ParentName: common.RootStateName,
-							entryIndex: 8,
+							entryIndex: 5,
 							EnterReactions: []*ASTNodeStateReaction{
 								{
 									Trigger:    "",
@@ -139,7 +140,7 @@ func TestReadSimple(t *testing.T) {
 						{
 							Name:       "Second",
 							ParentName: common.RootStateName,
-							entryIndex: 9,
+							entryIndex: 6,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Option1",
@@ -160,7 +161,7 @@ func TestReadSimple(t *testing.T) {
 						{
 							Name:       "Third",
 							ParentName: common.RootStateName,
-							entryIndex: 10,
+							entryIndex: 7,
 							Options: []*ASTNodeOption{
 								{
 									Name:      "Opt1",
@@ -304,6 +305,7 @@ func compareASTNodeRoot(t *testing.T, want, got *ASTNodeRoot) {
 
 func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 	assert.Equal(t, want.Name, got.Name)
+	scName := want.Name
 
 	if assert.Equal(t, len(want.Triggers), len(got.Triggers), "Not same amount of triggers") {
 		for i := 0; i < len(want.Triggers); i++ {
@@ -315,6 +317,16 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 				statechartName: want.Name,
 			}
 			tc.compare(t, want, got)
+		}
+
+		for i := 0; i < len(want.Comments); i++ {
+			want := want.Comments[i]
+			got := got.Comments[i]
+
+			cc := &commentComparer{
+				parent: fmt.Sprintf("statechart:%s", scName),
+			}
+			cc.compare(t, want, got)
 		}
 	}
 
@@ -349,6 +361,8 @@ type stateComparer struct {
 
 func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 	assert.Equal(t, want.Name, got.Name, "Statechart %s, State %d", sc.statechartName, sc.index)
+	stateName := want.Name
+
 	assert.Equal(t, want.entryIndex, got.entryIndex, sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
 
 	ctxStr := fmt.Sprintf("Statechart %s, State %q, Parent %q, Trigger %d (%s)", sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
@@ -431,4 +445,24 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 	// Compare parent.
 	assert.Equal(t, want.ParentName, got.ParentName, ctxStr)
+
+	// Compare comments.
+	for i := 0; i < len(want.Comments); i++ {
+		want := want.Comments[i]
+		got := got.Comments[i]
+
+		cc := &commentComparer{
+			parent: fmt.Sprintf("state:%s", stateName),
+		}
+		cc.compare(t, want, got)
+	}
+}
+
+type commentComparer struct {
+	parent string
+}
+
+func (cc *commentComparer) compare(t *testing.T, want, got *ASTNodeComment) {
+	assert.Equal(t, want.comment, got.comment, "parent %q", cc.parent)
+	assert.Equal(t, want.entryIndex, got.entryIndex, "parent %q (COMMENT=%q)", cc.parent, want.comment)
 }

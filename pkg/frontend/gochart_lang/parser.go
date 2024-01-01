@@ -2,6 +2,7 @@ package gochart_lang
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"strconv"
 
@@ -20,6 +21,7 @@ var (
 		Token_KeywordTransition,
 		Token_KeywordCapture,
 		Token_KeywordState,
+		Token_Comment,
 	}
 
 	expectedStatechartBodyStmtKeywords = []TokenIdentifier{
@@ -30,6 +32,7 @@ var (
 		Token_KeywordTransition,
 		Token_KeywordCapture,
 		Token_KeywordState,
+		Token_Comment,
 	}
 )
 
@@ -67,6 +70,9 @@ func (p *Parser) Parse(tokens []*Token) (*ASTNodeRoot, []error) {
 
 // ASTNode is the common interface for all the nodes within our Abstract Syntax Tree.
 type ASTNode interface {
+	// AppendNode is a convenient function to be able to append nodes into a node and have correct
+	// tracking of the internal indices.
+	AppendNode(node ASTNode)
 }
 
 // RULES *******************************************************************************************
@@ -80,6 +86,10 @@ type ASTNodeRoot struct {
 }
 
 var _ ASTNode = (*ASTNodeRoot)(nil)
+
+func (n *ASTNodeRoot) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
 
 // root -> statechart+
 func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
@@ -136,14 +146,55 @@ type ASTNodeStatechart struct {
 	Root     *ASTNodeState
 	States   []*ASTNodeState
 
+	// These comments will be outside the statechart, as inside comments will be inside of the root
+	// state comment tracking.
+	Comments []*ASTNodeComment
+
 	keywordToken *Token
 	nameToken    *Token
+
+	entryCount int
 }
 
 var _ ASTNode = (*ASTNodeStatechart)(nil)
 
+func (n *ASTNodeStatechart) AppendNode(node ASTNode) {
+	switch v := node.(type) {
+	case *ASTNodeTrigger:
+		v.entryIndex = n.entryCount
+		n.Triggers = append(n.Triggers, v)
+	case *ASTNodeComment:
+		v.entryIndex = n.entryCount
+		n.Comments = append(n.Comments, v)
+	default:
+		panic(fmt.Sprintf("unsupported type being appended %q", reflect.TypeOf(v).Name()))
+	}
+
+	n.entryCount++
+}
+
+func (n *ASTNodeStatechart) NonCommentEntryCount() int {
+	return len(n.Triggers) + n.Root.NonCommentEntryCount()
+}
+
 func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	p.debuglog("parsing statechart node")
+
+	// Create the tentative statechart to be able to track comments.
+	sc := &ASTNodeStatechart{}
+
+	// See if we get any out of initial comments.
+	for {
+		commentToken, ok := p.match(Token_Comment)
+		if !ok {
+			break
+		}
+
+		sc.AppendNode(&ASTNodeComment{
+			comment: commentToken.literal,
+			token:   commentToken,
+		})
+	}
 
 	// statechart keyword.
 	baseToken, err := p.consumeToken(Token_KeywordStatechart)
@@ -175,18 +226,18 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		options = opts
 	}
 
-	sc := &ASTNodeStatechart{
-		Name:         name,
-		Options:      options,
+	// Fill in the statechart now that we have the info.
+	sc.Name = name
+	sc.Options = options
+	sc.keywordToken = baseToken
+	sc.nameToken = nameToken
+	// The root state has the position of the statechart.
+	sc.Root = &ASTNodeState{
+		Name:         common.RootStateName,
 		keywordToken: baseToken,
 		nameToken:    nameToken,
-		// The root state has the position of the statechart.
-		Root: &ASTNodeState{
-			Name:         common.RootStateName,
-			keywordToken: baseToken,
-			nameToken:    nameToken,
-		},
 	}
+	sc.entryCount = 1 // To account for the root state.
 
 	{
 		// {
@@ -194,30 +245,39 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			return nil, p.pushErrorf(0, err.Error())
 		}
 
-		statechartEntriesCount := 0
-
 		for !p.atEnd() {
-			ok, err := p.parseStatechartBodyStmt(sc, statechartEntriesCount)
+			ok, err := p.parseStatechartBodyStmt(sc)
 			if err != nil {
 				return nil, fmt.Errorf("parsing statechart body statement: %w", err)
 			}
 
 			if ok {
-				statechartEntriesCount++
 				continue
-
 			}
 
 			break
 		}
 
-		if statechartEntriesCount == 0 {
+		if sc.NonCommentEntryCount() == 0 {
 			return nil, p.pushErrorf(0, "empty statechart found, need at least one statement")
 		}
 
 		if _, err := p.consumeToken(Token_RightBrace); err != nil {
 			return nil, p.pushErrorf(0, err.Error())
 		}
+	}
+
+	// See if we get any comments after the statechart.
+	for {
+		commentToken, ok := p.match(Token_Comment)
+		if !ok {
+			break
+		}
+
+		sc.AppendNode(&ASTNodeComment{
+			comment: commentToken.literal,
+			token:   commentToken,
+		})
 	}
 
 	return sc, nil
@@ -280,6 +340,10 @@ type ASTNodeOption struct {
 
 var _ ASTNode = (*ASTNodeOption)(nil)
 
+func (n *ASTNodeOption) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
+
 func (p *Parser) parseOption() (*ASTNodeOption, error) {
 	p.debuglog("-> parsing state option")
 
@@ -336,7 +400,7 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 // StatechartBodyStmt -> Trigger
 //                    -> State
 
-func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart, entryIndex int) (bool, error) {
+func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 	// If we're closing the brace, we simply exit the statement.
 	if peek := p.peek(); peek.id == Token_RightBrace {
 		return false, nil
@@ -354,13 +418,12 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart, entryIndex int) 
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
-		trigger.entryIndex = entryIndex
-		sc.Triggers = append(sc.Triggers, trigger)
+		sc.AppendNode(trigger)
 		return true, nil
 	}
 
 	// Otherwise all statements go into our root state.
-	if ok, err := p.parseStateBodyStmt(sc.Root, entryIndex); err != nil {
+	if ok, err := p.parseStateBodyStmt(sc.Root); err != nil {
 		return false, fmt.Errorf("parsing root state body statement: %w", err)
 	} else if ok {
 		return true, nil
@@ -384,6 +447,10 @@ type ASTNodeTrigger struct {
 }
 
 var _ ASTNode = (*ASTNodeTrigger)(nil)
+
+func (n *ASTNodeTrigger) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
 
 func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 	p.debuglog("parsing trigger node")
@@ -439,22 +506,66 @@ func (p *Parser) parseTrigger(baseToken *Token) (*ASTNodeTrigger, error) {
 // State -> 'state' NAME ( '(' ( Option ( ',' Option )* ')' ) '{' StateBody+'}'
 
 type ASTNodeState struct {
-	Name           string
-	ParentName     string
-	Default        bool
-	Options        []*ASTNodeOption
+	Name       string
+	ParentName string
+	Default    bool
+	Options    []*ASTNodeOption
+
 	EnterReactions []*ASTNodeStateReaction
 	ExitReactions  []*ASTNodeStateReaction
 	Transitions    []*ASTNodeStateTransition
 	Captures       []*ASTNodeStateCapture
 	Children       []*ASTNodeState
 
+	Comments []*ASTNodeComment
+
 	keywordToken *Token
 	nameToken    *Token
-	entryIndex   int
+
+	entryIndex int
+	entryCount int
 }
 
 var _ ASTNode = (*ASTNodeState)(nil)
+
+func (n *ASTNodeState) AppendNode(node ASTNode) {
+	switch v := node.(type) {
+	case *ASTNodeStateReaction:
+		v.entryIndex = n.entryCount
+		if v.IsEnterReaction() {
+			n.EnterReactions = append(n.EnterReactions, v)
+		}
+		if v.IsExitReaction() {
+			n.ExitReactions = append(n.ExitReactions, v)
+		}
+	case *ASTNodeStateTransition:
+		v.entryIndex = n.entryCount
+		n.Transitions = append(n.Transitions, v)
+	case *ASTNodeStateCapture:
+		v.entryIndex = n.entryCount
+		n.Captures = append(n.Captures, v)
+	case *ASTNodeState:
+		v.entryIndex = n.entryCount
+		n.Children = append(n.Children, v)
+	case *ASTNodeComment:
+		v.entryIndex = n.entryCount
+		n.Comments = append(n.Comments, v)
+	default:
+		panic(fmt.Sprintf("unsupported type being appended %q", reflect.TypeOf(v).Name()))
+	}
+
+	n.entryCount++
+}
+
+func (n *ASTNodeState) NonCommentEntryCount() int {
+	count := len(n.EnterReactions)
+	count += len(n.ExitReactions)
+	count += len(n.Transitions)
+	count += len(n.Captures)
+	count += len(n.Children)
+
+	return count
+}
 
 func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeState, error) {
 	p.debuglog("parsing state node")
@@ -509,22 +620,20 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 			return nil, fmt.Errorf("state %q: parsing state body: %w", name, err)
 		}
 
-		stateEntriesCount := 0
 		for !p.atEnd() {
-			ok, err := p.parseStateBodyStmt(state, stateEntriesCount)
+			ok, err := p.parseStateBodyStmt(state)
 			if err != nil {
 				return nil, fmt.Errorf("state %q: parsing state body statement: %w", state.Name, err)
 			}
 
 			if ok {
-				stateEntriesCount++
 				continue
 			}
 
 			break
 		}
 
-		if stateEntriesCount == 0 {
+		if state.NonCommentEntryCount() == 0 {
 			return nil, p.pushErrorf(0, "state %q: empty state found, need at least one statement", state.Name)
 		}
 
@@ -543,8 +652,9 @@ func (p *Parser) parseState(parent *ASTNodeState, baseToken *Token) (*ASTNodeSta
 //               -> StateExitReaction
 //               -> StateTransition
 //               -> State
+//               -> Comment
 
-func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, error) {
+func (p *Parser) parseStateBodyStmt(state *ASTNodeState) (bool, error) {
 	stmtToken, ok := p.matchAny(expectedStateBodyStmtKeywords...)
 	if !ok {
 		return false, nil
@@ -557,8 +667,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, 
 		if err != nil {
 			return false, fmt.Errorf("parsing enter reaction: %w", err)
 		}
-		reaction.entryIndex = entryIndex
-		state.EnterReactions = append(state.EnterReactions, reaction)
+		state.AppendNode(reaction)
 		return true, nil
 	case Token_KeywordExit:
 		p.debuglog("parsing state exit reaction node")
@@ -566,16 +675,14 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, 
 		if err != nil {
 			return false, fmt.Errorf("parsing exit reaction: %w", err)
 		}
-		reaction.entryIndex = entryIndex
-		state.ExitReactions = append(state.ExitReactions, reaction)
+		state.AppendNode(reaction)
 		return true, nil
 	case Token_KeywordTransition:
 		transition, err := p.parseStateTransition(stmtToken)
 		if err != nil {
 			return false, fmt.Errorf("parsing transition: %w", err)
 		}
-		transition.entryIndex = entryIndex
-		state.Transitions = append(state.Transitions, transition)
+		state.AppendNode(transition)
 		return true, nil
 	case Token_KeywordCapture:
 		p.debuglog("parsing state capture reaction")
@@ -583,8 +690,7 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, 
 		if err != nil {
 			return false, fmt.Errorf("parsing capture: %w", err)
 		}
-		capture.entryIndex = entryIndex
-		state.Captures = append(state.Captures, capture)
+		state.AppendNode(capture)
 		return true, nil
 	case Token_KeywordState:
 		p.debuglog("parsing child state node")
@@ -592,8 +698,14 @@ func (p *Parser) parseStateBodyStmt(state *ASTNodeState, entryIndex int) (bool, 
 		if err != nil {
 			return false, fmt.Errorf("parsing child state: %w", err)
 		}
-		child.entryIndex = entryIndex
-		state.Children = append(state.Children, child)
+		state.AppendNode(child)
+		return true, nil
+	case Token_Comment:
+		p.debuglog("parsing comment node")
+		state.AppendNode(&ASTNodeComment{
+			comment: stmtToken.literal,
+			token:   stmtToken,
+		})
 		return true, nil
 	}
 
@@ -614,6 +726,18 @@ type ASTNodeStateReaction struct {
 }
 
 var _ ASTNode = (*ASTNodeStateReaction)(nil)
+
+func (n *ASTNodeStateReaction) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
+
+func (n *ASTNodeStateReaction) IsEnterReaction() bool {
+	return n.keywordToken.id == Token_KeywordEnter
+}
+
+func (n *ASTNodeStateReaction) IsExitReaction() bool {
+	return n.keywordToken.id == Token_KeywordExit
+}
 
 func (p *Parser) parseStateReaction(baseToken *Token) (*ASTNodeStateReaction, error) {
 	p.debuglog("parsing state reaction node")
@@ -655,7 +779,11 @@ type ASTNodeStateTransition struct {
 	entryIndex   int
 }
 
-var _ ASTNode = (*ASTNodeState)(nil)
+var _ ASTNode = (*ASTNodeStateTransition)(nil)
+
+func (n *ASTNodeStateTransition) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
 
 func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition, error) {
 	p.debuglog("parsing state transition node")
@@ -757,6 +885,10 @@ type ASTNodeStateCapture struct {
 
 var _ ASTNode = (*ASTNodeStateCapture)(nil)
 
+func (n *ASTNodeStateCapture) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
+}
+
 func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, error) {
 	p.debuglog("parsing state capture node")
 
@@ -800,6 +932,23 @@ func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, erro
 	p.debuglog("-> parsed capture: %+v", capture)
 
 	return capture, nil
+}
+
+// Comment -----------------------------------------------------------------------------------------
+//
+// // <COMMENT>\n
+
+type ASTNodeComment struct {
+	comment string
+	token   *Token
+
+	entryIndex int
+}
+
+var _ ASTNode = (*ASTNodeComment)(nil)
+
+func (n *ASTNodeComment) AppendNode(node ASTNode) {
+	panic("this node cannot append!")
 }
 
 // HELPERS -----------------------------------------------------------------------------------------
