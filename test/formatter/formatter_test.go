@@ -58,3 +58,77 @@ func TestEnsureFormatterDoesNotChangeAST(t *testing.T) {
 		})
 	}
 }
+
+func TestThatFormatterIsIdempotent(t *testing.T) {
+	runfiles, err := test_support.Runfiles("testdata")
+	require.NoError(t, err)
+
+	gf, err := gochart_lang.NewGochartLangFrontend()
+	require.NoError(t, err)
+
+	ff, err := formatter.NewFormatterGochartBackend()
+	require.NoError(t, err)
+
+	for _, rf := range runfiles {
+		t.Run(filepath.Base(rf), func(t *testing.T) {
+			// We load the file for the first time.
+			lf, err := files.LoadFileFromPath(rf)
+			require.NoError(t, err)
+
+			scdata, err := gf.Process(lf)
+			require.NoError(t, err)
+
+			wantSc, err := ir.ProcessStatechartData(scdata)
+			require.NoError(t, err)
+
+			// Now that we have the formatted lf, we generate it over and over a couple of times and
+			// ensure the output is the same byte to byte.
+			for i := 0; i < 5; i++ {
+				wantOutputs, err := ff.Generate(context.Background(), wantSc)
+				require.NoError(t, err)
+				require.Equal(t, len(wantOutputs), 1)
+
+				wantOutput := wantOutputs[0]
+				require.NotNil(t, wantOutput.Content)
+				wantContent, err := io.ReadAll(wantOutput.Content)
+				require.NoError(t, err)
+
+				wantLF, err := files.LoadFileFromData(wantContent)
+				require.NoError(t, err)
+
+				wantScData, err := gf.Process(wantLF)
+				require.NoError(t, err)
+
+				wantSc, err := ir.ProcessStatechartData(wantScData)
+				require.NoError(t, err)
+
+				// We generate the output from this.
+				gotOutputs, err := ff.Generate(context.Background(), wantSc)
+				require.NoError(t, err)
+
+				require.Equal(t, len(gotOutputs), 1)
+
+				gotOutput := gotOutputs[0]
+				require.NotNil(t, gotOutput.Content)
+				gotContent, err := io.ReadAll(gotOutput.Content)
+				require.NoError(t, err)
+
+				require.Equal(t, wantContent, gotContent)
+
+				gotLF, err := files.LoadFileFromData(gotContent)
+				require.NoError(t, err)
+
+				gotScData, err := gf.Process(gotLF)
+				require.NoError(t, err)
+
+				gotSc, err := ir.ProcessStatechartData(gotScData)
+				require.NoError(t, err)
+
+				ir.CompareStatechart(t, wantSc, gotSc)
+
+				// Now we set the current statechart as the next one and do the loop again.
+				wantSc = gotSc
+			}
+		})
+	}
+}
