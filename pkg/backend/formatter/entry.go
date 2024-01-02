@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/files"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
@@ -279,8 +280,15 @@ func (f *formatState) Name() string {
 func (f *formatState) Indents() bool                  { return true }
 func (f *formatState) ChildEntries() []formatterEntry { return f.entries }
 
-func (f *formatState) Write(w io.Writer) {}
-func (f *formatState) Pop(w io.Writer)   {}
+func (f *formatState) Write(w io.Writer) {
+	collapseLineDistance(w, f)
+	// TODO(cdc): Write options!
+	writeStringf(w, "state %s { ", f.state.Name)
+}
+func (f *formatState) Pop(w io.Writer) {
+	collapseLineDistance(w, f)
+	writeStringf(w, "}")
+}
 func (f *formatState) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }
@@ -341,8 +349,16 @@ func (f *formatReaction) Name() string {
 func (f *formatReaction) Indents() bool                  { return false }
 func (f *formatReaction) ChildEntries() []formatterEntry { return nil }
 
-func (f *formatReaction) Write(w io.Writer) {}
-func (f *formatReaction) Pop(w io.Writer)   {}
+func (f *formatReaction) Write(w io.Writer) {
+	collapseLineDistance(w, f)
+
+	writeStringf(w, "%s ", strings.ToLower(f.reaction.Kind.String()))
+
+	if f.reaction.Trigger != nil {
+		writeStringf(w, "%s ", f.reaction.Trigger.Name)
+	}
+}
+func (f *formatReaction) Pop(w io.Writer) {}
 func (f *formatReaction) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }
@@ -490,5 +506,20 @@ func lineDistanceWithLastEntry(entry formatterEntry) int {
 	last := lastEntry.FrontendEntry().Position().Line
 	current := entry.FrontendEntry().Position().Line
 
-	return current - last
+	distance := current - last
+
+	// We special case if the previous line was only a '{', we consider it to be one less.
+	if distance > 1 {
+		// We actually want the line before current, but because line numbers are 1-indexed, just using
+		// the current value will give us the previous line.
+		if i := current - 2; i >= 0 {
+			line := entry.FrontendEntry().Position().File.Lines[i]
+			line = strings.TrimSpace(line)
+			if line == "{" {
+				distance--
+			}
+		}
+	}
+
+	return distance
 }
