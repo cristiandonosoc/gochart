@@ -47,11 +47,21 @@ func (iw *IndentedWriter) MustDecreateIndent() {
 }
 
 func (iw *IndentedWriter) Write(p []byte) (int, error) {
+	return iw.write(p, true)
+}
+
+func (iw *IndentedWriter) WriteIgnoreIndent(p []byte) (int, error) {
+	return iw.write(p, false)
+}
+
+func (iw *IndentedWriter) write(p []byte, indent bool) (int, error) {
 	data := string(p)
 	for _, r := range data {
-		if r == '\n' {
-			iw.handleNewLine()
-			continue
+		if indent {
+			if r == '\n' {
+				iw.handleNewLine()
+				continue
+			}
 		}
 
 		iw.appendRune(r)
@@ -99,4 +109,13 @@ func (iw *IndentedWriter) appendRune(r rune) {
 
 func writeStringf(w io.Writer, format string, args ...interface{}) {
 	w.Write([]byte(fmt.Sprintf(format, args...)))
+}
+
+func writeStringfNoIndent(w io.Writer, format string, args ...interface{}) {
+	str := fmt.Sprintf(format, args...)
+	if iw, ok := w.(*IndentedWriter); ok {
+		iw.WriteIgnoreIndent([]byte(str))
+	} else {
+		w.Write([]byte(str))
+	}
 }

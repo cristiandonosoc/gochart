@@ -388,8 +388,15 @@ func (f *formatCapture) Name() string {
 func (f *formatCapture) Indents() bool                  { return false }
 func (f *formatCapture) ChildEntries() []formatterEntry { return nil }
 
-func (f *formatCapture) Write(w io.Writer) {}
-func (f *formatCapture) Pop(w io.Writer)   {}
+func (f *formatCapture) Write(w io.Writer) {
+	collapseLineDistance(w, f)
+
+	writeStringf(w, "capture %s ", f.capture.Trigger.Name)
+	if f.capture.HasCondition() {
+		writeCondition(w, f.capture.Condition)
+	}
+}
+func (f *formatCapture) Pop(w io.Writer) {}
 func (f *formatCapture) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }
@@ -421,8 +428,25 @@ func (f *formatTransition) Name() string {
 func (f *formatTransition) Indents() bool                  { return false }
 func (f *formatTransition) ChildEntries() []formatterEntry { return nil }
 
-func (f *formatTransition) Write(w io.Writer) {}
-func (f *formatTransition) Pop(w io.Writer)   {}
+func (f *formatTransition) Write(w io.Writer) {
+	collapseLineDistance(w, f)
+
+	writeStringf(w, "transition ")
+	triggerName := "null"
+	if f.transition.Trigger != nil {
+		triggerName = f.transition.Trigger.Name
+	}
+	writeStringf(w, "%s > %s ", triggerName, f.transition.To.Name)
+
+	if f.transition.HasCondition() {
+		writeCondition(w, f.transition.Condition)
+	}
+
+	if f.transition.HasAction() {
+		writeAction(w, f.transition.Action)
+	}
+}
+func (f *formatTransition) Pop(w io.Writer) {}
 func (f *formatTransition) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }
@@ -522,4 +546,25 @@ func lineDistanceWithLastEntry(entry formatterEntry) int {
 	}
 
 	return distance
+}
+
+func writeCondition(w io.Writer, condition string) {
+	// We only want to have one space before and after.
+	condition = strings.TrimFunc(condition, func(r rune) bool {
+		return r == ' '
+	})
+	writeStringf(w, "if { ")
+	writeStringfNoIndent(w, condition)
+	writeStringf(w, " } ")
+}
+
+func writeAction(w io.Writer, action string) {
+	// We only want to have one space before and after.
+	action = strings.TrimFunc(action, func(r rune) bool {
+		return r == ' '
+	})
+
+	writeStringf(w, "do { ")
+	writeStringfNoIndent(w, action)
+	writeStringf(w, " } ")
 }
