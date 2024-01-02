@@ -90,6 +90,10 @@ type Option struct {
 	stringValue string
 	intValue    int64
 	boolValue   bool
+	// implicitBool refers whether the boolean value was implicit or not (simply writing the name,
+	// rather than an explicit "= true"). This doesn't change the logic of the option, but it's useful
+	// for downstream systems (like formatters) to know in which way the option was written.
+	implicitBool bool
 
 	frontendData *frontend_common.OptionData
 }
@@ -107,11 +111,19 @@ func newOption(od *OptionDefinition, fo *frontend_common.OptionData) (*Option, e
 
 	switch od.Kind {
 	case frontend_common.OptionValueKind_Boolean:
-		value, err := strconv.ParseBool(fo.Value)
-		if err != nil {
-			return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing bool value %q: %w", fo.Value, err)
+		implicit := true
+		value := true
+		if fo.Value != "" {
+			v, err := strconv.ParseBool(fo.Value)
+			if err != nil {
+				return nil, errors.Errorf(fo.Frontend_NamePos, "Semantic", "parsing bool value %q: %w", fo.Value, err)
+			}
+
+			value = v
+			implicit = false
 		}
 		option.boolValue = value
+		option.implicitBool = implicit
 	case frontend_common.OptionValueKind_String:
 		option.stringValue = fo.Value
 	case frontend_common.OptionValueKind_Integer:
@@ -188,6 +200,13 @@ func (so *Option) BoolValue() bool {
 		panic(fmt.Sprintf("Accessing wrong type, wanted boolean, got %s", so.Definition.Kind))
 	}
 	return so.boolValue
+}
+
+func (so *Option) IsImplicitBool() bool {
+	if so.Definition.Kind != frontend_common.OptionValueKind_Boolean {
+		panic(fmt.Sprintf("Accessing wrong type, wanted boolean, got %s", so.Definition.Kind))
+	}
+	return so.implicitBool
 }
 
 // Statechart Options ------------------------------------------------------------------------------

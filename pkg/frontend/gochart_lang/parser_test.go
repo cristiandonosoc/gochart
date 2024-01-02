@@ -187,7 +187,7 @@ func TestReadSimple(t *testing.T) {
 								{
 									Name:      "Option1",
 									ValueKind: common.OptionValueKind_Boolean,
-									Value:     "true",
+									Value:     "",
 								},
 							},
 							Transitions: []*ASTNodeStateTransition{
@@ -208,12 +208,12 @@ func TestReadSimple(t *testing.T) {
 								{
 									Name:      "Opt1",
 									ValueKind: common.OptionValueKind_Boolean,
-									Value:     "true",
+									Value:     "",
 								},
 								{
 									Name:      "Opt2",
 									ValueKind: common.OptionValueKind_Boolean,
-									Value:     "true",
+									Value:     "",
 								},
 								{
 									Name:      "Opt3",
@@ -262,7 +262,7 @@ func TestReadSimple(t *testing.T) {
 										{
 											Name:      "OptChild1",
 											ValueKind: common.OptionValueKind_Boolean,
-											Value:     "true",
+											Value:     "",
 										},
 										{
 											Name:      "OptChild2",
@@ -432,7 +432,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 			assert.Equal(t, want.Name, got.Name, "%s, Option %d", ctxStr, i)
 			assert.Equal(t, want.ValueKind, got.ValueKind, "%s, Option %d", ctxStr, i)
-			assert.Equal(t, want.Value, got.Value, "%s, Option %d", ctxStr, i)
+			assert.Equal(t, want.Value, got.Value, "%s, Option %d (%s)", ctxStr, i, want.Name)
 		}
 	}
 

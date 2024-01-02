@@ -209,8 +209,9 @@ func (f *formatStatechart) ChildEntries() []formatterEntry { return f.entries }
 
 func (f *formatStatechart) Write(w io.Writer) {
 	collapseLineDistance(w, f)
-	// TODO(cdc): Write options!
-	writeStringf(w, "statechart %s { ", f.sc.Name)
+	writeStringf(w, "statechart %s", f.sc.Name)
+	writeOptions(w, f.sc.Options)
+	writeStringf(w, "{ ")
 }
 func (f *formatStatechart) Pop(w io.Writer) {
 	collapseLineDistance(w, f)
@@ -282,8 +283,10 @@ func (f *formatState) ChildEntries() []formatterEntry { return f.entries }
 
 func (f *formatState) Write(w io.Writer) {
 	collapseLineDistance(w, f)
-	// TODO(cdc): Write options!
-	writeStringf(w, "state %s { ", f.state.Name)
+	writeStringf(w, "state %s", f.state.Name)
+	writeOptions(w, f.state.Options)
+	writeStringf(w, "{ ")
+
 }
 func (f *formatState) Pop(w io.Writer) {
 	collapseLineDistance(w, f)
@@ -546,6 +549,36 @@ func lineDistanceWithLastEntry(entry formatterEntry) int {
 	}
 
 	return distance
+}
+
+func writeOptions(w io.Writer, options []*ir.Option) {
+	// If there are no options, we simply write a space, as that is expected on the stream.
+	if len(options) == 0 {
+		writeStringf(w, " ")
+		return
+	}
+
+	// Collect the option strings
+	optionStrings := make([]string, 0, len(options))
+	for _, option := range options {
+		optionString := ""
+		switch kind := option.Definition.Kind; kind {
+		case frontend_common.OptionValueKind_Boolean:
+			if option.IsImplicitBool() {
+				optionString = option.Name()
+			} else {
+				optionString = fmt.Sprintf("%s = %t", option.Name(), option.BoolValue())
+			}
+		case frontend_common.OptionValueKind_String:
+			optionString = fmt.Sprintf("%s = %q", option.Name(), option.StringValue())
+		case frontend_common.OptionValueKind_Integer:
+			optionString = fmt.Sprintf("%s = %d", option.Name(), option.IntValue())
+		}
+
+		optionStrings = append(optionStrings, optionString)
+	}
+
+	writeStringf(w, "(%s) ", strings.Join(optionStrings, ", "))
 }
 
 func writeCondition(w io.Writer, condition string) {

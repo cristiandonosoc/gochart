@@ -357,9 +357,9 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 	}
 
 	// See if there is an optional value.
-	// If not, by default this is a "true" boolean option.
+	// If not, by default this is a "true" (empty) boolean option.
 	valueKind := common.OptionValueKind_Boolean
-	value := "true"
+	value := ""
 	if _, ok := p.match(Token_Equal); ok {
 		if token, ok := p.match(Token_Identifier); ok {
 			valueKind = common.OptionValueKind_String
