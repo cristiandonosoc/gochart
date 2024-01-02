@@ -125,7 +125,7 @@ capture capture if {
 		{id: Token_EOF, line: 21, char: 0},
 	}
 
-	lf, err := files.LoadFile([]byte(input))
+	lf, err := files.LoadFileFromData([]byte(input))
 	require.NoError(t, err)
 
 	s := NewScanner()

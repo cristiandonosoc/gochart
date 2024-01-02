@@ -1,0 +1,38 @@
+statechart GochartLevelConcurrent(concurrent) {
+	trigger Move()
+
+	state ActuatorFirst {
+		enter
+		exit
+	}
+
+	state ActuatorSecond {
+		enter
+		exit
+	}
+
+	state ActuatorThird {
+		enter
+		exit
+
+		state ActuatorThirdEmbed(concurrent) {
+			enter
+			exit
+
+			state ActuatorThirdEmbed_First {
+				enter
+				exit
+
+				state ActuatorThirdEmbed_FirstEmbed {
+					enter
+					exit
+				}
+			}
+
+			state ActuatorThirdEmbed_Second {
+				enter
+				exit
+			}
+		}
+	}
+}

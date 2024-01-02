@@ -108,12 +108,12 @@ func TestReadSimpleYaml(t *testing.T) {
 			want := wantTriggers[i]
 			got := sc.Triggers[i]
 
-			compareTrigger(t, want, got)
+			CompareTrigger(t, want, got)
 		}
 	}
 
 	want := ith.findState(t, frontend_common.RootStateName)
-	compareState(t, want, sc.Root)
+	CompareState(t, want, sc.Root)
 }
 
 func TestConcurrentGroups(t *testing.T) {
@@ -246,139 +246,12 @@ func TestConcurrentGroups(t *testing.T) {
 			want := wantTriggers[i]
 			got := sc.Triggers[i]
 
-			compareTrigger(t, want, got)
+			CompareTrigger(t, want, got)
 		}
 	}
 
 	want := ith.findState(t, frontend_common.RootStateName)
-	compareState(t, want, sc.Root)
-}
-
-// COMPARE FUNCTIONS -------------------------------------------------------------------------------
-
-func compareTrigger(t *testing.T, want, got *Trigger) {
-	assert.Equal(t, want.Name, got.Name)
-	if assert.Equal(t, len(want.Args), len(got.Args)) {
-		for i := 0; i < len(want.Args); i++ {
-			want := want.Args[i]
-			got := got.Args[i]
-
-			assert.Equal(t, want.Type, got.Type)
-			assert.Equal(t, want.Name, got.Name)
-		}
-	}
-}
-
-func compareState(t *testing.T, want, got *State) {
-	if !assert.Equal(t, want.Name, got.Name, "Parent: %s", want.Parent.SafeName()) {
-		return
-	}
-
-	ctxStr := fmt.Sprintf("State: %s", want.Name)
-
-	// Compare concurrentness.
-	assert.Equal(t, want.Concurrent, got.Concurrent, ctxStr)
-	assert.Equal(t, want.ConcurrentGroup, got.ConcurrentGroup, ctxStr)
-
-	// Compare the enter reactions.
-	compareReactions(t, want, want.EnterReactions, got.EnterReactions)
-
-	// Compare the exit reactions.
-	compareReactions(t, want, want.ExitReactions, got.ExitReactions)
-
-	// Compare the captures.
-	compareCaptures(t, want, want.Captures, got.Captures)
-
-	// Compare that we have the same parent.
-	// We only compare name, as otherwise we have a recursive call.
-	if assert.Equal(t, want.Parent != nil, got.Parent != nil) && want.Parent != nil {
-		assert.Equal(t, want.Parent.Name, got.Parent.Name, ctxStr)
-	}
-
-	// Compare that we have the same children.
-	if assert.Equal(t, len(want.Children), len(got.Children), want.SafeName()) {
-		for i := 0; i < len(want.Children); i++ {
-			want := want.Children[i]
-			got := got.Children[i]
-
-			compareState(t, want, got)
-		}
-	}
-
-	// Compare the transitions.
-	if assert.Equal(t, len(want.Transitions), len(got.Transitions)) {
-		for i := 0; i < len(want.Transitions); i++ {
-			want := want.Transitions[i]
-			got := got.Transitions[i]
-
-			compareTransition(t, want, got)
-		}
-	}
-}
-
-func compareReactions(t *testing.T, state *State, want, got []*StateReaction) {
-	if assert.Equal(t, len(want), len(got), state.Name) {
-		// Collect the names of the triggers for good error messages.
-		var wantList []string
-		var gotList []string
-		for i := 0; i < len(want); i++ {
-			want := want[i]
-			got := got[i]
-
-			wantList = append(wantList, want.String())
-			gotList = append(gotList, got.String())
-		}
-
-		for i := 0; i < len(want); i++ {
-			want := want[i]
-			got := got[i]
-
-			// Either the triggers are both nil or none.
-
-			if assert.Equal(t, want.Trigger != nil, got.Trigger != nil, "%s:\n- %s\n- %s", state.Name, wantList, gotList) {
-				if want.Trigger != nil {
-					assert.Equal(t, want.Trigger.Name, got.Trigger.Name, state.Name)
-				}
-			}
-		}
-	}
-}
-
-func compareCaptures(t *testing.T, state *State, want, got []*StateCapture) {
-	if assert.Equal(t, len(want), len(got), state.Name) {
-		// Collect the names of the triggers for good error messages.
-		var wantList []string
-		var gotList []string
-		for i := 0; i < len(want); i++ {
-			want := want[i]
-			got := got[i]
-
-			wantList = append(wantList, want.String())
-			gotList = append(gotList, got.String())
-		}
-
-		for i := 0; i < len(want); i++ {
-			want := want[i]
-			got := got[i]
-
-			assert.NotNil(t, got.Trigger, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
-			assert.Equal(t, want.Trigger.Name, got.Trigger.Name, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
-			assert.Equal(t, want.Condition, got.Condition, "%s:\n- %s\n- %s", state.Name, want.Condition, got.Condition)
-		}
-	}
-}
-
-func compareTransition(t *testing.T, want, got *Transition) {
-	// We only compare names to avoid over checking.
-	assert.Equal(t, want.From.Name, got.From.Name)
-	assert.Equal(t, want.To.Name, got.To.Name)
-	if assert.Equal(t, want.Trigger != nil, got.Trigger != nil) {
-		if want.Trigger != nil {
-			assert.Equal(t, want.Trigger.Name, got.Trigger.Name)
-		}
-	}
-	assert.Equal(t, want.Condition, got.Condition)
-	assert.Equal(t, want.Action, got.Action)
+	CompareState(t, want, sc.Root)
 }
 
 // HELPER FUNCTIONS --------------------------------------------------------------------------------

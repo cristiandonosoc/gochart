@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "formatter_test",
+    srcs = ["formatter_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        "//internal/files",
+        "//internal/test_support",
+        "//pkg/backend/formatter",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/ir",
+        "@com_github_stretchr_testify//require",
+    ],
+)

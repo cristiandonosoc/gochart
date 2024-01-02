@@ -23,7 +23,7 @@ func LoadFileFromPath(path string) (*LoadedFile, error) {
 		return nil, fmt.Errorf("reading file at %q: %w", path, err)
 	}
 
-	lf, err := LoadFile(data)
+	lf, err := LoadFileFromData(data)
 	if err != nil {
 		return nil, fmt.Errorf("creating load file: %w", err)
 	}
@@ -32,7 +32,7 @@ func LoadFileFromPath(path string) (*LoadedFile, error) {
 	return lf, nil
 }
 
-func LoadFile(data []byte) (*LoadedFile, error) {
+func LoadFileFromData(data []byte) (*LoadedFile, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 
 	var lines []string
