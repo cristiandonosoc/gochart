@@ -47,15 +47,7 @@ func (iw *IndentedWriter) MustDecreateIndent() {
 }
 
 func (iw *IndentedWriter) Write(p []byte) (int, error) {
-	// Trim all unnecessary space.
-	data := strings.TrimFunc(string(p), func(r rune) bool {
-		switch r {
-		case '\t', '\r', ' ':
-			return true
-		}
-		return false
-	})
-
+	data := string(p)
 	for _, r := range data {
 		if r == '\n' {
 			iw.handleNewLine()

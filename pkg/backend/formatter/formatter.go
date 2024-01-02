@@ -3,7 +3,6 @@ package formatter
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
@@ -62,11 +61,16 @@ func (fgb *formatterGochartBackend) Generate(ctx context.Context, sc *ir.Statech
 		opt(fgb.options)
 	}
 
-	f := newFormatterEntry(sc)
-	iw := NewIndentedWriter()
-	if err := fgb.formatEntry(ctx, f, iw, fgb.options.Debug); err != nil {
-		return nil, fmt.Errorf("formatting entries: %w", err)
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		// Continue.
 	}
+
+	iw := NewIndentedWriter()
+	gf := newGochartFormatter(iw, fgb.options.Debug)
+	gf.formatStatechart(sc)
 
 	content := iw.String()
 	output := &common.BackendOutput{
@@ -74,35 +78,4 @@ func (fgb *formatterGochartBackend) Generate(ctx context.Context, sc *ir.Statech
 	}
 
 	return []*common.BackendOutput{output}, nil
-}
-
-func (fgb *formatterGochartBackend) formatEntry(ctx context.Context, f formatterEntry, iw *IndentedWriter, debug bool) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		// Continue.
-	}
-
-	if !debug {
-		f.Write(iw)
-	} else {
-		f.DebugWrite(iw)
-	}
-
-	if f.Indents() {
-		iw.MustIncreaseIndent()
-	}
-
-	for _, cfe := range f.ChildEntries() {
-		if err := fgb.formatEntry(ctx, cfe, iw, debug); err != nil {
-			return err
-		}
-	}
-
-	if f.Indents() {
-		iw.MustDecreateIndent()
-	}
-
-	return nil
 }
