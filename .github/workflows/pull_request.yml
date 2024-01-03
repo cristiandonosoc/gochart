@@ -1,0 +1,11 @@
+name: pull request tests
+on: [pull_request]
+jobs:
+  windows:
+    name: pull request windows
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: run tests
+      run: bazel test //...
+
