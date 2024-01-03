@@ -2,6 +2,7 @@ package gochart_lang
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/test_support"
@@ -466,8 +467,8 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.TargetState, got.TargetState, "%s, Transition %d", ctxStr, i)
-			assert.Equal(t, want.Condition, got.Condition, "%s, Transition %d", ctxStr, i)
-			assert.Equal(t, want.Action, got.Action, "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, escapeString(want.Condition), escapeString(got.Condition), "%s, Transition %d", ctxStr, i)
+			assert.Equal(t, escapeString(want.Action), escapeString(got.Action), "%s, Transition %d", ctxStr, i)
 			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
@@ -479,7 +480,7 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.Captures[i]
 
 			assert.Equal(t, want.Trigger, got.Trigger, "%s, Capture %d", ctxStr, i)
-			assert.Equal(t, want.Condition, got.Condition, "%s, Capture %d", ctxStr, i)
+			assert.Equal(t, escapeString(want.Condition), escapeString(got.Condition), "%s, Capture %d", ctxStr, i)
 			assert.Equal(t, want.entryIndex, got.entryIndex, "%s, Option %d", ctxStr, i)
 		}
 	}
@@ -525,4 +526,8 @@ type commentComparer struct {
 func (cc *commentComparer) compare(t *testing.T, want, got *ASTNodeComment) {
 	assert.Equal(t, want.comment, got.comment, "parent %q", cc.parent)
 	assert.Equal(t, want.entryIndex, got.entryIndex, "parent %q (COMMENT=%q)", cc.parent, want.comment)
+}
+
+func escapeString(str string) string {
+	return strings.ReplaceAll(str, "\r", "")
 }

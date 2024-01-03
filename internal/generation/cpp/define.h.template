@@ -10,8 +10,10 @@
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
 #ifdef _MSC_VER
 #define GOCHART_DEBUG_BREAK __debugbreak()
+#define GOCHART_UNUSED
 #else
 #define GOCHART_DEBUG_BREAK __builtin_trap()
+#define GOCHART_UNUSED __attribute__((unused))
 #endif
 
 #include <array>
@@ -558,7 +560,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 			template <typename T>
 			bool Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionConditionTargeting{{$nullTransition.To.Name}}() const
 			{
-				const auto& gochart = *this;
+				GOCHART_UNUSED const auto& gochart = *this;
 				{{$nullTransition.Condition}};
 			}
 		{{- end }}{{/* if $nullTransition.HasCondition */}}
@@ -567,7 +569,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 			template <typename T>
 			void Gochart<T>::{{$state.DisplayName}}_EvaluateNullTransitionActionTargeting{{$nullTransition.To.Name}}()
 			{
-				auto& gochart = *this;
+				GOCHART_UNUSED auto& gochart = *this;
 				{{$nullTransition.Action}};
 			}
 		{{- end }}{{/* if $nullTransition.HasAction */}}
@@ -587,7 +589,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 				template <typename T>
 				bool Gochart<T>::{{$state.DisplayName}}_EvaluateTransitionConditionFor{{$trigger.Name}}({{$args}}) const
 				{
-					const auto& gochart = *this;
+					GOCHART_UNUSED const auto& gochart = *this;
 					{{$transition.Condition}};
 				}
 			{{- end }}{{/* $transition.HasCondition */}}
@@ -598,7 +600,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 				template <typename T>
 				void Gochart<T>::{{$state.DisplayName}}_ExecuteActionFor{{$trigger.Name}}({{$args}})
 				{
-					auto& gochart = *this;
+					GOCHART_UNUSED auto& gochart = *this;
 					{{$transition.Action}};
 				}
 			{{- end }}{{/* if $transition.HasAction */}}
@@ -613,7 +615,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 				template <typename T>
 				bool Gochart<T>::{{$state.DisplayName}}_EvaluateCaptureConditionFor{{$trigger.Name}}({{$args}}) const
 				{
-					const auto& gochart = *this;
+					GOCHART_UNUSED const auto& gochart = *this;
 					{{$capture.Condition}};
 				}
 			{{- end }}{{/* if $capture.HasCondition */}}
@@ -660,7 +662,7 @@ void Gochart<T>::ProcessTrigger(EState state, const {{$internal}}::TriggerEntry&
 					{
 						// We cast the trigger data to the correct type.
 						assert(trigger_data != nullptr);
-						auto* data = reinterpret_cast<const {{$internal}}::{{$trigger.Name}}Data*>(trigger_data);
+						GOCHART_UNUSED auto* data = reinterpret_cast<const {{$internal}}::{{$trigger.Name}}Data*>(trigger_data);
 
 						// Now we call the handler with the arguments.
 						GetOwner().{{$state.DisplayName}}_{{$reactionType}}{{$trigger.Name}}(
