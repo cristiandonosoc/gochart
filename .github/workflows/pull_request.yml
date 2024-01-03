@@ -1,11 +1,15 @@
 name: pull request tests
 on: [push, pull_request]
 jobs:
-  windows:
-    name: pull request windows
-    runs-on: windows-latest
+  tests:
+    name: pull request tests
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: run tests
       run: bazel test //...
+
 
