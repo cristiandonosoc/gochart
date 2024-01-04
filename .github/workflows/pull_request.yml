@@ -1,5 +1,5 @@
 name: pull request tests
-on: [push, pull_request]
+on: [pull_request]
 jobs:
   gofmt:
     name: Run gofmt
@@ -16,6 +16,13 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Load the cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-bazel-cache
+        path: |
+          ~/.cache/bazelisk
+          ~/.cache/bazel
     - uses: actions/checkout@v4
     - name: run tests
       run: bazel test //...
