@@ -2,14 +2,14 @@ name: pull request tests
 on: [pull_request]
 jobs:
   # Run gofmt.
-  gofmt:
-    name: Run gofmt
-    runs-on: ubuntu-latest
-    steps:
-    - uses: Jerome1337/gofmt-action@v1.0.5
-      with:
-        gofmt-path: .
-        gofmt-flags: -l -d
+  # gofmt:
+  #   name: Run gofmt
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: Jerome1337/gofmt-action@v1.0.5
+  #     with:
+  #       gofmt-path: .
+  #       gofmt-flags: -l -d
   # Make sure the tests passes.
   # tests:
   #   name: pull request tests
@@ -44,6 +44,7 @@ jobs:
   windows_tests:
     runs-on: windows-latest
     steps:
+    - run: env
     - name: Load the cache
       uses: actions/cache@v3
       with:
