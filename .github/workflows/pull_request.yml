@@ -11,12 +11,25 @@ jobs:
         gofmt-path: .
         gofmt-flags: -l -d
   # Make sure the tests passes.
-  tests:
-    name: pull request tests
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+  # tests:
+  #   name: pull request tests
+  #   strategy:
+  #     matrix:
+  #       os: [windows-latest, ubuntu-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #   - name: Load the cache
+  #     uses: actions/cache@v3
+  #     with:
+  #       key: ${{ runner.os }}-bazel-cache
+  #       path: |
+  #         ~/.cache/bazelisk
+  #         ~/.cache/bazel
+  #   - uses: actions/checkout@v4
+  #   - name: run tests
+  #     run: bazel test //...
+  linux_tests:
+    runs-on: ubuntu-latest
     steps:
     - name: Load the cache
       uses: actions/cache@v3
@@ -25,6 +38,18 @@ jobs:
         path: |
           ~/.cache/bazelisk
           ~/.cache/bazel
+    - uses: actions/checkout@v4
+    - name: run tests
+      run: bazel test //...
+  windows_tests:
+    runs-on: windows-latest
+    steps:
+    - name: Load the cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-bazel-cache
+        path: |
+          ${{ env.USERPROFILE }}\_bazel_${{ env.USERNAME }}
     - uses: actions/checkout@v4
     - name: run tests
       run: bazel test //...
