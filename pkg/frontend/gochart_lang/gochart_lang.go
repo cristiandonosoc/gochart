@@ -67,7 +67,7 @@ func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*common.GochartDa
 	}
 
 	ft := newFrontendTranslator(lf)
-	scdata := ft.translateGochart(root.gocharts[0])
+	gcdata := ft.translateGochart(root.gocharts[0])
 
-	return scdata, nil
+	return gcdata, nil
 }

@@ -13,7 +13,7 @@ import (
 // description is not going to change anymore.
 func validate(ih *inputHandler) error {
 	if len(ih.states) < 2 {
-		return errors.Errorf(ih.scdata.Frontend_NamePos, "Semantic", "no root states found")
+		return errors.Errorf(ih.gcdata.Frontend_NamePos, "Semantic", "no root states found")
 	}
 
 	// Validate states.

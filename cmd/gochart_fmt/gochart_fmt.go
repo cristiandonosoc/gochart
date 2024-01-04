@@ -55,12 +55,12 @@ func internalMain() error {
 						return fmt.Errorf("loading file %q: %w", path, err)
 					}
 
-					scdata, err := gf.Process(lf)
+					gcdata, err := gf.Process(lf)
 					if err != nil {
 						return fmt.Errorf("processing gochart frontend: %w", err)
 					}
 
-					gc, err := ir.ProcessGochartData(scdata)
+					gc, err := ir.ProcessGochartData(gcdata)
 					if err != nil {
 						return fmt.Errorf("processing IR data: %w", err)
 					}

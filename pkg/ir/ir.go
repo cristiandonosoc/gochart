@@ -41,8 +41,8 @@ type Gochart struct {
 	FrontendData *frontend_common.GochartData
 }
 
-func (sc *Gochart) ConcurrentGroupCount() int {
-	return len(sc.ConcurrentHeads)
+func (gc *Gochart) ConcurrentGroupCount() int {
+	return len(gc.ConcurrentHeads)
 }
 
 // TRIGGER -----------------------------------------------------------------------------------------

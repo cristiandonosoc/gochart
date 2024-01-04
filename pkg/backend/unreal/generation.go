@@ -207,12 +207,12 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		return nil, fmt.Errorf("loading file %q: %w", gochart.Path, err)
 	}
 
-	scdata, err := ugb.gochartFrontend.Process(lf)
+	gcdata, err := ugb.gochartFrontend.Process(lf)
 	if err != nil {
 		return nil, fmt.Errorf("processing gochart frontend: %w", err)
 	}
 
-	gc, err := ir.ProcessGochartData(scdata)
+	gc, err := ir.ProcessGochartData(gcdata)
 	if err != nil {
 		return nil, fmt.Errorf("processing IR data: %w", err)
 	}

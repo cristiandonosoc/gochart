@@ -11,7 +11,7 @@ import (
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
-	scdata *frontend_common.GochartData
+	gcdata *frontend_common.GochartData
 
 	triggers []*Trigger
 	root     *State
@@ -24,37 +24,37 @@ type inputHandler struct {
 	stateMap   map[string]*State
 }
 
-func ProcessGochartData(scdata *frontend_common.GochartData) (*Gochart, error) {
-	gc, err := processGochartDataInternal(scdata)
+func ProcessGochartData(gcdata *frontend_common.GochartData) (*Gochart, error) {
+	gc, err := processGochartDataInternal(gcdata)
 	if err != nil {
 		return nil, errors.NewErrorContainer([]error{err})
 	}
 	return gc, nil
 }
 
-func processGochartDataInternal(scdata *frontend_common.GochartData) (*Gochart, error) {
+func processGochartDataInternal(gcdata *frontend_common.GochartData) (*Gochart, error) {
 	ih := inputHandler{
-		scdata:     scdata,
+		gcdata:     gcdata,
 		triggerMap: make(map[string]*Trigger),
 		stateMap:   make(map[string]*State),
 	}
 
 	// We create the base root state.
 	root := &State{
-		Name:         scdata.Root.Name,
-		FrontendData: scdata.Root,
+		Name:         gcdata.Root.Name,
+		FrontendData: gcdata.Root,
 	}
 
 	// We create the base state object (will be filled more later).
 	statechart := &Gochart{
-		Name: scdata.Name,
+		Name: gcdata.Name,
 		// By default the namespace is same as the name. This might be override by an option.
-		Namespace:    scdata.Name,
+		Namespace:    gcdata.Name,
 		Root:         root,
-		FrontendData: scdata,
+		FrontendData: gcdata,
 	}
-	if err := parseGochartOptions(statechart, scdata.Options); err != nil {
-		return nil, fmt.Errorf("statechart %q: parsing options: %w", scdata.Name, err)
+	if err := parseGochartOptions(statechart, gcdata.Options); err != nil {
+		return nil, fmt.Errorf("statechart %q: parsing options: %w", gcdata.Name, err)
 	}
 
 	if err := ih.collectTriggers(); err != nil {
@@ -88,9 +88,9 @@ func processGochartDataInternal(scdata *frontend_common.GochartData) (*Gochart, 
 }
 
 func (ih *inputHandler) collectTriggers() error {
-	triggers := make([]*Trigger, 0, len(ih.scdata.Triggers))
+	triggers := make([]*Trigger, 0, len(ih.gcdata.Triggers))
 
-	for _, tdata := range ih.scdata.Triggers {
+	for _, tdata := range ih.gcdata.Triggers {
 		trigger, err := ih.createTrigger(tdata)
 		if err != nil {
 			return fmt.Errorf("creating trigger %q: %w", tdata.Name, err)
@@ -132,7 +132,7 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 	// We first create all the states and track its associated data.
 	states := []*State{}
 	stateMap := map[string]*State{}
-	for _, statedata := range ih.scdata.States {
+	for _, statedata := range ih.gcdata.States {
 		// The state should not exist.
 		if _, ok := stateMap[statedata.Name]; ok {
 			return errors.Errorf(statedata.Frontend_NamePos, "Semantic", "state %q already exists", statedata.Name)
@@ -321,7 +321,7 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*frontend_common.Capt
 
 func (ih *inputHandler) collectTransitions() error {
 	// We go over all the transitions and generate the actual mapping.
-	for _, tdata := range ih.scdata.Transitions {
+	for _, tdata := range ih.gcdata.Transitions {
 		transition, fromState, err := ih.createTransition(tdata)
 		if err != nil {
 			return fmt.Errorf("creating transition %q: %w", tdata.String(), err)
@@ -443,7 +443,7 @@ func (ih *inputHandler) getConcurrentGroupTitle(concurrentGroup int) string {
 
 	// If the state is nil, it means that this is a root state.
 	if head.HeadState == nil {
-		return fmt.Sprintf("statechart %q", ih.scdata.Name)
+		return fmt.Sprintf("statechart %q", ih.gcdata.Name)
 	}
 
 	return fmt.Sprintf("state %q", head.HeadState.Name)

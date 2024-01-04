@@ -99,27 +99,27 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 
 	var gocharts []*ASTNodeGochart
 
-	sc, err := p.parseGochart()
+	gc, err := p.parseGochart()
 	if err != nil {
 		if len(p.errors) == 0 {
 			p.pushInternalErrorf(0, "unaccounted parser error on err: %v", err.Error())
 		}
 		return nil, p.errors
 	}
-	gocharts = append(gocharts, sc)
+	gocharts = append(gocharts, gc)
 
 	// See if there are more gochart nodes.
 	// TODO(cdc): See how we can make the parser recover from an error.
 	for {
 		if p.peek().id == Token_KeywordStatechart {
-			sc, err := p.parseGochart()
+			gc, err := p.parseGochart()
 			if err != nil {
 				if len(p.errors) == 0 {
 					p.pushInternalErrorf(0, fmt.Sprintf("unaccounted parser error on err: %v", err.Error()))
 				}
 				return nil, p.errors
 			}
-			gocharts = append(gocharts, sc)
+			gocharts = append(gocharts, gc)
 		}
 
 		break
@@ -183,7 +183,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 
 	// Create the tentative gochart to be able to track comments.
 	// We create the root state immediatelly as we use that for the index source.
-	sc := &ASTNodeGochart{
+	gc := &ASTNodeGochart{
 		Root: &ASTNodeState{},
 	}
 
@@ -194,7 +194,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 			break
 		}
 
-		sc.AppendNode(&ASTNodeComment{
+		gc.AppendNode(&ASTNodeComment{
 			comment: commentToken.literal,
 			token:   commentToken,
 		})
@@ -231,16 +231,16 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 	}
 
 	// Fill in the gochart now that we have the info.
-	sc.Name = name
-	sc.Options = options
-	sc.keywordToken = baseToken
-	sc.nameToken = nameToken
+	gc.Name = name
+	gc.Options = options
+	gc.keywordToken = baseToken
+	gc.nameToken = nameToken
 	// The root state has the position of the gochart.
-	sc.Root.Name = common.RootStateName
-	sc.Root.keywordToken = baseToken
-	sc.Root.nameToken = nameToken
-	sc.Root.entryIndex = sc.entryCount
-	sc.entryCount++ // To account for the root state.
+	gc.Root.Name = common.RootStateName
+	gc.Root.keywordToken = baseToken
+	gc.Root.nameToken = nameToken
+	gc.Root.entryIndex = gc.entryCount
+	gc.entryCount++ // To account for the root state.
 
 	{
 		// {
@@ -249,7 +249,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 		}
 
 		for !p.atEnd() {
-			ok, err := p.parseGochartBodyStmt(sc)
+			ok, err := p.parseGochartBodyStmt(gc)
 			if err != nil {
 				return nil, fmt.Errorf("parsing gochart body statement: %w", err)
 			}
@@ -261,7 +261,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 			break
 		}
 
-		if sc.NonCommentEntryCount() == 0 {
+		if gc.NonCommentEntryCount() == 0 {
 			return nil, p.pushErrorf(0, "empty statechart found, need at least one statement")
 		}
 
@@ -277,13 +277,13 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 			break
 		}
 
-		sc.AppendNode(&ASTNodeComment{
+		gc.AppendNode(&ASTNodeComment{
 			comment: commentToken.literal,
 			token:   commentToken,
 		})
 	}
 
-	return sc, nil
+	return gc, nil
 }
 
 // Options ------------------------------------------------------------------------------------
@@ -403,7 +403,7 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 // GochartBodyStmt -> Trigger
 //                 -> State
 
-func (p *Parser) parseGochartBodyStmt(sc *ASTNodeGochart) (bool, error) {
+func (p *Parser) parseGochartBodyStmt(gc *ASTNodeGochart) (bool, error) {
 	// If we're closing the brace, we simply exit the statement.
 	if peek := p.peek(); peek.id == Token_RightBrace {
 		return false, nil
@@ -421,12 +421,12 @@ func (p *Parser) parseGochartBodyStmt(sc *ASTNodeGochart) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
-		sc.AppendNode(trigger)
+		gc.AppendNode(trigger)
 		return true, nil
 	}
 
 	// Otherwise all statements go into our root state.
-	if ok, err := p.parseStateBodyStmt(sc.Root); err != nil {
+	if ok, err := p.parseStateBodyStmt(gc.Root); err != nil {
 		return false, fmt.Errorf("parsing root state body statement: %w", err)
 	} else if ok {
 		return true, nil

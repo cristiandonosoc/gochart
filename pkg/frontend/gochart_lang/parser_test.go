@@ -360,7 +360,7 @@ func compareASTNodeRoot(t *testing.T, want, got *ASTNodeRoot) {
 
 func compareASTNodeGochart(t *testing.T, want, got *ASTNodeGochart) {
 	assert.Equal(t, want.Name, got.Name)
-	scName := want.Name
+	gcName := want.Name
 
 	if assert.Equal(t, len(want.Triggers), len(got.Triggers), "Not same amount of triggers") {
 		for i := 0; i < len(want.Triggers); i++ {
@@ -374,7 +374,7 @@ func compareASTNodeGochart(t *testing.T, want, got *ASTNodeGochart) {
 			tc.compare(t, want, got)
 		}
 
-		parent := fmt.Sprintf("gochart:%s", scName)
+		parent := fmt.Sprintf("gochart:%s", gcName)
 		if assert.Equal(t, len(want.Comments), len(got.Comments), parent) {
 			for i := 0; i < len(want.Comments); i++ {
 				want := want.Comments[i]

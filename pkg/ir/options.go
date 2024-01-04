@@ -211,9 +211,9 @@ func (so *Option) IsImplicitBool() bool {
 
 // Gochart Options ------------------------------------------------------------------------------
 
-type GochartOptionHandler func(sc *Gochart, option *Option) error
+type GochartOptionHandler func(gc *Gochart, option *Option) error
 
-func parseGochartOptions(sc *Gochart, frontendOptions []*frontend_common.OptionData) error {
+func parseGochartOptions(gc *Gochart, frontendOptions []*frontend_common.OptionData) error {
 	options, err := collectOptionsFromDefinitions("statechart", kGochartOptionDefinitions, frontendOptions)
 	if err != nil {
 		return fmt.Errorf("collecting statechart options from definitions: %w", err)
@@ -226,22 +226,22 @@ func parseGochartOptions(sc *Gochart, frontendOptions []*frontend_common.OptionD
 			return errors.InternalErrorf("invalid handler type for statechart option %q", option.Definition.Name)
 		}
 
-		if err := handler(sc, option); err != nil {
+		if err := handler(gc, option); err != nil {
 			return fmt.Errorf("handling statechart option %q: %w", option.Definition.Name, err)
 		}
 	}
 
-	sc.Options = options
+	gc.Options = options
 	return nil
 }
 
-func parseGochartOption_Concurrent(sc *Gochart, option *Option) error {
-	sc.Root.Concurrent = option.BoolValue()
+func parseGochartOption_Concurrent(gc *Gochart, option *Option) error {
+	gc.Root.Concurrent = option.BoolValue()
 	return nil
 }
 
-func parseGochartOption_Namespace(sc *Gochart, option *Option) error {
-	sc.Namespace = option.StringValue()
+func parseGochartOption_Namespace(gc *Gochart, option *Option) error {
+	gc.Namespace = option.StringValue()
 	return nil
 }
 

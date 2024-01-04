@@ -146,11 +146,11 @@ func (gf *gochartFormatter) newFormatGochartWrapper(gc *ir.Gochart) *formatGocha
 // The frontend_common.FrontendEntry interface
 func (f *formatGochartWrapper) Index() int { return 0 }
 func (f *formatGochartWrapper) Position() *files.LoadedFilePosition {
-	scPos := f.gc.FrontendData.Position()
+	gcPos := f.gc.FrontendData.Position()
 
 	// The wrapper is positioned at the first character of the first line.
 	return &files.LoadedFilePosition{
-		File: scPos.File,
+		File: gcPos.File,
 		Line: 1,
 		Char: 1,
 	}

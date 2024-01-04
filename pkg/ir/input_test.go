@@ -90,15 +90,15 @@ func TestReadSimpleYaml(t *testing.T) {
 	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(lf)
+	gcdata, err := yf.Process(lf)
 	require.NoError(t, err)
-	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States),
-		"WANT:", printStates(wantStates), "GOT:", printFrontendStates(scdata.States))
+	require.Equal(t, len(wantTriggers), len(gcdata.Triggers))
+	require.Equal(t, len(wantStates), len(gcdata.States),
+		"WANT:", printStates(wantStates), "GOT:", printFrontendStates(gcdata.States))
 
-	t.Log(printFrontendStates(scdata.States))
+	t.Log(printFrontendStates(gcdata.States))
 
-	gc, err := ProcessGochartData(scdata)
+	gc, err := ProcessGochartData(gcdata)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Simple", gc.Name)
@@ -231,12 +231,12 @@ func TestConcurrentGroups(t *testing.T) {
 	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(lf)
+	gcdata, err := yf.Process(lf)
 	require.NoError(t, err)
-	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States))
+	require.Equal(t, len(wantTriggers), len(gcdata.Triggers))
+	require.Equal(t, len(wantStates), len(gcdata.States))
 
-	gc, err := ProcessGochartData(scdata)
+	gc, err := ProcessGochartData(gcdata)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Concurrent", gc.Name)

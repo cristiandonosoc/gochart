@@ -15,10 +15,10 @@ func newFrontendTranslator(lf *files.LoadedFile) *frontendTranslator {
 	}
 }
 
-func (ft *frontendTranslator) translateGochart(nsc *ASTNodeGochart) *common.GochartData {
+func (ft *frontendTranslator) translateGochart(ngc *ASTNodeGochart) *common.GochartData {
 	// Collect triggers.
-	triggers := make([]*common.TriggerData, 0, len(nsc.Triggers))
-	for _, nt := range nsc.Triggers {
+	triggers := make([]*common.TriggerData, 0, len(ngc.Triggers))
+	for _, nt := range ngc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(nt))
 	}
 
@@ -26,21 +26,21 @@ func (ft *frontendTranslator) translateGochart(nsc *ASTNodeGochart) *common.Goch
 	var states []*common.StateData
 	var transitions []*common.TransitionData
 
-	states, transitions = ft.translateState(nsc.Root, states, transitions)
+	states, transitions = ft.translateState(ngc.Root, states, transitions)
 	if states[0].Name != common.RootStateName {
 		panic("root state is not the first one!")
 	}
 
 	return &common.GochartData{
-		Name:                nsc.Name,
-		Options:             ft.translateOptions(nsc.Options),
+		Name:                ngc.Name,
+		Options:             ft.translateOptions(ngc.Options),
 		Triggers:            triggers,
 		Root:                states[0],
 		States:              states,
 		Transitions:         transitions,
-		Comments:            ft.translateComments(nsc.Comments),
-		Frontend_KeywordPos: tokenToPosition(ft.lf, nsc.keywordToken),
-		Frontend_NamePos:    tokenToPosition(ft.lf, nsc.nameToken),
+		Comments:            ft.translateComments(ngc.Comments),
+		Frontend_KeywordPos: tokenToPosition(ft.lf, ngc.keywordToken),
+		Frontend_NamePos:    tokenToPosition(ft.lf, ngc.nameToken),
 	}
 }
 
