@@ -45,12 +45,16 @@ jobs:
     runs-on: windows-latest
     steps:
     - run: env
+    - name: Add paths to env
+      run: |
+        echo "USERPROFILE=%USERPROFILE%" >> $GITHUB_ENV
+        echo "USERNAME=%USERNAME%" >> $GITHUB_ENV
     - name: Load the cache
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-bazel-cache
         path: |
-          # ${{ env.USERPROFILE }}\_bazel_${{ env.USERNAME }}
+          ${{ env.USERPROFILE }}\_bazel_${{ env.USERNAME }}
           $USERPROFILE\_bazel_$USERNAME
     - uses: actions/checkout@v4
     # - name: run tests
