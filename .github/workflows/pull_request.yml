@@ -49,10 +49,12 @@ jobs:
         ENV_CONTEXT_BEFORE: ${{ toJson(env) }}
       run: write-host "$env:ENV_CONTEXT_BEFORE"
     - name: Add paths to env
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       shell: cmd
       run: |
-        echo "USERPROFILE=%USERPROFILE%" >> "$GITHUB_ENV"
-        echo "USERNAME=%USERNAME%" >> "$GITHUB_ENV"
+        echo ::set-env name=USERPROFILE::%USERPROFILE%
+        echo ::set-env name=USERNAME::%USERNAME%
     - name: dump after env
       env:
         ENV_CONTEXT_AFTER: ${{ toJson(env) }}
