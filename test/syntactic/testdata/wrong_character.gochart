@@ -3,37 +3,37 @@
 //Scanner error:
 //  35:
 //  36:
-//  37: statechart @asda@@@ {
-//                 ^---> unrecognized character '@'
+//  37: gochart @asda@@@ {
+//              ^---> unrecognized character '@'
 //  38:
 //  39: }
 //
 //Scanner error:
 //  35:
 //  36:
-//  37: statechart @asda@@@ {
-//                      ^---> unrecognized character '@'
+//  37: gochart @asda@@@ {
+//                   ^---> unrecognized character '@'
 //  38:
 //  39: }
 //
 //Scanner error:
 //  35:
 //  36:
-//  37: statechart @asda@@@ {
-//                       ^---> unrecognized character '@'
+//  37: gochart @asda@@@ {
+//                    ^---> unrecognized character '@'
 //  38:
 //  39: }
 //
 //Scanner error:
 //  35:
 //  36:
-//  37: statechart @asda@@@ {
-//                        ^---> unrecognized character '@'
+//  37: gochart @asda@@@ {
+//                     ^---> unrecognized character '@'
 //  38:
 //  39: }
 // --- ERROR END
 
 
-statechart @asda@@@ {
+gochart @asda@@@ {
 
 }

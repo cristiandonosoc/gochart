@@ -1,5 +1,5 @@
 // Package gochart_lang is the frontend for what we can "gochart_lang", which is a custom spec
-// language to describe statecharts.
+// language to describe gocharts.
 package gochart_lang
 
 import (
@@ -49,7 +49,7 @@ func NewGochartLangFrontend(opts ...option.Option) (*gochartLangFrontend, error)
 	}, nil
 }
 
-func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*common.StatechartData, error) {
+func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*common.GochartData, error) {
 	scanner := NewScanner()
 	tokens, scannerErrors := scanner.gatherTokens(lf)
 	if len(scannerErrors) > 0 {
@@ -62,12 +62,12 @@ func (glf *gochartLangFrontend) Process(lf *files.LoadedFile) (*common.Statechar
 		return nil, errors.NewErrorContainer(parserErrors)
 	}
 
-	if len(root.statecharts) != 1 {
-		return nil, fmt.Errorf("For now only one statechart is supported per file")
+	if len(root.gocharts) != 1 {
+		return nil, fmt.Errorf("For now only one gochart is supported per file")
 	}
 
 	ft := newFrontendTranslator(lf)
-	scdata := ft.translateStatechart(root.statecharts[0])
+	gcdata := ft.translateGochart(root.gocharts[0])
 
-	return scdata, nil
+	return gcdata, nil
 }

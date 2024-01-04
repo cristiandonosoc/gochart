@@ -1,5 +1,5 @@
 // This is a comment
-statechart Door {
+gochart Door {
 	trigger Update(bool tick)		// This is another comment
 
 	trigger ActivateDoorActuator(bool active)

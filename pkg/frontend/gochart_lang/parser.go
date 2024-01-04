@@ -24,7 +24,7 @@ var (
 		Token_Comment,
 	}
 
-	expectedStatechartBodyStmtKeywords = []TokenIdentifier{
+	expectedGochartBodyStmtKeywords = []TokenIdentifier{
 		Token_KeywordTrigger,
 		// Plus all the state ones.
 		Token_KeywordEnter,
@@ -42,8 +42,8 @@ type Parser struct {
 	tokens  []*Token
 	current int
 
-	currentStatechart string
-	currentState      string
+	currentGochart string
+	currentState   string
 
 	errors []error
 
@@ -79,10 +79,10 @@ type ASTNode interface {
 
 // Root --------------------------------------------------------------------------------------------
 //
-// Root -> Statechart+
+// Root -> Gochart+
 
 type ASTNodeRoot struct {
-	statecharts []*ASTNodeStatechart
+	gocharts []*ASTNodeGochart
 }
 
 var _ ASTNode = (*ASTNodeRoot)(nil)
@@ -91,53 +91,53 @@ func (n *ASTNodeRoot) AppendNode(node ASTNode) {
 	panic("this node cannot append!")
 }
 
-// root -> statechart+
+// root -> gochart+
 func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	p.debuglog("parsing root node")
 
 	root := &ASTNodeRoot{}
 
-	var statecharts []*ASTNodeStatechart
+	var gocharts []*ASTNodeGochart
 
-	sc, err := p.parseStatechart()
+	gc, err := p.parseGochart()
 	if err != nil {
 		if len(p.errors) == 0 {
 			p.pushInternalErrorf(0, "unaccounted parser error on err: %v", err.Error())
 		}
 		return nil, p.errors
 	}
-	statecharts = append(statecharts, sc)
+	gocharts = append(gocharts, gc)
 
-	// See if there are more statechart nodes.
+	// See if there are more gochart nodes.
 	// TODO(cdc): See how we can make the parser recover from an error.
 	for {
-		if p.peek().id == Token_KeywordStatechart {
-			sc, err := p.parseStatechart()
+		if p.peek().id == Token_KeywordGochart {
+			gc, err := p.parseGochart()
 			if err != nil {
 				if len(p.errors) == 0 {
 					p.pushInternalErrorf(0, fmt.Sprintf("unaccounted parser error on err: %v", err.Error()))
 				}
 				return nil, p.errors
 			}
-			statecharts = append(statecharts, sc)
+			gocharts = append(gocharts, gc)
 		}
 
 		break
 	}
 
 	if !p.atEnd() {
-		p.pushErrorf(0, "expected \"statechart\" keyword, got %q", p.peek())
+		p.pushErrorf(0, "expected \"gochart\" keyword, got %q", p.peek())
 	}
 
-	root.statecharts = statecharts
+	root.gocharts = gocharts
 	return root, p.errors
 }
 
-// Statechart --------------------------------------------------------------------------------------
+// Gochart --------------------------------------------------------------------------------------
 //
-// Statechart -> 'statechart' NAME ( '(' ')' )? '{' StatechartBodyStmt+ '}'
+// Gochart -> 'gochart' NAME ( '(' ')' )? '{' GochartBodyStmt+ '}'
 
-type ASTNodeStatechart struct {
+type ASTNodeGochart struct {
 	Name string
 
 	Options []*ASTNodeOption
@@ -146,7 +146,7 @@ type ASTNodeStatechart struct {
 	Root     *ASTNodeState
 	States   []*ASTNodeState
 
-	// These comments will be outside the statechart, as inside comments will be inside of the root
+	// These comments will be outside the gochart, as inside comments will be inside of the root
 	// state comment tracking.
 	Comments []*ASTNodeComment
 
@@ -156,9 +156,9 @@ type ASTNodeStatechart struct {
 	entryCount int
 }
 
-var _ ASTNode = (*ASTNodeStatechart)(nil)
+var _ ASTNode = (*ASTNodeGochart)(nil)
 
-func (n *ASTNodeStatechart) AppendNode(node ASTNode) {
+func (n *ASTNodeGochart) AppendNode(node ASTNode) {
 	switch v := node.(type) {
 	case *ASTNodeTrigger:
 		// We use the indices of the root state.
@@ -174,16 +174,16 @@ func (n *ASTNodeStatechart) AppendNode(node ASTNode) {
 	}
 }
 
-func (n *ASTNodeStatechart) NonCommentEntryCount() int {
+func (n *ASTNodeGochart) NonCommentEntryCount() int {
 	return len(n.Triggers) + n.Root.NonCommentEntryCount()
 }
 
-func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
-	p.debuglog("parsing statechart node")
+func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
+	p.debuglog("parsing gochart node")
 
-	// Create the tentative statechart to be able to track comments.
+	// Create the tentative gochart to be able to track comments.
 	// We create the root state immediatelly as we use that for the index source.
-	sc := &ASTNodeStatechart{
+	gc := &ASTNodeGochart{
 		Root: &ASTNodeState{},
 	}
 
@@ -194,14 +194,14 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			break
 		}
 
-		sc.AppendNode(&ASTNodeComment{
+		gc.AppendNode(&ASTNodeComment{
 			comment: commentToken.literal,
 			token:   commentToken,
 		})
 	}
 
-	// statechart keyword.
-	baseToken, err := p.consumeToken(Token_KeywordStatechart)
+	// gochart keyword.
+	baseToken, err := p.consumeToken(Token_KeywordGochart)
 	if err != nil {
 		return nil, p.pushErrorf(0, err.Error())
 	}
@@ -209,38 +209,38 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 	// The name.
 	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
-		return nil, p.pushErrorf(0, "after \"statechart\" keyword: %v", err.Error())
+		return nil, p.pushErrorf(0, "after \"gochart\" keyword: %v", err.Error())
 	}
 	name := nameToken.literal
 
 	// Debug tracking.
 	{
-		prevStatechart := p.currentStatechart
-		p.currentStatechart = name
+		prevGochart := p.currentGochart
+		p.currentGochart = name
 		defer func() {
-			p.currentStatechart = prevStatechart
+			p.currentGochart = prevGochart
 		}()
 	}
 
 	// The options.
 	var options []*ASTNodeOption
 	if opts, ok, err := p.parseOptions(); err != nil {
-		return nil, fmt.Errorf("statechart %q: parsing options: %w", name, err)
+		return nil, fmt.Errorf("gochart %q: parsing options: %w", name, err)
 	} else if ok {
 		options = opts
 	}
 
-	// Fill in the statechart now that we have the info.
-	sc.Name = name
-	sc.Options = options
-	sc.keywordToken = baseToken
-	sc.nameToken = nameToken
-	// The root state has the position of the statechart.
-	sc.Root.Name = common.RootStateName
-	sc.Root.keywordToken = baseToken
-	sc.Root.nameToken = nameToken
-	sc.Root.entryIndex = sc.entryCount
-	sc.entryCount++ // To account for the root state.
+	// Fill in the gochart now that we have the info.
+	gc.Name = name
+	gc.Options = options
+	gc.keywordToken = baseToken
+	gc.nameToken = nameToken
+	// The root state has the position of the gochart.
+	gc.Root.Name = common.RootStateName
+	gc.Root.keywordToken = baseToken
+	gc.Root.nameToken = nameToken
+	gc.Root.entryIndex = gc.entryCount
+	gc.entryCount++ // To account for the root state.
 
 	{
 		// {
@@ -249,9 +249,9 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}
 
 		for !p.atEnd() {
-			ok, err := p.parseStatechartBodyStmt(sc)
+			ok, err := p.parseGochartBodyStmt(gc)
 			if err != nil {
-				return nil, fmt.Errorf("parsing statechart body statement: %w", err)
+				return nil, fmt.Errorf("parsing gochart body statement: %w", err)
 			}
 
 			if ok {
@@ -261,8 +261,8 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 			break
 		}
 
-		if sc.NonCommentEntryCount() == 0 {
-			return nil, p.pushErrorf(0, "empty statechart found, need at least one statement")
+		if gc.NonCommentEntryCount() == 0 {
+			return nil, p.pushErrorf(0, "empty gochart found, need at least one statement")
 		}
 
 		if _, err := p.consumeToken(Token_RightBrace); err != nil {
@@ -270,20 +270,20 @@ func (p *Parser) parseStatechart() (*ASTNodeStatechart, error) {
 		}
 	}
 
-	// See if we get any comments after the statechart.
+	// See if we get any comments after the gochart.
 	for {
 		commentToken, ok := p.match(Token_Comment)
 		if !ok {
 			break
 		}
 
-		sc.AppendNode(&ASTNodeComment{
+		gc.AppendNode(&ASTNodeComment{
 			comment: commentToken.literal,
 			token:   commentToken,
 		})
 	}
 
-	return sc, nil
+	return gc, nil
 }
 
 // Options ------------------------------------------------------------------------------------
@@ -398,12 +398,12 @@ func (p *Parser) parseOption() (*ASTNodeOption, error) {
 	return option, nil
 }
 
-// StatechartBodyStmt ------------------------------------------------------------------------------
+// GochartBodyStmt ------------------------------------------------------------------------------
 //
-// StatechartBodyStmt -> Trigger
-//                    -> State
+// GochartBodyStmt -> Trigger
+//                 -> State
 
-func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
+func (p *Parser) parseGochartBodyStmt(gc *ASTNodeGochart) (bool, error) {
 	// If we're closing the brace, we simply exit the statement.
 	if peek := p.peek(); peek.id == Token_RightBrace {
 		return false, nil
@@ -411,8 +411,8 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 
 	peek := p.peek()
 
-	if !slices.Contains(expectedStatechartBodyStmtKeywords, peek.id) {
-		return false, p.pushErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, peek.id)
+	if !slices.Contains(expectedGochartBodyStmtKeywords, peek.id) {
+		return false, p.pushErrorf(0, "expected token to be in %v, got %q", expectedGochartBodyStmtKeywords, peek.id)
 	}
 
 	// If we found a trigger, we hook it as such.
@@ -421,18 +421,18 @@ func (p *Parser) parseStatechartBodyStmt(sc *ASTNodeStatechart) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing trigger: %w", err)
 		}
-		sc.AppendNode(trigger)
+		gc.AppendNode(trigger)
 		return true, nil
 	}
 
 	// Otherwise all statements go into our root state.
-	if ok, err := p.parseStateBodyStmt(sc.Root); err != nil {
+	if ok, err := p.parseStateBodyStmt(gc.Root); err != nil {
 		return false, fmt.Errorf("parsing root state body statement: %w", err)
 	} else if ok {
 		return true, nil
 	}
 
-	return false, p.pushInternalErrorf(0, "expected token to be in %v, got %q", expectedStatechartBodyStmtKeywords, peek.id)
+	return false, p.pushInternalErrorf(0, "expected token to be in %v, got %q", expectedGochartBodyStmtKeywords, peek.id)
 }
 
 // Trigger -----------------------------------------------------------------------------------------
@@ -1109,5 +1109,5 @@ func (p *Parser) debuglog(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("GOCHART PARSER: STATECHART %q, STATE: %q: %s\n", p.currentStatechart, p.currentState, fmt.Sprintf(format, args...))
+	fmt.Printf("GOCHART PARSER: STATECHART %q, STATE: %q: %s\n", p.currentGochart, p.currentState, fmt.Sprintf(format, args...))
 }

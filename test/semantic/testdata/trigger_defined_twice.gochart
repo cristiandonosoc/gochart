@@ -1,7 +1,7 @@
 // --- ERROR BEGIN
 //
 //Semantic error:
-//  12: statechart Mumu {
+//  12: gochart Mumu {
 //  13: 	trigger SomeTrigger()
 //  14: 	trigger SomeTrigger()
 //      	        ^---> trigger "SomeTrigger" defined more than once
@@ -9,7 +9,7 @@
 //  16: 	state Root {
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger()
 	trigger SomeTrigger()
 

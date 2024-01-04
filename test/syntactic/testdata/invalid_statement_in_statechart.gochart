@@ -2,15 +2,15 @@
 //
 //Parser error:
 //  11:
-//  12: statechart mumu {
-//  13: 	statechart mumu2 {
-//      	^---> expected token to be in [trigger enter exit transition capture state <comment>], got "statechart"
+//  12: gochart mumu {
+//  13: 	gochart mumu2 {
+//      	^---> expected token to be in [trigger enter exit transition capture state <comment>], got "gochart"
 //  14:
 //  15: 	}
 // --- ERROR END
 
-statechart mumu {
-	statechart mumu2 {
+gochart mumu {
+	gochart mumu2 {
 
 	}
 }

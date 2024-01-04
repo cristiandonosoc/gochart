@@ -1,7 +1,7 @@
 // Outside Comment 1
 // Outside Comment 2
 
-statechart Example(Opt1, Opt2 = "String", Opt3 = 33) {
+gochart Example(Opt1, Opt2 = "String", Opt3 = 33) {
 	// Inside Comment 1
 	trigger Execute() // Inside Comment 2
 	trigger Update(float dt)

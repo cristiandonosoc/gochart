@@ -207,17 +207,17 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		return nil, fmt.Errorf("loading file %q: %w", gochart.Path, err)
 	}
 
-	scdata, err := ugb.gochartFrontend.Process(lf)
+	gcdata, err := ugb.gochartFrontend.Process(lf)
 	if err != nil {
 		return nil, fmt.Errorf("processing gochart frontend: %w", err)
 	}
 
-	sc, err := ir.ProcessStatechartData(scdata)
+	gc, err := ir.ProcessGochartData(gcdata)
 	if err != nil {
 		return nil, fmt.Errorf("processing IR data: %w", err)
 	}
 
-	outputs, err := cpp_gen.Generate(sc, cppGenConfig)
+	outputs, err := cpp_gen.Generate(gc, cppGenConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Generating gochart output files: %w", err)
 	}
@@ -230,7 +230,7 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		}
 
 		// If we didn't write, means that even though it was generated, the output was up to date.
-		// This can happen when someone makes non-structural changes to a statechart (like adding
+		// This can happen when someone makes non-structural changes to a gochart (like adding
 		// comments), which will invalidate the mod time, but not change the output.
 		if !written {
 			output.UpToDate = true

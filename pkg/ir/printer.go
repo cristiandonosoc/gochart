@@ -7,7 +7,7 @@ import (
 )
 
 type irPrinter struct {
-	sc *Statechart
+	gc *Gochart
 	p  *printer.Printer
 }
 
@@ -19,19 +19,19 @@ func NewPrinter(w io.Writer) *irPrinter {
 	}
 }
 
-func (ip *irPrinter) PrintStatechart(sc *Statechart) {
-	ip.sc = sc
+func (ip *irPrinter) PrintGochart(gc *Gochart) {
+	ip.gc = gc
 
-	ip.p.WriteLine("Statechart %s", sc.Name)
+	ip.p.WriteLine("Gochart %s", gc.Name)
 
 	ip.p.PushIndent()
 	defer ip.p.PopIndent()
 
-	for _, trigger := range sc.Triggers {
+	for _, trigger := range gc.Triggers {
 		ip.printTrigger(trigger)
 	}
 
-	ip.printState(sc.Root)
+	ip.printState(gc.Root)
 }
 
 func (ip *irPrinter) printTrigger(trigger *Trigger) {

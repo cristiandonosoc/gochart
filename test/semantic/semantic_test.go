@@ -30,10 +30,10 @@ func TestLogicalErrors(t *testing.T) {
 			_, wantErrorText, err := test_support.ExtractExpectedError(t, bytes.NewReader(lf.Data))
 			require.NoError(t, err)
 
-			scdata, err := gf.Process(lf)
+			gcdata, err := gf.Process(lf)
 			require.NoError(t, err)
 
-			_, gotErr := ir.ProcessStatechartData(scdata)
+			_, gotErr := ir.ProcessGochartData(gcdata)
 			require.NoError(t, err)
 
 			if wantErrorText == "" {

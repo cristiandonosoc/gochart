@@ -8,7 +8,7 @@ import (
 )
 
 type frontendPrinter struct {
-	sc *common.StatechartData
+	gc *common.GochartData
 	p  *printer.Printer
 }
 
@@ -20,19 +20,19 @@ func NewPrinter(w io.Writer) *frontendPrinter {
 	}
 }
 
-func (fp *frontendPrinter) PrintStatechart(sc *common.StatechartData) {
-	fp.sc = sc
+func (fp *frontendPrinter) PrintGochart(gc *common.GochartData) {
+	fp.gc = gc
 
-	fp.p.WriteLine("Statechart %s", sc.Name)
+	fp.p.WriteLine("Gochart %s", gc.Name)
 
 	fp.p.PushIndent()
 	defer fp.p.PopIndent()
 
-	for _, trigger := range sc.Triggers {
+	for _, trigger := range gc.Triggers {
 		fp.printTrigger(trigger)
 	}
 
-	fp.printState(sc.Root)
+	fp.printState(gc.Root)
 }
 
 func (fp *frontendPrinter) printTrigger(trigger *common.TriggerData) {
@@ -57,7 +57,7 @@ func (fp *frontendPrinter) printState(state *common.StateData) {
 	{
 		// Print all the transitions for this state.
 		var transitions []*common.TransitionData
-		for _, transition := range fp.sc.Transitions {
+		for _, transition := range fp.gc.Transitions {
 			if transition.From == state.Name {
 				transitions = append(transitions, transition)
 			}

@@ -1,7 +1,7 @@
 {{template "header.template" .}}
 
 {{- $root := . -}}
-{{- $sc := $root.Statechart }}
+{{- $sc := $root.Gochart }}
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
 
@@ -111,7 +111,7 @@ struct TriggerEntry
 // This is useful because triggers can be sent while handling other triggers, so we need a queue
 // to be able to maitain the list of all sent triggers.
 //
-// TODO(cdc): This class is the same for each statechart class, so there is no need to generate
+// TODO(cdc): This class is the same for each gochart class, so there is no need to generate
 //            it over and over. Once we have a place to have common "gochart" things, we can
 //            move this there.
 class TriggerRingBufferQueue
@@ -148,7 +148,7 @@ struct TriggerProcessingState
 // It will hold the states that need to be exited first and then the states that will need to be
 // entered after that.
 //
-// TODO(cdc): This class is the same for each statechart class, so there is no need to generate
+// TODO(cdc): This class is the same for each gochart class, so there is no need to generate
 //            it over and over. Once we have a place to have common "gochart" things, we can
 //            move this there.
 class Route
@@ -1230,7 +1230,7 @@ void Route::Compute(EState from, EState to, Route* out)
 
     // Special case of when we are just doing a route to the invalid state.
 	// This is basically "exit the state as much as you can".
-    // The main case is deactivating the statechart, in which we need to exit the whol state stack.
+    // The main case is deactivating the gochart, in which we need to exit the whol state stack.
     if (to == EState::__Invalid__)
     {
         out->AppendDefaultExits(from, out);

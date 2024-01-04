@@ -1,4 +1,4 @@
-statechart Concurrent {
+gochart Concurrent {
 	trigger ActivateActuator(test::EActuatorType actuator, bool activate)
 
 	trigger StartSpawning()

@@ -1,4 +1,4 @@
-statechart GochartLevelConcurrent(concurrent) {
+gochart GochartLevelConcurrent(concurrent) {
 	trigger Move()
 
 	state ActuatorFirst {

@@ -1,4 +1,4 @@
-// Package formatter is a backend that generates a formated version of the given statechart.
+// Package formatter is a backend that generates a formated version of the given gochart.
 package formatter
 
 import (
@@ -55,7 +55,7 @@ func NewFormatterGochartBackend(opts ...option.Option) (*formatterGochartBackend
 	}, nil
 }
 
-func (fgb *formatterGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error) {
+func (fgb *formatterGochartBackend) Generate(ctx context.Context, gc *ir.Gochart, opts ...option.Option) ([]*common.BackendOutput, error) {
 	// TODO(cdc): Don't make the options global to the backend as it is now.
 	for _, opt := range opts {
 		opt(fgb.options)
@@ -70,7 +70,7 @@ func (fgb *formatterGochartBackend) Generate(ctx context.Context, sc *ir.Statech
 
 	iw := NewIndentedWriter()
 	gf := newGochartFormatter(iw, fgb.options.Debug)
-	gf.formatStatechart(sc)
+	gf.formatGochart(gc)
 
 	content := iw.String()
 	output := &common.BackendOutput{

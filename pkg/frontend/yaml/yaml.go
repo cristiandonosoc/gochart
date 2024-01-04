@@ -19,16 +19,16 @@ func NewYamlFrontend(opts ...option.Option) (*yamlFrontend, error) {
 type yamlFrontend struct {
 }
 
-func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*common.StatechartData, error) {
-	var yamlData YamlStatechart
+func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*common.GochartData, error) {
+	var yamlData YamlGochart
 	if err := yaml.Unmarshal(lf.Data, &yamlData); err != nil {
 		return nil, fmt.Errorf("unmarshalling yaml: %w", err)
 	}
 
 	ft := newFrontendTranslator()
-	scdata := ft.translateStatechart(&yamlData)
+	gcdata := ft.translateGochart(&yamlData)
 
-	return scdata, nil
+	return gcdata, nil
 }
 
 // YAML TO OUTPUT TRANSLATION ----------------------------------------------------------------------
@@ -43,21 +43,21 @@ func newFrontendTranslator() *frontendTranslator {
 	return &frontendTranslator{}
 }
 
-func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.StatechartData {
+func (ft *frontendTranslator) translateGochart(ygc *YamlGochart) *common.GochartData {
 	// Collect Triggers.
-	triggers := make([]*common.TriggerData, 0, len(ysc.Triggers))
-	for _, yt := range ysc.Triggers {
+	triggers := make([]*common.TriggerData, 0, len(ygc.Triggers))
+	for _, yt := range ygc.Triggers {
 		triggers = append(triggers, ft.translateTrigger(yt))
 	}
 
 	// Collect states.
-	states := make([]*common.StateData, 0, len(ysc.States))
-	for _, ys := range ysc.States {
+	states := make([]*common.StateData, 0, len(ygc.States))
+	for _, ys := range ygc.States {
 		states = append(states, ft.translateState(ys))
 	}
 
-	transitions := make([]*common.TransitionData, 0, len(ysc.Transitions))
-	for _, yt := range ysc.Transitions {
+	transitions := make([]*common.TransitionData, 0, len(ygc.Transitions))
+	for _, yt := range ygc.Transitions {
 		transitions = append(transitions, ft.translateTransition(yt))
 	}
 
@@ -72,8 +72,8 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.S
 	}
 	states = append([]*common.StateData{root}, states...)
 
-	return &common.StatechartData{
-		Name:        ysc.Name,
+	return &common.GochartData{
+		Name:        ygc.Name,
 		Triggers:    triggers,
 		Root:        root,
 		States:      states,

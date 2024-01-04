@@ -1,4 +1,4 @@
-// Package gochart_lang holds the logic to partse a statechart from a file/text into our intermediate
+// Package gochart_lang holds the logic to parse a gochart from a file/text into our intermediate
 // representation, which can then be used by a backend.
 package gochart_lang
 
@@ -24,7 +24,7 @@ func (se *ScanError) Error() string {
 }
 
 // Scanner is an object capable of taking in a reader and scanning over to create a valid
-// representation of our statechart grammar.
+// representation of our gochart grammar.
 type Scanner struct {
 	lf *files.LoadedFile
 
@@ -51,7 +51,7 @@ func NewScanner() *Scanner {
 		keywords: map[string]TokenIdentifier{
 			"if":         Token_KeywordIf,
 			"do":         Token_KeywordDo,
-			"statechart": Token_KeywordStatechart,
+			"gochart":    Token_KeywordGochart,
 			"state":      Token_KeywordState,
 			"enter":      Token_KeywordEnter,
 			"exit":       Token_KeywordExit,

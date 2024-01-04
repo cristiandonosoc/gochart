@@ -90,30 +90,30 @@ func TestReadSimpleYaml(t *testing.T) {
 	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(lf)
+	gcdata, err := yf.Process(lf)
 	require.NoError(t, err)
-	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States),
-		"WANT:", printStates(wantStates), "GOT:", printFrontendStates(scdata.States))
+	require.Equal(t, len(wantTriggers), len(gcdata.Triggers))
+	require.Equal(t, len(wantStates), len(gcdata.States),
+		"WANT:", printStates(wantStates), "GOT:", printFrontendStates(gcdata.States))
 
-	t.Log(printFrontendStates(scdata.States))
+	t.Log(printFrontendStates(gcdata.States))
 
-	sc, err := ProcessStatechartData(scdata)
+	gc, err := ProcessGochartData(gcdata)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Simple", sc.Name)
+	assert.Equal(t, "Simple", gc.Name)
 
-	if assert.Equal(t, len(wantTriggers), len(sc.Triggers), "Different amount of triggers") {
+	if assert.Equal(t, len(wantTriggers), len(gc.Triggers), "Different amount of triggers") {
 		for i := 0; i < len(wantTriggers); i++ {
 			want := wantTriggers[i]
-			got := sc.Triggers[i]
+			got := gc.Triggers[i]
 
 			CompareTrigger(t, want, got)
 		}
 	}
 
 	want := ith.findState(t, frontend_common.RootStateName)
-	CompareState(t, want, sc.Root)
+	CompareState(t, want, gc.Root)
 }
 
 func TestConcurrentGroups(t *testing.T) {
@@ -231,27 +231,27 @@ func TestConcurrentGroups(t *testing.T) {
 	lf, err := files.LoadFileFromPath(path)
 	require.NoError(t, err)
 
-	scdata, err := yf.Process(lf)
+	gcdata, err := yf.Process(lf)
 	require.NoError(t, err)
-	require.Equal(t, len(wantTriggers), len(scdata.Triggers))
-	require.Equal(t, len(wantStates), len(scdata.States))
+	require.Equal(t, len(wantTriggers), len(gcdata.Triggers))
+	require.Equal(t, len(wantStates), len(gcdata.States))
 
-	sc, err := ProcessStatechartData(scdata)
+	gc, err := ProcessGochartData(gcdata)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Concurrent", sc.Name)
+	assert.Equal(t, "Concurrent", gc.Name)
 
-	if assert.Equal(t, len(wantTriggers), len(sc.Triggers), "Different amount of triggers") {
+	if assert.Equal(t, len(wantTriggers), len(gc.Triggers), "Different amount of triggers") {
 		for i := 0; i < len(wantTriggers); i++ {
 			want := wantTriggers[i]
-			got := sc.Triggers[i]
+			got := gc.Triggers[i]
 
 			CompareTrigger(t, want, got)
 		}
 	}
 
 	want := ith.findState(t, frontend_common.RootStateName)
-	CompareState(t, want, sc.Root)
+	CompareState(t, want, gc.Root)
 }
 
 // HELPER FUNCTIONS --------------------------------------------------------------------------------

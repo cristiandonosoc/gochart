@@ -9,7 +9,7 @@
 //  18: 			return false;
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger()
 
 	state Root {

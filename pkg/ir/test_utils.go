@@ -10,7 +10,7 @@ import (
 
 // COMPARE FUNCTIONS -------------------------------------------------------------------------------
 
-func CompareStatechart(t *testing.T, want, got *Statechart) {
+func CompareGochart(t *testing.T, want, got *Gochart) {
 	assert.Equal(t, want.Name, got.Name)
 	assert.Equal(t, want.Namespace, got.Namespace)
 

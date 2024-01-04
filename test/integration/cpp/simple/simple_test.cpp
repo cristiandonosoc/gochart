@@ -31,7 +31,7 @@ private:
     using GochartType = gochart::Door::Gochart<Delegate>;
     friend GochartType;
 
-    // Statechart begin.
+    // Gochart begin.
     void StateDoor_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
     void StateDoorInactive_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
     void StateDoorOpened_CaptureUpdate(bool tick) { TrackCall(__FUNCTION__); }
@@ -42,7 +42,7 @@ private:
 
     void ActionFunction(bool active) { TrackCall(__FUNCTION__); }
     void NullTransitionCall() { TrackCall(__FUNCTION__); }
-    // Statechart end.
+    // Gochart end.
 
     void TrackCall(const std::string& function_name)
     {
@@ -53,17 +53,16 @@ private:
     }
 
     std::vector<std::string> Calls;
-
 };
 
 TEST(SimpleTest, BasicAssertions)
 {
     Delegate delegate;
-    auto statechart = gochart::Door::Create(&delegate);
-    statechart->Activate();
-    statechart->TriggerActivateDoorActuator(true);
-    statechart->TriggerToggleDoor(true, false);
-    statechart->Deactivate();
+    auto gochart = gochart::Door::Create(&delegate);
+    gochart->Activate();
+    gochart->TriggerActivateDoorActuator(true);
+    gochart->TriggerToggleDoor(true, false);
+    gochart->Deactivate();
 
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 }
@@ -71,144 +70,144 @@ TEST(SimpleTest, BasicAssertions)
 TEST(SimpleTest, Captures)
 {
     Delegate delegate;
-    auto statechart = gochart::Door::Create(&delegate);
+    auto gochart = gochart::Door::Create(&delegate);
 
-    statechart->Activate();
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
-    EXPECT_FALSE(statechart->IsInStateExact(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
-    EXPECT_FALSE(statechart->IsInState(gochart::Door::EState::DoorActive)); // Check once.
+    gochart->Activate();
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorInactive));
+    EXPECT_FALSE(gochart->IsInStateExact(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorInactive));
+    EXPECT_FALSE(gochart->IsInState(gochart::Door::EState::DoorActive)); // Check once.
     EXPECT_EQ(delegate.GetCalls().size(), 0);
 
-    statechart->TriggerUpdate(true);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
+    gochart->TriggerUpdate(true);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorInactive));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorInactive));
     EXPECT_EQ(delegate.GetCalls().size(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerActivateDoorActuator(false);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
+    gochart->TriggerActivateDoorActuator(false);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorInactive));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorInactive));
     EXPECT_EQ(delegate.GetCalls().size(), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerUpdate(true);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorInactive));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorInactive));
+    gochart->TriggerUpdate(true);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorInactive));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorInactive));
     EXPECT_EQ(delegate.GetCalls().size(), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerActivateDoorActuator(true);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
-    EXPECT_FALSE(statechart->IsInState(gochart::Door::EState::DoorInactive));
+    gochart->TriggerActivateDoorActuator(true);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorOpened));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorOpened));
+    EXPECT_FALSE(gochart->IsInState(gochart::Door::EState::DoorInactive));
     EXPECT_EQ(delegate.GetCalls().size(), 3);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerUpdate(true);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
+    gochart->TriggerUpdate(true);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorOpened));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorOpened));
     EXPECT_EQ(delegate.GetCalls().size(), 4);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 0);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerUpdate(false);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorOpened));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorOpened));
+    gochart->TriggerUpdate(false);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorOpened));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorOpened));
     EXPECT_EQ(delegate.GetCalls().size(), 5);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 0);
 
-    statechart->TriggerToggleDoor(true, false);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
+    gochart->TriggerToggleDoor(true, false);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorMoving));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorMoving));
     EXPECT_EQ(delegate.GetCalls().size(), 6);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 
-    statechart->TriggerUpdate(true);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
+    gochart->TriggerUpdate(true);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorMoving));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorMoving));
     EXPECT_EQ(delegate.GetCalls().size(), 7);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 
-    statechart->TriggerToggleDoor(true, false);
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::Door));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorActive));
-    EXPECT_TRUE(statechart->IsInState(gochart::Door::EState::DoorMoving));
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::DoorMoving));
+    gochart->TriggerToggleDoor(true, false);
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::Door));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorActive));
+    EXPECT_TRUE(gochart->IsInState(gochart::Door::EState::DoorMoving));
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::DoorMoving));
     EXPECT_EQ(delegate.GetCalls().size(), 7);
     EXPECT_EQ(delegate.GetCallCount("StateDoor_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorInactive_CaptureUpdate"), 2);
     EXPECT_EQ(delegate.GetCallCount("StateDoorOpened_CaptureUpdate"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateDoorMoving_EnterToggleDoor"), 1);
 
-    statechart->Deactivate();
+    gochart->Deactivate();
 }
 
 TEST(SimpleTest, TransitionAction)
 {
     return;
     Delegate delegate;
-    auto statechart = gochart::Door::Create(&delegate);
+    auto gochart = gochart::Door::Create(&delegate);
 
-    statechart->Activate();
+    gochart->Activate();
     EXPECT_EQ(delegate.GetCalls().size(), 0);
 
-    statechart->TriggerActivateDoorActuator(false);
+    gochart->TriggerActivateDoorActuator(false);
     EXPECT_EQ(delegate.GetCalls().size(), 0);
 
-    statechart->TriggerActivateDoorActuator(true);
+    gochart->TriggerActivateDoorActuator(true);
     EXPECT_EQ(delegate.GetCalls().size(), 1);
     EXPECT_EQ(delegate.GetCallCount("ActionFunction"), 1);
 
-    statechart->Deactivate();
+    gochart->Deactivate();
 }
 
 TEST(SimpleTest, NullTransition)
 {
     Delegate delegate;
-    auto statechart = gochart::Door::Create(&delegate);
+    auto gochart = gochart::Door::Create(&delegate);
 
-    statechart->Activate();
+    gochart->Activate();
 
-    statechart->TriggerTransferToWindow();
-    EXPECT_TRUE(statechart->IsInStateExact(gochart::Door::EState::WindowIdle));
+    gochart->TriggerTransferToWindow();
+    EXPECT_TRUE(gochart->IsInStateExact(gochart::Door::EState::WindowIdle));
 
     std::vector<std::string> wantCalls{
         "StateWindowInitial_Enter",
@@ -221,5 +220,5 @@ TEST(SimpleTest, NullTransition)
     EXPECT_EQ(delegate.GetCallCount("StateWindowInitial_Enter"), 1);
     EXPECT_EQ(delegate.GetCallCount("StateWindowInitial_Exit"), 1);
 
-    statechart->Deactivate();
+    gochart->Deactivate();
 }
