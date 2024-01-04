@@ -9,8 +9,8 @@
 class Delegate
 {
 public:
-    void Statechart_Enter() { TrackCall(__FUNCTION__); }
-    void Statechart_Exit() { TrackCall(__FUNCTION__); }
+    void Gochart_Enter() { TrackCall(__FUNCTION__); }
+    void Gochart_Exit() { TrackCall(__FUNCTION__); }
     void StateFirst_Enter() { TrackCall(__FUNCTION__); }
     void StateFirst_Exit() { TrackCall(__FUNCTION__); }
     void StateFirstSon1_Enter() { TrackCall(__FUNCTION__); }
@@ -70,7 +70,7 @@ TEST(Routes, Test)
     // clang-format off
     test::CompareCalls(
             std::array{
-            std::string("Statechart_Enter"),
+            std::string("Gochart_Enter"),
             std::string("StateFirst_Enter"),
             std::string("StateFirstSon2_Enter"),
 
@@ -94,7 +94,7 @@ TEST(Routes, Test)
 
             std::string("StateFirstSon2_Exit"),
             std::string("StateFirst_Exit"),
-            std::string("Statechart_Exit"),
+            std::string("Gochart_Exit"),
             }, delegate.GetCalls());
     // clang-format on
 }

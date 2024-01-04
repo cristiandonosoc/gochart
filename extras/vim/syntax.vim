@@ -2,7 +2,7 @@ if exists("b:current_syntax")
 	finish
 endif
 
-syntax keyword gochartStructural statechart nextgroup=gochartStructuralIdentifier
+syntax keyword gochartStructural gochart nextgroup=gochartStructuralIdentifier
 syntax keyword gochartStructural state nextgroup=gochartStructuralIdentifier
 
 " Structural Options

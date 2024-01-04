@@ -230,7 +230,7 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 		}
 
 		// If we didn't write, means that even though it was generated, the output was up to date.
-		// This can happen when someone makes non-structural changes to a statechart (like adding
+		// This can happen when someone makes non-structural changes to a gochart (like adding
 		// comments), which will invalidate the mod time, but not change the output.
 		if !written {
 			output.UpToDate = true

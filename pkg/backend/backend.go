@@ -1,4 +1,4 @@
-// Package backend holds the interface for reading the IR of a statechart and generate the code
+// Package backend holds the interface for reading the IR of a gochart and generate the code
 // needed to implement in different languages.
 package backend
 

@@ -9,7 +9,7 @@
 //  18:
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger()
 
 	state From {

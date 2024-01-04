@@ -109,9 +109,9 @@ func (gf *gochartFormatter) newFormatterEntry(e any) formatterEntry {
 
 // GochartWrapper -------------------------------------------------------------------------------
 //
-// Gochart has a wrapper because there can be comments outside the statechart and we don't have a
-// "higher-level" entity above the statechart that contains both the statechart and the commnets.
-// So in this case the statechart contains both the comments and external comments.
+// Gochart has a wrapper because there can be comments outside the gochart and we don't have a
+// "higher-level" entity above the gochart that contains both the gochart and the commnets.
+// So in this case the gochart contains both the comments and external comments.
 
 type formatGochartWrapper struct {
 	gc      *ir.Gochart
@@ -125,7 +125,7 @@ func (gf *gochartFormatter) newFormatGochartWrapper(gc *ir.Gochart) *formatGocha
 		gf: gf,
 	}
 
-	// Create a child with the statechart as a child.
+	// Create a child with the gochart as a child.
 
 	entries := []formatterEntry{
 		gf.newFormatGochart(gc),
@@ -158,7 +158,7 @@ func (f *formatGochartWrapper) Position() *files.LoadedFilePosition {
 
 func (f *formatGochartWrapper) Formatter() *gochartFormatter                 { return f.gf }
 func (f *formatGochartWrapper) FrontendEntry() frontend_common.FrontendEntry { return f }
-func (f *formatGochartWrapper) Name() string                                 { return "<statechart_wrapper>" }
+func (f *formatGochartWrapper) Name() string                                 { return "<gochart_wrapper>" }
 func (f *formatGochartWrapper) Indents() bool                                { return false }
 func (f *formatGochartWrapper) ChildEntries() []formatterEntry               { return f.entries }
 
@@ -202,14 +202,14 @@ func (f *formatGochart) FrontendEntry() frontend_common.FrontendEntry {
 	return f.gc.Root.FrontendData
 }
 func (f *formatGochart) Name() string {
-	return fmt.Sprintf("%d:statechart:%s", f.gc.Root.FrontendData.Index(), f.gc.Name)
+	return fmt.Sprintf("%d:gochart:%s", f.gc.Root.FrontendData.Index(), f.gc.Name)
 }
 func (f *formatGochart) Indents() bool                  { return true }
 func (f *formatGochart) ChildEntries() []formatterEntry { return f.entries }
 
 func (f *formatGochart) Write(w io.Writer) {
 	collapseLineDistance(w, f)
-	writeStringf(w, "statechart %s", f.gc.Name)
+	writeStringf(w, "gochart %s", f.gc.Name)
 	writeOptions(w, f.gc.Options)
 	writeStringf(w, "{ ")
 }

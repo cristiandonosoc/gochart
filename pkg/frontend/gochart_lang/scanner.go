@@ -51,7 +51,7 @@ func NewScanner() *Scanner {
 		keywords: map[string]TokenIdentifier{
 			"if":         Token_KeywordIf,
 			"do":         Token_KeywordDo,
-			"statechart": Token_KeywordStatechart,
+			"gochart":    Token_KeywordGochart,
 			"state":      Token_KeywordState,
 			"enter":      Token_KeywordEnter,
 			"exit":       Token_KeywordExit,

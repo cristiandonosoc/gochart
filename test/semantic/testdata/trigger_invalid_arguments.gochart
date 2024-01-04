@@ -2,7 +2,7 @@
 //
 //Semantic error:
 //  13:
-//  14: statechart Mumu {
+//  14: gochart Mumu {
 //  15: 	trigger SomeTrigger(int a, std::string a)
 //      	                   ^---> argument "a": argument is defined twice
 //  16:
@@ -11,7 +11,7 @@
 //Full context: parsing arguments for trigger "SomeTrigger": argument "a": argument is defined twice
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger(int a, std::string a)
 
 	state Root {

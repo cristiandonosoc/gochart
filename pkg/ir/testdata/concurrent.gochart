@@ -1,5 +1,4 @@
-statechart Concurrent {
-
+gochart Concurrent {
 	trigger SomeTrigger()
 
 	state A {

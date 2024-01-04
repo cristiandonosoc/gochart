@@ -19,7 +19,7 @@ type ConcurrentHead struct {
 	HeadState *State
 }
 
-// Gochart represents a single statechart state machine.
+// Gochart represents a single gochart state machine.
 type Gochart struct {
 	Name      string
 	Namespace string
@@ -28,7 +28,7 @@ type Gochart struct {
 
 	Triggers []*Trigger
 
-	// Root is the base state of the complete statechart.
+	// Root is the base state of the complete gochart.
 	// Normally this is a "hidden" state created by the gochart.
 	Root            *State
 	ConcurrentHeads []*ConcurrentHead
@@ -92,7 +92,7 @@ func (ta *TriggerArgument) String() string {
 
 // STATE -------------------------------------------------------------------------------------------
 
-// State represents a single state withing a statechart.
+// State represents a single state withing a gochart.
 type State struct {
 	Name    string
 	Default bool
@@ -113,7 +113,7 @@ type State struct {
 
 	Parent *State
 
-	statechart   *Gochart
+	gochart      *Gochart
 	FrontendData *frontend_common.StateData
 }
 
@@ -128,7 +128,7 @@ func (s *State) IsRoot() bool {
 // Mostly used to give an easier time to the backend.
 func (s *State) DisplayName() string {
 	if s.IsRoot() {
-		return "Statechart"
+		return "Gochart"
 	}
 	return fmt.Sprintf("State%s", s.Name)
 }
@@ -172,7 +172,7 @@ func (s *State) IsParentOf(other *State) bool {
 func (s *State) GetConcurrentGroup() int {
 	// Create a set of states.
 	headStates := make(map[*State]int)
-	for group, head := range s.statechart.ConcurrentHeads {
+	for group, head := range s.gochart.ConcurrentHeads {
 		headStates[head.HeadState] = group
 	}
 

@@ -7,7 +7,7 @@
 
 /***************************************************************************************************
  *
- * If you're looking for the signature you must implement for the statechart delegate.
+ * If you're looking for the signature you must implement for the gochart delegate.
  * Here you go:
 {{ $reactionTypes := list "Enter" "Exit" "Capture" }}
 {{- range $_, $state := $sc.States }}

@@ -214,20 +214,20 @@ func (so *Option) IsImplicitBool() bool {
 type GochartOptionHandler func(gc *Gochart, option *Option) error
 
 func parseGochartOptions(gc *Gochart, frontendOptions []*frontend_common.OptionData) error {
-	options, err := collectOptionsFromDefinitions("statechart", kGochartOptionDefinitions, frontendOptions)
+	options, err := collectOptionsFromDefinitions("gochart", kGochartOptionDefinitions, frontendOptions)
 	if err != nil {
-		return fmt.Errorf("collecting statechart options from definitions: %w", err)
+		return fmt.Errorf("collecting gochart options from definitions: %w", err)
 	}
 
 	for _, option := range options {
 		// Cast the handler.
 		handler, ok := option.Definition.Handler.(GochartOptionHandler)
 		if !ok {
-			return errors.InternalErrorf("invalid handler type for statechart option %q", option.Definition.Name)
+			return errors.InternalErrorf("invalid handler type for gochart option %q", option.Definition.Name)
 		}
 
 		if err := handler(gc, option); err != nil {
-			return fmt.Errorf("handling statechart option %q: %w", option.Definition.Name, err)
+			return fmt.Errorf("handling gochart option %q: %w", option.Definition.Name, err)
 		}
 	}
 

@@ -1,7 +1,7 @@
 // --- ERROR BEGIN
 //
 //Semantic error:
-//  12: statechart Mumu {
+//  12: gochart Mumu {
 //  13: 	state Root {
 //  14: 		capture NonExistent
 //      		        ^---> cannot find trigger "NonExistent"
@@ -9,7 +9,7 @@
 //  16: }
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	state Root {
 		capture NonExistent
 	}

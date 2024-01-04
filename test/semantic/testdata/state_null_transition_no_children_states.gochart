@@ -9,7 +9,7 @@
 //  18: 		state ChildA {
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger()
 
 	state A {

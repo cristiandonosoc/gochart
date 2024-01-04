@@ -46,15 +46,15 @@ func processGochartDataInternal(gcdata *frontend_common.GochartData) (*Gochart, 
 	}
 
 	// We create the base state object (will be filled more later).
-	statechart := &Gochart{
+	gochart := &Gochart{
 		Name: gcdata.Name,
 		// By default the namespace is same as the name. This might be override by an option.
 		Namespace:    gcdata.Name,
 		Root:         root,
 		FrontendData: gcdata,
 	}
-	if err := parseGochartOptions(statechart, gcdata.Options); err != nil {
-		return nil, fmt.Errorf("statechart %q: parsing options: %w", gcdata.Name, err)
+	if err := parseGochartOptions(gochart, gcdata.Options); err != nil {
+		return nil, fmt.Errorf("gochart %q: parsing options: %w", gcdata.Name, err)
 	}
 
 	if err := ih.collectTriggers(); err != nil {
@@ -73,18 +73,18 @@ func processGochartDataInternal(gcdata *frontend_common.GochartData) (*Gochart, 
 		return nil, fmt.Errorf("validating input: %w", err)
 	}
 
-	statechart.ConcurrentHeads = ih.concurrentHeads
-	statechart.Triggers = ih.triggers
-	statechart.States = ih.states
-	statechart.TriggerMap = ih.triggerMap
-	statechart.StateMap = ih.stateMap
+	gochart.ConcurrentHeads = ih.concurrentHeads
+	gochart.Triggers = ih.triggers
+	gochart.States = ih.states
+	gochart.TriggerMap = ih.triggerMap
+	gochart.StateMap = ih.stateMap
 
-	// Now that we have the statechart, we go over each state creating the back pointer.
-	for _, state := range statechart.States {
-		state.statechart = statechart
+	// Now that we have the gochart, we go over each state creating the back pointer.
+	for _, state := range gochart.States {
+		state.gochart = gochart
 	}
 
-	return statechart, nil
+	return gochart, nil
 }
 
 func (ih *inputHandler) collectTriggers() error {
@@ -371,7 +371,7 @@ func (ih *inputHandler) calculateConcurrentness(state *State) error {
 	return ih.calculateConcurrentnessDFS(state)
 }
 
-// calculateConcurrentnessDFS traverse the statechart tree in BFS order, calculating concurrent
+// calculateConcurrentnessDFS traverse the gochart tree in BFS order, calculating concurrent
 // groups as it finds them.
 func (ih *inputHandler) calculateConcurrentnessDFS(state *State) error {
 	for _, child := range state.Children {
@@ -397,7 +397,7 @@ func (ih *inputHandler) calculateConcurrentnessDFS(state *State) error {
 	return nil
 }
 
-// calculateConcurrentnessBFS traverse the statechart tree in BFS order, calculating concurrent
+// calculateConcurrentnessBFS traverse the gochart tree in BFS order, calculating concurrent
 // groups as it finds them.
 func (ih *inputHandler) calculateConcurrentnessBFS(state *State) error {
 	// Create a queue with states to calculate.
@@ -443,7 +443,7 @@ func (ih *inputHandler) getConcurrentGroupTitle(concurrentGroup int) string {
 
 	// If the state is nil, it means that this is a root state.
 	if head.HeadState == nil {
-		return fmt.Sprintf("statechart %q", ih.gcdata.Name)
+		return fmt.Sprintf("gochart %q", ih.gcdata.Name)
 	}
 
 	return fmt.Sprintf("state %q", head.HeadState.Name)

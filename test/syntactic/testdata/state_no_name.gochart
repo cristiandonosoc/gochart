@@ -2,14 +2,14 @@
 //
 //Parser error:
 //  11:
-//  12: statechart mumu {
+//  12: gochart mumu {
 //  13: 	state {
 //      	      ^---> after "state" keyword: expected "<identifier>", but got "{"
 //  14:
 //  15: 	}
 // --- ERROR END
 
-statechart mumu {
+gochart mumu {
 	state {
 
 	}

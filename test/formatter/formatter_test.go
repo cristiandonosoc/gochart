@@ -126,7 +126,7 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 
 				ir.CompareGochart(t, wantGc, gotGc)
 
-				// Now we set the current statechart as the next one and do the loop again.
+				// Now we set the current gochart as the next one and do the loop again.
 				wantGc = gotGc
 			}
 		})

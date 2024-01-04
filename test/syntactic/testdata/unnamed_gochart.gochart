@@ -1,0 +1,15 @@
+// --- ERROR BEGIN
+//
+//Parser error:
+//  11:
+//  12:
+//  13: gochart {
+//              ^---> after "gochart" keyword: expected "<identifier>", but got "{"
+//  14:
+//  15: }
+// --- ERROR END
+
+
+gochart {
+
+}

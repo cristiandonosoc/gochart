@@ -18,8 +18,8 @@ func TestGatherTokens(t *testing.T) {
 <<[["this is a string literal"]]>>
 "literal"
    "multiline true
-  string""after_line enter exit statechart state transition trigger null"
-  statechart state transition aabb a0123456789b null
+  string""after_line enter exit gochart state transition trigger null"
+  gochart state transition aabb a0123456789b null
 	trigger SomeTrigger(std::string<std::vector*>&, std::unique_ptr<void(Foo**&)>),=,
 	,= true false true
 123456789 22
@@ -58,15 +58,15 @@ capture capture if {
 		{id: Token_String, literal: "literal", line: 5, char: 1},
 		{id: Token_String, literal: `multiline true
   string`, line: 6, char: 4},
-		{id: Token_String, literal: "after_line enter exit statechart state transition trigger null", line: 7, char: 10},
+		{id: Token_String, literal: "after_line enter exit gochart state transition trigger null", line: 7, char: 10},
 
-		{id: Token_KeywordStatechart, literal: "statechart", line: 8, char: 3},
-		{id: Token_KeywordState, literal: "state", line: 8, char: 14},
-		{id: Token_KeywordTransition, literal: "transition", line: 8, char: 20},
+		{id: Token_KeywordGochart, literal: "gochart", line: 8, char: 3},
+		{id: Token_KeywordState, literal: "state", line: 8, char: 11},
+		{id: Token_KeywordTransition, literal: "transition", line: 8, char: 17},
 
-		{id: Token_Identifier, literal: "aabb", line: 8, char: 31},
-		{id: Token_Identifier, literal: "a0123456789b", line: 8, char: 36},
-		{id: Token_KeywordNull, literal: "null", line: 8, char: 49},
+		{id: Token_Identifier, literal: "aabb", line: 8, char: 28},
+		{id: Token_Identifier, literal: "a0123456789b", line: 8, char: 33},
+		{id: Token_KeywordNull, literal: "null", line: 8, char: 46},
 
 		{id: Token_KeywordTrigger, literal: "trigger", line: 9, char: 2},
 		{id: Token_Identifier, literal: "SomeTrigger", line: 9, char: 10},

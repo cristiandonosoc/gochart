@@ -1,4 +1,4 @@
-// Package cpp is a Gochart backend meant to generate C++ code for statechart.
+// Package cpp is a Gochart backend meant to generate C++ code for gochart.
 package cpp
 
 import (

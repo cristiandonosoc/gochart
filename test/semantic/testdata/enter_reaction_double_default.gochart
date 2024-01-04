@@ -9,7 +9,7 @@
 //  17: }
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	state Root {
 		enter
 		enter

@@ -58,7 +58,7 @@ const (
 	// Keywords
 	Token_KeywordIf         // 'if'
 	Token_KeywordDo         // 'do'
-	Token_KeywordStatechart // 'statechart'
+	Token_KeywordGochart    // 'gochart'
 	Token_KeywordState      // 'state'
 	Token_KeywordEnter      // 'enter'
 	Token_KeywordExit       // 'exit'
@@ -115,8 +115,8 @@ func (t TokenIdentifier) String() string {
 		return "if"
 	case Token_KeywordDo:
 		return "do"
-	case Token_KeywordStatechart:
-		return "statechart"
+	case Token_KeywordGochart:
+		return "gochart"
 	case Token_KeywordState:
 		return "state"
 	case Token_KeywordEnter:

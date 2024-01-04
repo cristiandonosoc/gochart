@@ -52,12 +52,12 @@ func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
 
 	frontendData, err := gc.Frontend.Process(lf)
 	if err != nil {
-		return fmt.Errorf("processing statechart: %w", err)
+		return fmt.Errorf("processing gochart: %w", err)
 	}
 
 	irData, err := ir.ProcessGochartData(frontendData)
 	if err != nil {
-		return fmt.Errorf("processing statechart: %w", err)
+		return fmt.Errorf("processing gochart: %w", err)
 	}
 
 	printer := ir.NewPrinter(w)
@@ -79,7 +79,7 @@ func (gc *GochartCompiler) Generate(ctx context.Context, path string, opts ...op
 
 	frontendData, err := gc.Frontend.Process(lf)
 	if err != nil {
-		return nil, fmt.Errorf("processing statechart: %w", err)
+		return nil, fmt.Errorf("processing gochart: %w", err)
 	}
 
 	irData, err := ir.ProcessGochartData(frontendData)

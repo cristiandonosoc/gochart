@@ -111,7 +111,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	// See if there are more gochart nodes.
 	// TODO(cdc): See how we can make the parser recover from an error.
 	for {
-		if p.peek().id == Token_KeywordStatechart {
+		if p.peek().id == Token_KeywordGochart {
 			gc, err := p.parseGochart()
 			if err != nil {
 				if len(p.errors) == 0 {
@@ -126,7 +126,7 @@ func (p *Parser) parseRoot() (*ASTNodeRoot, []error) {
 	}
 
 	if !p.atEnd() {
-		p.pushErrorf(0, "expected \"statechart\" keyword, got %q", p.peek())
+		p.pushErrorf(0, "expected \"gochart\" keyword, got %q", p.peek())
 	}
 
 	root.gocharts = gocharts
@@ -200,8 +200,8 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 		})
 	}
 
-	// statechart keyword.
-	baseToken, err := p.consumeToken(Token_KeywordStatechart)
+	// gochart keyword.
+	baseToken, err := p.consumeToken(Token_KeywordGochart)
 	if err != nil {
 		return nil, p.pushErrorf(0, err.Error())
 	}
@@ -209,7 +209,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 	// The name.
 	nameToken, err := p.consumeToken(Token_Identifier)
 	if err != nil {
-		return nil, p.pushErrorf(0, "after \"statechart\" keyword: %v", err.Error())
+		return nil, p.pushErrorf(0, "after \"gochart\" keyword: %v", err.Error())
 	}
 	name := nameToken.literal
 
@@ -262,7 +262,7 @@ func (p *Parser) parseGochart() (*ASTNodeGochart, error) {
 		}
 
 		if gc.NonCommentEntryCount() == 0 {
-			return nil, p.pushErrorf(0, "empty statechart found, need at least one statement")
+			return nil, p.pushErrorf(0, "empty gochart found, need at least one statement")
 		}
 
 		if _, err := p.consumeToken(Token_RightBrace); err != nil {

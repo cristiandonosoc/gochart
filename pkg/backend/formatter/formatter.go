@@ -1,4 +1,4 @@
-// Package formatter is a backend that generates a formated version of the given statechart.
+// Package formatter is a backend that generates a formated version of the given gochart.
 package formatter
 
 import (

@@ -9,7 +9,7 @@
 //  17: 	}
 // --- ERROR END
 
-statechart Mumu {
+gochart Mumu {
 	trigger SomeTrigger()
 
 	state Root(default, test_bool = 22) {

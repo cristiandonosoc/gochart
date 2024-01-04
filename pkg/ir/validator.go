@@ -8,8 +8,8 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
-// validate is called once the complete statechart has been parsed and collected.
-// This means that all options have already been calculated and are certain that the statechart
+// validate is called once the complete gochart has been parsed and collected.
+// This means that all options have already been calculated and are certain that the gochart
 // description is not going to change anymore.
 func validate(ih *inputHandler) error {
 	if len(ih.states) < 2 {

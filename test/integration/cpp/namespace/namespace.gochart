@@ -1,4 +1,4 @@
-statechart OriginalName(namespace = "ChangedName") {
+gochart OriginalName(namespace = "ChangedName") {
 	state Foo {
 		enter
 		exit

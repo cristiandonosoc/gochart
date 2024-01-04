@@ -96,7 +96,7 @@ func internalMain() error {
 
 	app := cli.App{
 		Name:  "gochart",
-		Usage: "Generate statechart",
+		Usage: "Generate gochart",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "verbose",
