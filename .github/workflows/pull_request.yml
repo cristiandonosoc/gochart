@@ -51,8 +51,8 @@ jobs:
     - name: Add paths to env
       shell: cmd
       run: |
-        echo ::set-env name=USERPROFILE::%USERPROFILE%
-        echo ::set-env name=USERNAME::%USERNAME%
+        echo "USERPROFILE=%USERPROFILE%" >> "$GITHUB_ENV"
+        echo "USERNAME=%USERNAME%" >> "$GITHUB_ENV"
     - name: dump after env
       env:
         ENV_CONTEXT_AFTER: ${{ toJson(env) }}
