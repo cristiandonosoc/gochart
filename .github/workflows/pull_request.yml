@@ -5,7 +5,7 @@ jobs:
     name: Run gofmt
     runs-on: ubuntu-latest
     steps:
-      uses: Jerome1337/gofmt-action@v1
+    - uses: Jerome1337/gofmt-action@v1
       with:
         gofmt-path: .
         gofmt-flags: -l -d
