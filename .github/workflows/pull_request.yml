@@ -4,10 +4,11 @@ jobs:
   gofmt:
     name: Run gofmt
     runs-on: ubuntu-latest
-    uses: Jerome1337/gofmt-action@v1
-    with:
-      gofmt-path: .
-      gofmt-flags: -l -d
+    steps:
+      uses: Jerome1337/gofmt-action@v1
+      with:
+        gofmt-path: .
+        gofmt-flags: -l -d
   tests:
     name: pull request tests
     strategy:
