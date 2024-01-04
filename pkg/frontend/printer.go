@@ -8,7 +8,7 @@ import (
 )
 
 type frontendPrinter struct {
-	sc *common.StatechartData
+	sc *common.GochartData
 	p  *printer.Printer
 }
 
@@ -20,10 +20,10 @@ func NewPrinter(w io.Writer) *frontendPrinter {
 	}
 }
 
-func (fp *frontendPrinter) PrintStatechart(sc *common.StatechartData) {
+func (fp *frontendPrinter) PrintGochart(sc *common.GochartData) {
 	fp.sc = sc
 
-	fp.p.WriteLine("Statechart %s", sc.Name)
+	fp.p.WriteLine("Gochart %s", sc.Name)
 
 	fp.p.PushIndent()
 	defer fp.p.PopIndent()

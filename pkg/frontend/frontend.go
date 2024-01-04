@@ -1,5 +1,5 @@
 // Package frontend holds the interface for reading different kind of languages/specs that we might
-// support for reading statecharts.
+// support for reading gocharts.
 package frontend
 
 import (
@@ -21,7 +21,7 @@ import (
 type GochartFrontend interface {
 	// Process takes the content describing input for this frontend and is meant to return frontend
 	// data that can then be consumed by others parts of the program, mostly the |ir| package.
-	Process(lf *files.LoadedFile) (*common.StatechartData, error)
+	Process(lf *files.LoadedFile) (*common.GochartData, error)
 }
 
 type frontendFactory func(*cli.Context) (GochartFrontend, error)
@@ -47,7 +47,7 @@ func SetFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:  "frontend",
 			Value: "gochart",
-			Usage: fmt.Sprintf("The frontend `LANGUAGE` to read the statechart from. Valid values: %v", keys),
+			Usage: fmt.Sprintf("The frontend `LANGUAGE` to read the gochart from. Valid values: %v", keys),
 		},
 	}
 }

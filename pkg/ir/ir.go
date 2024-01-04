@@ -1,4 +1,4 @@
-// Package ir holds the intermediate representation of the Statechart, which will then permit us to
+// Package ir holds the intermediate representation of the Gochart, which will then permit us to
 // generate representations from it (eg. to C++).
 package ir
 
@@ -19,8 +19,8 @@ type ConcurrentHead struct {
 	HeadState *State
 }
 
-// Statechart represents a single statechart state machine.
-type Statechart struct {
+// Gochart represents a single statechart state machine.
+type Gochart struct {
 	Name      string
 	Namespace string
 
@@ -38,10 +38,10 @@ type Statechart struct {
 
 	TriggerMap   map[string]*Trigger
 	StateMap     map[string]*State
-	FrontendData *frontend_common.StatechartData
+	FrontendData *frontend_common.GochartData
 }
 
-func (sc *Statechart) ConcurrentGroupCount() int {
+func (sc *Gochart) ConcurrentGroupCount() int {
 	return len(sc.ConcurrentHeads)
 }
 
@@ -113,7 +113,7 @@ type State struct {
 
 	Parent *State
 
-	statechart   *Statechart
+	statechart   *Gochart
 	FrontendData *frontend_common.StateData
 }
 

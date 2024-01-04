@@ -39,7 +39,7 @@ func (gc *GochartCompiler) PrintFrontend(path string, w io.Writer) error {
 	}
 
 	printer := frontend.NewPrinter(w)
-	printer.PrintStatechart(frontendData)
+	printer.PrintGochart(frontendData)
 
 	return nil
 }
@@ -55,13 +55,13 @@ func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
 		return fmt.Errorf("processing statechart: %w", err)
 	}
 
-	irData, err := ir.ProcessStatechartData(frontendData)
+	irData, err := ir.ProcessGochartData(frontendData)
 	if err != nil {
 		return fmt.Errorf("processing statechart: %w", err)
 	}
 
 	printer := ir.NewPrinter(w)
-	printer.PrintStatechart(irData)
+	printer.PrintGochart(irData)
 
 	return nil
 }
@@ -82,7 +82,7 @@ func (gc *GochartCompiler) Generate(ctx context.Context, path string, opts ...op
 		return nil, fmt.Errorf("processing statechart: %w", err)
 	}
 
-	irData, err := ir.ProcessStatechartData(frontendData)
+	irData, err := ir.ProcessGochartData(frontendData)
 	if err != nil {
 		return nil, fmt.Errorf("processing frontend: %w", err)
 	}

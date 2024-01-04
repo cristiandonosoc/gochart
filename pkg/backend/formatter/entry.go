@@ -17,7 +17,7 @@ import (
 
 type gochartFormatter struct {
 	iw    *IndentedWriter
-	sc    *ir.Statechart
+	gc    *ir.Gochart
 	debug bool
 
 	writtenEntries []formatterEntry
@@ -30,9 +30,9 @@ func newGochartFormatter(iw *IndentedWriter, debug bool) *gochartFormatter {
 	}
 }
 
-func (gf *gochartFormatter) formatStatechart(sc *ir.Statechart) {
-	gf.sc = sc
-	f := gf.newFormatterEntry(sc)
+func (gf *gochartFormatter) formatGochart(gc *ir.Gochart) {
+	gf.gc = gc
+	f := gf.newFormatterEntry(gc)
 	gf.formatEntry(f)
 }
 
@@ -87,8 +87,8 @@ type formatterEntry interface {
 
 func (gf *gochartFormatter) newFormatterEntry(e any) formatterEntry {
 	switch v := e.(type) {
-	case *ir.Statechart:
-		return gf.newFormatStatechartWrapper(v)
+	case *ir.Gochart:
+		return gf.newFormatGochartWrapper(v)
 	case *ir.Trigger:
 		return gf.newFormatTrigger(v)
 	case *ir.State:
@@ -107,31 +107,31 @@ func (gf *gochartFormatter) newFormatterEntry(e any) formatterEntry {
 	}
 }
 
-// StatechartWrapper -------------------------------------------------------------------------------
+// GochartWrapper -------------------------------------------------------------------------------
 //
-// Statechart has a wrapper because there can be comments outside the statechart and we don't have a
+// Gochart has a wrapper because there can be comments outside the statechart and we don't have a
 // "higher-level" entity above the statechart that contains both the statechart and the commnets.
 // So in this case the statechart contains both the comments and external comments.
 
-type formatStatechartWrapper struct {
-	sc      *ir.Statechart
+type formatGochartWrapper struct {
+	gc      *ir.Gochart
 	entries []formatterEntry
 	gf      *gochartFormatter // Back pointer.
 }
 
-func (gf *gochartFormatter) newFormatStatechartWrapper(sc *ir.Statechart) *formatStatechartWrapper {
-	f := &formatStatechartWrapper{
-		sc: sc,
+func (gf *gochartFormatter) newFormatGochartWrapper(gc *ir.Gochart) *formatGochartWrapper {
+	f := &formatGochartWrapper{
+		gc: gc,
 		gf: gf,
 	}
 
 	// Create a child with the statechart as a child.
 
 	entries := []formatterEntry{
-		gf.newFormatStatechart(sc),
+		gf.newFormatGochart(gc),
 	}
 
-	for _, entry := range sc.FrontendData.Comments {
+	for _, entry := range gc.FrontendData.Comments {
 		entries = append(entries, gf.newFormatterEntry(entry))
 	}
 
@@ -144,9 +144,9 @@ func (gf *gochartFormatter) newFormatStatechartWrapper(sc *ir.Statechart) *forma
 }
 
 // The frontend_common.FrontendEntry interface
-func (f *formatStatechartWrapper) Index() int { return 0 }
-func (f *formatStatechartWrapper) Position() *files.LoadedFilePosition {
-	scPos := f.sc.FrontendData.Position()
+func (f *formatGochartWrapper) Index() int { return 0 }
+func (f *formatGochartWrapper) Position() *files.LoadedFilePosition {
+	scPos := f.gc.FrontendData.Position()
 
 	// The wrapper is positioned at the first character of the first line.
 	return &files.LoadedFilePosition{
@@ -156,38 +156,38 @@ func (f *formatStatechartWrapper) Position() *files.LoadedFilePosition {
 	}
 }
 
-func (f *formatStatechartWrapper) Formatter() *gochartFormatter                 { return f.gf }
-func (f *formatStatechartWrapper) FrontendEntry() frontend_common.FrontendEntry { return f }
-func (f *formatStatechartWrapper) Name() string                                 { return "<statechart_wrapper>" }
-func (f *formatStatechartWrapper) Indents() bool                                { return false }
-func (f *formatStatechartWrapper) ChildEntries() []formatterEntry               { return f.entries }
+func (f *formatGochartWrapper) Formatter() *gochartFormatter                 { return f.gf }
+func (f *formatGochartWrapper) FrontendEntry() frontend_common.FrontendEntry { return f }
+func (f *formatGochartWrapper) Name() string                                 { return "<statechart_wrapper>" }
+func (f *formatGochartWrapper) Indents() bool                                { return false }
+func (f *formatGochartWrapper) ChildEntries() []formatterEntry               { return f.entries }
 
-func (f *formatStatechartWrapper) Write(w io.Writer)      {}
-func (f *formatStatechartWrapper) Pop(w io.Writer)        {}
-func (f *formatStatechartWrapper) DebugWrite(w io.Writer) {}
+func (f *formatGochartWrapper) Write(w io.Writer)      {}
+func (f *formatGochartWrapper) Pop(w io.Writer)        {}
+func (f *formatGochartWrapper) DebugWrite(w io.Writer) {}
 
-// Statechart --------------------------------------------------------------------------------------
+// Gochart --------------------------------------------------------------------------------------
 
-type formatStatechart struct {
-	sc      *ir.Statechart
+type formatGochart struct {
+	gc      *ir.Gochart
 	entries []formatterEntry
 	gf      *gochartFormatter // Back pointer.
 }
 
-func (gf *gochartFormatter) newFormatStatechart(sc *ir.Statechart) *formatStatechart {
-	f := &formatStatechart{
-		sc: sc,
+func (gf *gochartFormatter) newFormatGochart(gc *ir.Gochart) *formatGochart {
+	f := &formatGochart{
+		gc: gc,
 		gf: gf,
 	}
 
 	var entries []formatterEntry
 
-	for _, entry := range sc.Triggers {
+	for _, entry := range gc.Triggers {
 		entries = append(entries, gf.newFormatterEntry(entry))
 	}
 
 	// Go over the root state ang gets the entries from it.
-	entries = append(entries, gf.collectChildrenFromState(sc.Root)...)
+	entries = append(entries, gf.collectChildrenFromState(gc.Root)...)
 
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].FrontendEntry().Index() < entries[j].FrontendEntry().Index()
@@ -197,27 +197,27 @@ func (gf *gochartFormatter) newFormatStatechart(sc *ir.Statechart) *formatStatec
 	return f
 }
 
-func (f *formatStatechart) Formatter() *gochartFormatter { return f.gf }
-func (f *formatStatechart) FrontendEntry() frontend_common.FrontendEntry {
-	return f.sc.Root.FrontendData
+func (f *formatGochart) Formatter() *gochartFormatter { return f.gf }
+func (f *formatGochart) FrontendEntry() frontend_common.FrontendEntry {
+	return f.gc.Root.FrontendData
 }
-func (f *formatStatechart) Name() string {
-	return fmt.Sprintf("%d:statechart:%s", f.sc.Root.FrontendData.Index(), f.sc.Name)
+func (f *formatGochart) Name() string {
+	return fmt.Sprintf("%d:statechart:%s", f.gc.Root.FrontendData.Index(), f.gc.Name)
 }
-func (f *formatStatechart) Indents() bool                  { return true }
-func (f *formatStatechart) ChildEntries() []formatterEntry { return f.entries }
+func (f *formatGochart) Indents() bool                  { return true }
+func (f *formatGochart) ChildEntries() []formatterEntry { return f.entries }
 
-func (f *formatStatechart) Write(w io.Writer) {
+func (f *formatGochart) Write(w io.Writer) {
 	collapseLineDistance(w, f)
-	writeStringf(w, "statechart %s", f.sc.Name)
-	writeOptions(w, f.sc.Options)
+	writeStringf(w, "statechart %s", f.gc.Name)
+	writeOptions(w, f.gc.Options)
 	writeStringf(w, "{ ")
 }
-func (f *formatStatechart) Pop(w io.Writer) {
+func (f *formatGochart) Pop(w io.Writer) {
 	collapseLineDistance(w, f)
 	writeStringf(w, "}")
 }
-func (f *formatStatechart) DebugWrite(w io.Writer) {
+func (f *formatGochart) DebugWrite(w io.Writer) {
 	writeStringf(w, "%s\n", f.Name())
 }
 

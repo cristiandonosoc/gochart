@@ -33,7 +33,7 @@ func TestLogicalErrors(t *testing.T) {
 			scdata, err := gf.Process(lf)
 			require.NoError(t, err)
 
-			_, gotErr := ir.ProcessStatechartData(scdata)
+			_, gotErr := ir.ProcessGochartData(scdata)
 			require.NoError(t, err)
 
 			if wantErrorText == "" {

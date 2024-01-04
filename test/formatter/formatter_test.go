@@ -30,13 +30,13 @@ func TestEnsureFormatterDoesNotChangeAST(t *testing.T) {
 			wantLF, err := files.LoadFileFromPath(rf)
 			require.NoError(t, err)
 
-			wantScData, err := gf.Process(wantLF)
+			wantGcData, err := gf.Process(wantLF)
 			require.NoError(t, err)
 
-			wantSc, err := ir.ProcessStatechartData(wantScData)
+			wantGc, err := ir.ProcessGochartData(wantGcData)
 			require.NoError(t, err)
 
-			outputs, err := ff.Generate(context.Background(), wantSc)
+			outputs, err := ff.Generate(context.Background(), wantGc)
 			require.NoError(t, err)
 			require.Equal(t, len(outputs), 1)
 
@@ -48,13 +48,13 @@ func TestEnsureFormatterDoesNotChangeAST(t *testing.T) {
 			gotLF, err := files.LoadFileFromData(content)
 			require.NoError(t, err)
 
-			gotScData, err := gf.Process(gotLF)
+			gotGcData, err := gf.Process(gotLF)
 			require.NoError(t, err)
 
-			gotSc, err := ir.ProcessStatechartData(gotScData)
+			gotGc, err := ir.ProcessGochartData(gotGcData)
 			require.NoError(t, err)
 
-			ir.CompareStatechart(t, wantSc, gotSc)
+			ir.CompareGochart(t, wantGc, gotGc)
 		})
 	}
 }
@@ -75,16 +75,16 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 			lf, err := files.LoadFileFromPath(rf)
 			require.NoError(t, err)
 
-			scdata, err := gf.Process(lf)
+			gcdata, err := gf.Process(lf)
 			require.NoError(t, err)
 
-			wantSc, err := ir.ProcessStatechartData(scdata)
+			wantGc, err := ir.ProcessGochartData(gcdata)
 			require.NoError(t, err)
 
 			// Now that we have the formatted lf, we generate it over and over a couple of times and
 			// ensure the output is the same byte to byte.
 			for i := 0; i < 5; i++ {
-				wantOutputs, err := ff.Generate(context.Background(), wantSc)
+				wantOutputs, err := ff.Generate(context.Background(), wantGc)
 				require.NoError(t, err)
 				require.Equal(t, len(wantOutputs), 1)
 
@@ -96,14 +96,14 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 				wantLF, err := files.LoadFileFromData(wantContent)
 				require.NoError(t, err)
 
-				wantScData, err := gf.Process(wantLF)
+				wantGcData, err := gf.Process(wantLF)
 				require.NoError(t, err)
 
-				wantSc, err := ir.ProcessStatechartData(wantScData)
+				wantGc, err := ir.ProcessGochartData(wantGcData)
 				require.NoError(t, err)
 
 				// We generate the output from this.
-				gotOutputs, err := ff.Generate(context.Background(), wantSc)
+				gotOutputs, err := ff.Generate(context.Background(), wantGc)
 				require.NoError(t, err)
 
 				require.Equal(t, len(gotOutputs), 1)
@@ -118,16 +118,16 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 				gotLF, err := files.LoadFileFromData(gotContent)
 				require.NoError(t, err)
 
-				gotScData, err := gf.Process(gotLF)
+				gotGcData, err := gf.Process(gotLF)
 				require.NoError(t, err)
 
-				gotSc, err := ir.ProcessStatechartData(gotScData)
+				gotGc, err := ir.ProcessGochartData(gotGcData)
 				require.NoError(t, err)
 
-				ir.CompareStatechart(t, wantSc, gotSc)
+				ir.CompareGochart(t, wantGc, gotGc)
 
 				// Now we set the current statechart as the next one and do the loop again.
-				wantSc = gotSc
+				wantGc = gotGc
 			}
 		})
 	}

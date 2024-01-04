@@ -11,7 +11,7 @@ import (
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
-	scdata *frontend_common.StatechartData
+	scdata *frontend_common.GochartData
 
 	triggers []*Trigger
 	root     *State
@@ -24,15 +24,15 @@ type inputHandler struct {
 	stateMap   map[string]*State
 }
 
-func ProcessStatechartData(scdata *frontend_common.StatechartData) (*Statechart, error) {
-	sc, err := processStatechartDataInternal(scdata)
+func ProcessGochartData(scdata *frontend_common.GochartData) (*Gochart, error) {
+	gc, err := processGochartDataInternal(scdata)
 	if err != nil {
 		return nil, errors.NewErrorContainer([]error{err})
 	}
-	return sc, nil
+	return gc, nil
 }
 
-func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Statechart, error) {
+func processGochartDataInternal(scdata *frontend_common.GochartData) (*Gochart, error) {
 	ih := inputHandler{
 		scdata:     scdata,
 		triggerMap: make(map[string]*Trigger),
@@ -46,14 +46,14 @@ func processStatechartDataInternal(scdata *frontend_common.StatechartData) (*Sta
 	}
 
 	// We create the base state object (will be filled more later).
-	statechart := &Statechart{
+	statechart := &Gochart{
 		Name: scdata.Name,
 		// By default the namespace is same as the name. This might be override by an option.
 		Namespace:    scdata.Name,
 		Root:         root,
 		FrontendData: scdata,
 	}
-	if err := parseStatechartOptions(statechart, scdata.Options); err != nil {
+	if err := parseGochartOptions(statechart, scdata.Options); err != nil {
 		return nil, fmt.Errorf("statechart %q: parsing options: %w", scdata.Name, err)
 	}
 

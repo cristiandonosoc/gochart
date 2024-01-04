@@ -50,12 +50,12 @@ func (c *Config) validate() error {
 	return nil
 }
 
-func Generate(sc *ir.Statechart, config *Config) ([]*common.BackendOutput, error) {
+func Generate(gc *ir.Gochart, config *Config) ([]*common.BackendOutput, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
-	tm, err := newTemplateManager(config, sc)
+	tm, err := newTemplateManager(config, gc)
 	if err != nil {
 		return nil, fmt.Errorf("building new template manager: %w", err)
 	}

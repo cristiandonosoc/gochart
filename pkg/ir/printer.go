@@ -7,7 +7,7 @@ import (
 )
 
 type irPrinter struct {
-	sc *Statechart
+	sc *Gochart
 	p  *printer.Printer
 }
 
@@ -19,10 +19,10 @@ func NewPrinter(w io.Writer) *irPrinter {
 	}
 }
 
-func (ip *irPrinter) PrintStatechart(sc *Statechart) {
+func (ip *irPrinter) PrintGochart(sc *Gochart) {
 	ip.sc = sc
 
-	ip.p.WriteLine("Statechart %s", sc.Name)
+	ip.p.WriteLine("Gochart %s", sc.Name)
 
 	ip.p.PushIndent()
 	defer ip.p.PopIndent()

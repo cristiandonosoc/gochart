@@ -15,7 +15,7 @@ func newFrontendTranslator(lf *files.LoadedFile) *frontendTranslator {
 	}
 }
 
-func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *common.StatechartData {
+func (ft *frontendTranslator) translateGochart(nsc *ASTNodeGochart) *common.GochartData {
 	// Collect triggers.
 	triggers := make([]*common.TriggerData, 0, len(nsc.Triggers))
 	for _, nt := range nsc.Triggers {
@@ -31,7 +31,7 @@ func (ft *frontendTranslator) translateStatechart(nsc *ASTNodeStatechart) *commo
 		panic("root state is not the first one!")
 	}
 
-	return &common.StatechartData{
+	return &common.GochartData{
 		Name:                nsc.Name,
 		Options:             ft.translateOptions(nsc.Options),
 		Triggers:            triggers,

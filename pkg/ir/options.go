@@ -18,23 +18,23 @@ type OptionDefinition struct {
 }
 
 var (
-	// Statechart Options ----------------------------------------------------------------------------
+	// Gochart Options ----------------------------------------------------------------------------
 
-	kStatechartOption_Concurrent = "concurrent"
-	kStatechartOption_Namespace  = "namespace"
+	kGochartOption_Concurrent = "concurrent"
+	kGochartOption_Namespace  = "namespace"
 
-	kStatechartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
-		kStatechartOption_Concurrent: {
-			Name:        kStatechartOption_Concurrent,
+	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
+		kGochartOption_Concurrent: {
+			Name:        kGochartOption_Concurrent,
 			Kind:        frontend_common.OptionValueKind_Boolean,
 			Description: "Whether the root states of the gochart should be considered concurrent within each other.",
-			Handler:     StatechartOptionHandler(parseStatechartOption_Concurrent),
+			Handler:     GochartOptionHandler(parseGochartOption_Concurrent),
 		},
-		kStatechartOption_Namespace: {
-			Name:        kStatechartOption_Namespace,
+		kGochartOption_Namespace: {
+			Name:        kGochartOption_Namespace,
 			Kind:        frontend_common.OptionValueKind_String,
 			Description: "The name of the namespace to generate. Otherwise the name of gochart will be used.",
-			Handler:     StatechartOptionHandler(parseStatechartOption_Namespace),
+			Handler:     GochartOptionHandler(parseGochartOption_Namespace),
 		},
 	})
 
@@ -209,19 +209,19 @@ func (so *Option) IsImplicitBool() bool {
 	return so.implicitBool
 }
 
-// Statechart Options ------------------------------------------------------------------------------
+// Gochart Options ------------------------------------------------------------------------------
 
-type StatechartOptionHandler func(sc *Statechart, option *Option) error
+type GochartOptionHandler func(sc *Gochart, option *Option) error
 
-func parseStatechartOptions(sc *Statechart, frontendOptions []*frontend_common.OptionData) error {
-	options, err := collectOptionsFromDefinitions("statechart", kStatechartOptionDefinitions, frontendOptions)
+func parseGochartOptions(sc *Gochart, frontendOptions []*frontend_common.OptionData) error {
+	options, err := collectOptionsFromDefinitions("statechart", kGochartOptionDefinitions, frontendOptions)
 	if err != nil {
 		return fmt.Errorf("collecting statechart options from definitions: %w", err)
 	}
 
 	for _, option := range options {
 		// Cast the handler.
-		handler, ok := option.Definition.Handler.(StatechartOptionHandler)
+		handler, ok := option.Definition.Handler.(GochartOptionHandler)
 		if !ok {
 			return errors.InternalErrorf("invalid handler type for statechart option %q", option.Definition.Name)
 		}
@@ -235,12 +235,12 @@ func parseStatechartOptions(sc *Statechart, frontendOptions []*frontend_common.O
 	return nil
 }
 
-func parseStatechartOption_Concurrent(sc *Statechart, option *Option) error {
+func parseGochartOption_Concurrent(sc *Gochart, option *Option) error {
 	sc.Root.Concurrent = option.BoolValue()
 	return nil
 }
 
-func parseStatechartOption_Namespace(sc *Statechart, option *Option) error {
+func parseGochartOption_Namespace(sc *Gochart, option *Option) error {
 	sc.Namespace = option.StringValue()
 	return nil
 }

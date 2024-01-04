@@ -25,7 +25,7 @@ func TestReadSimple(t *testing.T) {
 	require.Empty(t, errors)
 
 	want := &ASTNodeRoot{
-		statecharts: []*ASTNodeStatechart{
+		gocharts: []*ASTNodeGochart{
 			{
 				Name: "Example",
 				Options: []*ASTNodeOption{
@@ -348,17 +348,17 @@ func TestReadSimple(t *testing.T) {
 // Helpers -----------------------------------------------------------------------------------------
 
 func compareASTNodeRoot(t *testing.T, want, got *ASTNodeRoot) {
-	if assert.Equal(t, len(want.statecharts), len(got.statecharts)) {
-		for i := 0; i < len(want.statecharts); i++ {
-			want := want.statecharts[i]
-			got := got.statecharts[i]
+	if assert.Equal(t, len(want.gocharts), len(got.gocharts)) {
+		for i := 0; i < len(want.gocharts); i++ {
+			want := want.gocharts[i]
+			got := got.gocharts[i]
 
-			compareASTNodeStatechart(t, want, got)
+			compareASTNodeGochart(t, want, got)
 		}
 	}
 }
 
-func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
+func compareASTNodeGochart(t *testing.T, want, got *ASTNodeGochart) {
 	assert.Equal(t, want.Name, got.Name)
 	scName := want.Name
 
@@ -368,13 +368,13 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 			got := got.Triggers[i]
 
 			tc := &triggerComparer{
-				index:          i,
-				statechartName: want.Name,
+				index:       i,
+				gochartName: want.Name,
 			}
 			tc.compare(t, want, got)
 		}
 
-		parent := fmt.Sprintf("statechart:%s", scName)
+		parent := fmt.Sprintf("gochart:%s", scName)
 		if assert.Equal(t, len(want.Comments), len(got.Comments), parent) {
 			for i := 0; i < len(want.Comments); i++ {
 				want := want.Comments[i]
@@ -388,42 +388,42 @@ func compareASTNodeStatechart(t *testing.T, want, got *ASTNodeStatechart) {
 		}
 	}
 
-	statechartName := want.Name
+	gochartName := want.Name
 
 	sc := &stateComparer{
-		index:          0,
-		statechartName: statechartName,
+		index:       0,
+		gochartName: gochartName,
 	}
 	sc.compare(t, want.Root, got.Root)
 }
 
 type triggerComparer struct {
-	index          int
-	statechartName string
+	index       int
+	gochartName string
 }
 
 func (tc *triggerComparer) compare(t *testing.T, want, got *ASTNodeTrigger) {
-	assert.Equal(t, want.Name, got.Name, "Statechart %q, Trigger %d", tc.statechartName, tc.index)
-	assert.Equal(t, want.entryIndex, got.entryIndex, tc.statechartName, tc.index, want.Name)
+	assert.Equal(t, want.Name, got.Name, "Gochart %q, Trigger %d", tc.gochartName, tc.index)
+	assert.Equal(t, want.entryIndex, got.entryIndex, tc.gochartName, tc.index, want.Name)
 
-	ctxStr := fmt.Sprintf("Statechart %q, Trigger %d (%s)", tc.statechartName, tc.index, want.Name)
+	ctxStr := fmt.Sprintf("Gochart %q, Trigger %d (%s)", tc.gochartName, tc.index, want.Name)
 
 	assert.Equal(t, want.ArgsString, got.ArgsString, ctxStr)
 }
 
 type stateComparer struct {
-	index          int
-	statechartName string
-	parentState    string
+	index       int
+	gochartName string
+	parentState string
 }
 
 func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
-	assert.Equal(t, want.Name, got.Name, "Statechart %s, State %d", sc.statechartName, sc.index)
+	assert.Equal(t, want.Name, got.Name, "Gochart %s, State %d", sc.gochartName, sc.index)
 	stateName := want.Name
 
-	assert.Equal(t, want.entryIndex, got.entryIndex, sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
+	assert.Equal(t, want.entryIndex, got.entryIndex, sc.gochartName, want.Name, sc.parentState, sc.index, want.Name)
 
-	ctxStr := fmt.Sprintf("Statechart %s, State %q, Parent %q, Trigger %d (%s)", sc.statechartName, want.Name, sc.parentState, sc.index, want.Name)
+	ctxStr := fmt.Sprintf("Gochart %s, State %q, Parent %q, Trigger %d (%s)", sc.gochartName, want.Name, sc.parentState, sc.index, want.Name)
 
 	// Compare options.
 	if assert.Equal(t, len(want.Options), len(got.Options), ctxStr) {
@@ -493,9 +493,9 @@ func (sc *stateComparer) compare(t *testing.T, want, got *ASTNodeState) {
 			got := got.Children[i]
 
 			subComparer := &stateComparer{
-				index:          i,
-				statechartName: sc.statechartName,
-				parentState:    parentStateName,
+				index:       i,
+				gochartName: sc.gochartName,
+				parentState: parentStateName,
 			}
 			subComparer.compare(t, want, got)
 		}

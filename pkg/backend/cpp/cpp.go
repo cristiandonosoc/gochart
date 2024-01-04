@@ -83,7 +83,7 @@ func NewCppGochartBackend(opts ...option.Option) (*cppGochartBackend, error) {
 	}, nil
 }
 
-func (cpp *cppGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, opts ...option.Option) ([]*common.BackendOutput, error) {
+func (cpp *cppGochartBackend) Generate(ctx context.Context, gc *ir.Gochart, opts ...option.Option) ([]*common.BackendOutput, error) {
 	for _, opt := range opts {
 		opt(cpp.options)
 	}
@@ -97,7 +97,7 @@ func (cpp *cppGochartBackend) Generate(ctx context.Context, sc *ir.Statechart, o
 		Verbose:           cpp.options.Verbose,
 	}
 
-	outputs, err := cpp_gen.Generate(sc, config)
+	outputs, err := cpp_gen.Generate(gc, config)
 	if err != nil {
 		return nil, fmt.Errorf("Generating files: %w", err)
 	}

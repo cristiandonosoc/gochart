@@ -32,11 +32,11 @@ type templateManager struct {
 	declareTemplate        *template.Template
 	defineTemplate         *template.Template
 
-	sc     *ir.Statechart
+	gc     *ir.Gochart
 	config *Config
 }
 
-func newTemplateManager(config *Config, sc *ir.Statechart) (*templateManager, error) {
+func newTemplateManager(config *Config, gc *ir.Gochart) (*templateManager, error) {
 	forwardDeclareTemplate, err := readTemplate(kForwardDeclareFilename)
 	if err != nil {
 		return nil, fmt.Errorf("reading forward declare template %q: %w", kForwardDeclareFilename, err)
@@ -56,7 +56,7 @@ func newTemplateManager(config *Config, sc *ir.Statechart) (*templateManager, er
 		forwardDeclareTemplate: forwardDeclareTemplate,
 		declareTemplate:        declareTemplate,
 		defineTemplate:         defineTemplate,
-		sc:                     sc,
+		gc:                     gc,
 		config:                 config,
 	}, nil
 }
@@ -93,7 +93,7 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 }
 
 func (tm *templateManager) generateTemplates() (_forwardDeclare, _declare, _define io.Reader, _err error) {
-	context := newTemplateContext(tm.config, tm.sc)
+	context := newTemplateContext(tm.config, tm.gc)
 
 	var forwardDeclareBuf bytes.Buffer
 	if err := tm.forwardDeclareTemplate.Execute(&forwardDeclareBuf, context); err != nil {
@@ -116,13 +116,13 @@ func (tm *templateManager) generateTemplates() (_forwardDeclare, _declare, _defi
 // templateContext is a common struct that has helpers and information needed by the templates.
 type templateContext struct {
 	Config
-	Statechart *ir.Statechart
+	Gochart *ir.Gochart
 }
 
-func newTemplateContext(config *Config, sc *ir.Statechart) *templateContext {
+func newTemplateContext(config *Config, sc *ir.Gochart) *templateContext {
 	tc := &templateContext{
-		Config:     *config,
-		Statechart: sc,
+		Config:  *config,
+		Gochart: sc,
 	}
 
 	return tc

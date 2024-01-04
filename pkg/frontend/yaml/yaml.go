@@ -19,14 +19,14 @@ func NewYamlFrontend(opts ...option.Option) (*yamlFrontend, error) {
 type yamlFrontend struct {
 }
 
-func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*common.StatechartData, error) {
-	var yamlData YamlStatechart
+func (yf *yamlFrontend) Process(lf *files.LoadedFile) (*common.GochartData, error) {
+	var yamlData YamlGochart
 	if err := yaml.Unmarshal(lf.Data, &yamlData); err != nil {
 		return nil, fmt.Errorf("unmarshalling yaml: %w", err)
 	}
 
 	ft := newFrontendTranslator()
-	scdata := ft.translateStatechart(&yamlData)
+	scdata := ft.translateGochart(&yamlData)
 
 	return scdata, nil
 }
@@ -43,7 +43,7 @@ func newFrontendTranslator() *frontendTranslator {
 	return &frontendTranslator{}
 }
 
-func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.StatechartData {
+func (ft *frontendTranslator) translateGochart(ysc *YamlGochart) *common.GochartData {
 	// Collect Triggers.
 	triggers := make([]*common.TriggerData, 0, len(ysc.Triggers))
 	for _, yt := range ysc.Triggers {
@@ -72,7 +72,7 @@ func (ft *frontendTranslator) translateStatechart(ysc *YamlStatechart) *common.S
 	}
 	states = append([]*common.StateData{root}, states...)
 
-	return &common.StatechartData{
+	return &common.GochartData{
 		Name:        ysc.Name,
 		Triggers:    triggers,
 		Root:        root,

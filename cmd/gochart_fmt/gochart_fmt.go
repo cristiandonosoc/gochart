@@ -60,12 +60,12 @@ func internalMain() error {
 						return fmt.Errorf("processing gochart frontend: %w", err)
 					}
 
-					sc, err := ir.ProcessStatechartData(scdata)
+					gc, err := ir.ProcessGochartData(scdata)
 					if err != nil {
 						return fmt.Errorf("processing IR data: %w", err)
 					}
 
-					outputs, err := gb.Generate(context.Background(), sc)
+					outputs, err := gb.Generate(context.Background(), gc)
 					if err != nil {
 						return fmt.Errorf("formatting file: %w", err)
 					}

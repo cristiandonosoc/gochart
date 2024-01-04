@@ -40,9 +40,9 @@ type OptionData struct {
 	Frontend_NamePos *files.LoadedFilePosition
 }
 
-// StatechartData is all the information a frontend needs to output about a statechart.
+// GochartData is all the information a frontend needs to output about a gochart.
 // This will be consumed by the |ir| package and validated.
-type StatechartData struct {
+type GochartData struct {
 	Name string
 
 	Options []*OptionData
@@ -59,10 +59,10 @@ type StatechartData struct {
 	Frontend_NamePos    *files.LoadedFilePosition
 }
 
-var _ FrontendEntry = (*StatechartData)(nil)
+var _ FrontendEntry = (*GochartData)(nil)
 
-func (sd *StatechartData) Index() int                          { return sd.Frontend_Index }
-func (sd *StatechartData) Position() *files.LoadedFilePosition { return sd.Frontend_KeywordPos }
+func (sd *GochartData) Index() int                          { return sd.Frontend_Index }
+func (sd *GochartData) Position() *files.LoadedFilePosition { return sd.Frontend_KeywordPos }
 
 // TriggerData is all the information the frontend has about a trigger definition.
 type TriggerData struct {

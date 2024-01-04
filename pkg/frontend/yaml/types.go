@@ -1,6 +1,6 @@
 package yaml
 
-type YamlStatechart struct {
+type YamlGochart struct {
 	Name        string            `yaml:"name"`
 	Triggers    []*YamlTrigger    `yaml:"triggers"`
 	States      []*YamlState      `yaml:"states"`

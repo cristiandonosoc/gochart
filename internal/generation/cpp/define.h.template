@@ -1,7 +1,7 @@
 {{template "header.template" .}}
 
 {{- $root := . -}}
-{{- $sc := $root.Statechart }}
+{{- $sc := $root.Gochart }}
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
 
