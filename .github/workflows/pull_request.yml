@@ -1,6 +1,7 @@
 name: pull request tests
 on: [pull_request]
 jobs:
+  # Run gofmt.
   gofmt:
     name: Run gofmt
     runs-on: ubuntu-latest
@@ -9,6 +10,7 @@ jobs:
       with:
         gofmt-path: .
         gofmt-flags: -l -d
+  # Make sure the tests passes.
   tests:
     name: pull request tests
     strategy:
