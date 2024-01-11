@@ -1,4 +1,5 @@
 load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
 
 # gazelle:prefix github.com/cristiandonosoc/gochart
 gazelle(name = "gazelle")
@@ -11,4 +12,12 @@ gazelle(
         "-prune",
     ],
     command = "update-repos",
+)
+
+pkg_zip(
+    name = "pkg_release",
+    srcs = [
+        "//cmd/gochart",
+        "//cmd/gochart_fmt",
+    ],
 )
