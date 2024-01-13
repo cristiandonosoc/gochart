@@ -4,12 +4,13 @@ on:
   push:
     tags:
       - "v*" # Matches v0.1.0, v1.2, v.2, etc.
+permissions:
+  contents: write
+
 jobs:
   create_release:
     name: Create single release for all builds
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -21,3 +22,24 @@ jobs:
           draft: true
           prerelease: true
           title: Release ${{ github.ref_name }}
+  build_linux:
+    name: Create the linux release
+    needs: create_release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: bazel test //...
+      - name: Package build
+        run: bazel build //:pkg_release
+      - name: Copy it to root
+        run: cp $(bazel cquery //:pkg_release --output=files 2>/dev/null) ${{ github.workspace }}/
+      - name: Upload package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/pkg_release.zip
+          asset_name: gochart-linux-${{ github.ref_name }}.zip
+          asset_content_type: application/octet-stream
