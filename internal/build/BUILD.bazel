@@ -4,5 +4,10 @@ go_library(
     name = "build",
     srcs = ["build.go"],
     importpath = "github.com/cristiandonosoc/gochart/internal/build",
+    x_defs = {
+        "github.com/cristiandonosoc/gochart/internal/build.GOCHART_VERSION": "{STABLE_GOCHART_VERSION}",
+        "github.com/cristiandonosoc/gochart/internal/build.GOCHART_BUILD_TIME": "{FORMATTED_DATE}",
+        "github.com/cristiandonosoc/gochart/internal/build.GOCHART_GIT_COMMIT": "{STABLE_GOCHART_GIT_COMMIT}",
+    },
     visibility = ["//:__subpackages__"],
 )

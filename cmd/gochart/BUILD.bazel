@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/cmd/gochart",
     visibility = ["//visibility:private"],
     deps = [
+        "//internal/cmd/version",
         "//internal/files",
         "//internal/option",
         "//pkg/backend",

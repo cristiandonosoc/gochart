@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cristiandonosoc/gochart/internal/cmd/version"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/gochart"
@@ -106,6 +107,7 @@ func internalMain() error {
 		},
 		Commands: commands,
 	}
+	version.AppendVersionData(&app)
 
 	if err := app.Run(os.Args); err != nil {
 		return err
