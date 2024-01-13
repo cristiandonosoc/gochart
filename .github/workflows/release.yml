@@ -54,8 +54,7 @@ jobs:
       - name: Package build
         run: bazel build //:pkg_release
       - name: Copy it to workspace root
-        shell: cmd
-        run: for /f "delims=" %i in ('bazel cquery //:pkg_release --output=files 2^>NUL') do cp %i ${{ github.workspace }}
+        run: cp $(bazel cquery //:pkg_release --output=files 2>$null) ${{ github.workspace }}
       - name: Upload package
         uses: actions/upload-release-asset@v1
         env:
