@@ -8,7 +8,8 @@ jobs:
   create_release:
     name: Create single release for all builds
     runs-on: ubuntu-latest
-    permissions: contents-write
+    permissions:
+      contents: write
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
