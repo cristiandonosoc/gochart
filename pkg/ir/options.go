@@ -20,15 +20,15 @@ type OptionDefinition struct {
 var (
 	// Gochart Options ----------------------------------------------------------------------------
 
-	kGochartOption_Concurrent = "concurrent"
-	kGochartOption_Namespace  = "namespace"
+	kGochartOption_Parallel  = "parallel"
+	kGochartOption_Namespace = "namespace"
 
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
-		kGochartOption_Concurrent: {
-			Name:        kGochartOption_Concurrent,
+		kGochartOption_Parallel: {
+			Name:        kGochartOption_Parallel,
 			Kind:        frontend_common.OptionValueKind_Boolean,
-			Description: "Whether the root states of the gochart should be considered concurrent within each other.",
-			Handler:     GochartOptionHandler(parseGochartOption_Concurrent),
+			Description: "Whether the root states of the gochart should be considered running in parallel within each other.",
+			Handler:     GochartOptionHandler(parseGochartOption_Parallel),
 		},
 		kGochartOption_Namespace: {
 			Name:        kGochartOption_Namespace,
@@ -40,8 +40,8 @@ var (
 
 	// State Options ---------------------------------------------------------------------------------
 
-	kStateOption_Default    = "default"
-	kStateOption_Concurrent = "concurrent"
+	kStateOption_Default  = "default"
+	kStateOption_Parallel = "parallel"
 
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStateOption_Default: {
@@ -50,11 +50,11 @@ var (
 			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
 			Handler:     StateOptionHandler(parseStateOption_Default),
 		},
-		kStateOption_Concurrent: {
-			Name:        kStateOption_Concurrent,
+		kStateOption_Parallel: {
+			Name:        kStateOption_Parallel,
 			Kind:        frontend_common.OptionValueKind_Boolean,
-			Description: "Whether this state is to be considered a concurrent one.",
-			Handler:     StateOptionHandler(parseStateOption_Concurrent),
+			Description: "Whether this state is to be considered a parallel one.",
+			Handler:     StateOptionHandler(parseStateOption_Parallel),
 		},
 	})
 )
@@ -235,8 +235,8 @@ func parseGochartOptions(gc *Gochart, frontendOptions []*frontend_common.OptionD
 	return nil
 }
 
-func parseGochartOption_Concurrent(gc *Gochart, option *Option) error {
-	gc.Root.Concurrent = option.BoolValue()
+func parseGochartOption_Parallel(gc *Gochart, option *Option) error {
+	gc.Root.Parallel = option.BoolValue()
 	return nil
 }
 
@@ -276,7 +276,7 @@ func parseStateOption_Default(state *State, option *Option) error {
 	return nil
 }
 
-func parseStateOption_Concurrent(state *State, option *Option) error {
-	state.Concurrent = option.BoolValue()
+func parseStateOption_Parallel(state *State, option *Option) error {
+	state.Parallel = option.BoolValue()
 	return nil
 }

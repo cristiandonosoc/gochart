@@ -32,8 +32,8 @@ namespace {{$internal}}
 // Data Functions.
 EState GetParentState(EState state);
 EState GetDefaultChild(EState state);
-bool GetIsConcurrent(EState state);
-size_t GetConcurrentGroup(EState state);
+bool GetIsParallel(EState state);
+size_t GetParallelGroup(EState state);
 size_t GetChildCount(EState state);
 bool IsChildOf(EState parent, EState child);
 bool IsLeafState(EState state);
@@ -222,7 +222,7 @@ bool Gochart<T>::IsInStateExact(EState state) const
 	}
 
 
-	// Go over all the concurrent groups and check if we're in that state.
+	// Go over all the parallel groups and check if we're in that state.
 	for (EState current_state : CurrentStates)
 	{
 		if (current_state == state)
@@ -250,7 +250,7 @@ bool Gochart<T>::IsInState(EState state) const
 		return true;
 	}
 
-	// Otherwise we need to go over each concurrent group looking for parents.
+	// Otherwise we need to go over each parallel group looking for parents.
 	for (EState current_state : CurrentStates)
 	{
 		// Go over the parent states and see if that is the state being asked for.
@@ -276,7 +276,7 @@ bool Gochart<T>::IsInState(EState state) const
 template <typename T>
 Gochart<T>::Gochart(T* owner) : Owner(owner)
 {
-	for (size_t i = 0; i < {{$internal}}::kConcurrentGroupCount; i++)
+	for (size_t i = 0; i < {{$internal}}::kParallelGroupCount; i++)
 	{
 		CurrentStates[i] = EState::__Invalid__;
 	}
@@ -285,7 +285,7 @@ Gochart<T>::Gochart(T* owner) : Owner(owner)
 template <typename T>
 Gochart<T>::~Gochart()
 {
-	for (size_t i = 0; i < {{$internal}}::kConcurrentGroupCount; i++)
+	for (size_t i = 0; i < {{$internal}}::kParallelGroupCount; i++)
 	{
 		assert(CurrentStates[i] == EState::__Invalid__);
 	}
@@ -334,7 +334,7 @@ void Gochart<T>::Deactivate()
     assert(!GetFlag_Deactivating());
     SetFlag_Deactivating(true);
 
-    // We process a transition of the root concurrent group to invalid, which means an exit.
+    // We process a transition of the root parallel group to invalid, which means an exit.
     ProcessTransition(CurrentStates[0], EState::__Invalid__, ETrigger::__Invalid__, nullptr);
 
     SetFlag_Deactivating(false);
@@ -700,10 +700,10 @@ template <typename T>
 void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_data)
 {
     assert(state != EState::__Invalid__);
-	size_t concurrent_group = {{$internal}}::GetConcurrentGroup(state);
-	assert(concurrent_group < {{$internal}}::kConcurrentGroupCount);
+	size_t parallel_group = {{$internal}}::GetParallelGroup(state);
+	assert(parallel_group < {{$internal}}::kParallelGroupCount);
 
-	CurrentStates[concurrent_group] = state;
+	CurrentStates[parallel_group] = state;
 
     // First we check for trigger specific reactions, as the default one will be called always.
     if (trigger != ETrigger::__Invalid__ && {{$internal}}::HasEnterReaction(state, trigger))
@@ -726,11 +726,11 @@ void Gochart<T>::EnterState(EState state, ETrigger trigger, const void* trigger_
 	}
 	else
 	{
-		// Now that we enter, we see if this state is concurrent and we need to enter the other
-		// concurrent groups.
-		if ({{$internal}}::GetIsConcurrent(state))
+		// Now that we enter, we see if this state is parallel and we need to enter the other
+		// parallel groups.
+		if ({{$internal}}::GetIsParallel(state))
 		{
-			EvaluateConcurrentEnter(state, trigger, trigger_data);
+			EvaluateParallelEnter(state, trigger, trigger_data);
 		}
 	}
 }
@@ -784,7 +784,7 @@ void Gochart<T>::EvaluateLeafConditions(EState state, ETrigger trigger, const vo
 }
 
 template <typename T>
-void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data)
+void Gochart<T>::EvaluateParallelEnter(EState state, ETrigger trigger, const void* trigger_data)
 {
 	switch (state)
 	{
@@ -792,7 +792,7 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 		{{- $state := . }}
 		case EState::{{$state.Name}}:
 		{
-			{{- if $state.Concurrent }}
+			{{- if $state.Parallel }}
 			for (EState child_state : {{$internal}}::k{{$state.DisplayName}}ChildrenArray)
 			{
 				// We enter the state and the we trigger a transition to follow the default enters.
@@ -800,7 +800,7 @@ void Gochart<T>::EvaluateConcurrentEnter(EState state, ETrigger trigger, const v
 				ProcessTransition(child_state, child_state, trigger, trigger_data);
 			}
 			{{- else }}
-			// State {{$state.Name}} is not concurrent. Nothing to do.
+			// State {{$state.Name}} is not parallel. Nothing to do.
 			GOCHART_DEBUG_BREAK;
 			{{- end }}
 			break;
@@ -816,11 +816,11 @@ template <typename T>
 void Gochart<T>::ExitState(EState state, ETrigger trigger, const void* trigger_data)
 {
     assert(state != EState::__Invalid__);
-	size_t concurrent_group = {{$internal}}::GetConcurrentGroup(state);
-	assert(concurrent_group < {{$internal}}::kConcurrentGroupCount);
+	size_t parallel_group = {{$internal}}::GetParallelGroup(state);
+	assert(parallel_group < {{$internal}}::kParallelGroupCount);
 
-	// First we check if we need to exit any of the concurrent children.
-	EvaluateConcurrentExit(state, trigger, trigger_data);
+	// First we check if we need to exit any of the parallel children.
+	EvaluateParallelExit(state, trigger, trigger_data);
 
     // First we check for a trigger specific exit. Then we call the default exit.
     if (trigger != ETrigger::__Invalid__ && {{$internal}}::HasExitReaction(state, trigger))
@@ -835,17 +835,17 @@ void Gochart<T>::ExitState(EState state, ETrigger trigger, const void* trigger_d
         CallExitReaction(state, ETrigger::__Invalid__, nullptr);
     }
 
-	// If the parent is concurrent, then we mark this concurrent group as invalid (stopped).
+	// If the parent is parallel, then we mark this parallel group as invalid (stopped).
     EState parent = {{$internal}}::GetParentState(state);
-	if (parent != EState::__Invalid__ && {{$internal}}::GetIsConcurrent(parent))
+	if (parent != EState::__Invalid__ && {{$internal}}::GetIsParallel(parent))
 	{
 		parent = EState::__Invalid__;
 	}
-	CurrentStates[concurrent_group] = parent;
+	CurrentStates[parallel_group] = parent;
 }
 
 template <typename T>
-void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const void* trigger_data)
+void Gochart<T>::EvaluateParallelExit(EState state, ETrigger trigger, const void* trigger_data)
 {
 	switch (state)
 	{
@@ -853,8 +853,8 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 		{{- $state := . }}
 		case EState::{{$state.Name}}:
 		{
-			{{- if $state.Concurrent }}
-			// It it is a concurrent state, we need to close the concurrent children.
+			{{- if $state.Parallel }}
+			// It it is a parallel state, we need to close the parallel children.
 			// We iterate them in reverse order so that that they are closed from bottom of the file
 			// upwards.
 			auto& children = {{$internal}}::k{{$state.DisplayName}}ChildrenArray;
@@ -864,7 +864,7 @@ void Gochart<T>::EvaluateConcurrentExit(EState state, ETrigger trigger, const vo
 				ProcessTransition(*it, EState::__Invalid__, trigger, trigger_data);
 			}
 			{{- else }}
-			// State {{$state.Name}} is not concurrent. Nothing to do.
+			// State {{$state.Name}} is not parallel. Nothing to do.
 			{{- end }}
 			break;
 		}
@@ -904,8 +904,8 @@ void Gochart<T>::ProcessTriggerQueue()
 
         ProcessingState->CurrentTrigger = entry.Trigger;
 
-		// We issue the trigger to all current active concurrent states.
-		// The order of the concurrent groups is such that child groups will be processed first.
+		// We issue the trigger to all current active parallel states.
+		// The order of the parallel groups is such that child groups will be processed first.
 		for (EState state : CurrentStates)
 		{
 			if (state == EState::__Invalid__)
@@ -928,12 +928,12 @@ void Gochart<T>::ProcessTriggerQueue()
 template <typename T>
 void Gochart<T>::ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data)
 {
-	// From the child state, we find the current active state of that concurrent group,
+	// From the child state, we find the current active state of that parallel group,
 	// since that is the one we have to exit from.
-	size_t concurrent_group = {{$internal}}::GetConcurrentGroup(from);
-	assert(concurrent_group < {{$internal}}::kConcurrentGroupCount);
+	size_t parallel_group = {{$internal}}::GetParallelGroup(from);
+	assert(parallel_group < {{$internal}}::kParallelGroupCount);
 
-	if (EState active_state = CurrentStates[concurrent_group]; active_state != from)
+	if (EState active_state = CurrentStates[parallel_group]; active_state != from)
 	{
 		assert({{$internal}}::IsChildOf(from, active_state));
 		from = active_state;
@@ -1034,14 +1034,14 @@ EState GetDefaultChild(EState state)
     return EState::__Invalid__;
 }
 
-bool GetIsConcurrent(EState state)
+bool GetIsParallel(EState state)
 {
 	switch (state)
 	{
 		{{- range $sc.States }}
 		{{- $state := . }}
 		case EState::{{$state.Name}}:
-			return {{$state.Concurrent}};
+			return {{$state.Parallel}};
 		{{- end }}{{/* range $sc.States */}}
 		default:
 			break;
@@ -1051,14 +1051,14 @@ bool GetIsConcurrent(EState state)
 	return false;
 }
 
-size_t GetConcurrentGroup(EState state)
+size_t GetParallelGroup(EState state)
 {
 	switch (state)
 	{
 		{{- range $sc.States }}
 		{{- $state := . }}
 		case EState::{{$state.Name}}:
-			return {{$state.GetConcurrentGroup}};
+			return {{$state.GetParallelGroup}};
 		{{- end }}{{/* range $sc.States */}}
 		default:
 			break;
@@ -1189,9 +1189,9 @@ void Route::SwapEnterStates()
 
 void Route::AppendDefaultEnters(EState state, Route* out)
 {
-	// If the state is concurrent, there is no default enters to evaluate (it is somewhat similar to
-	// a leaf state for this concurrent group).
-	if ({{$internal}}::GetIsConcurrent(state))
+	// If the state is parallel, there is no default enters to evaluate (it is somewhat similar to
+	// a leaf state for this parallel group).
+	if ({{$internal}}::GetIsParallel(state))
 	{
 		return;
 	}
@@ -1201,9 +1201,9 @@ void Route::AppendDefaultEnters(EState state, Route* out)
     {
         out->AppendEnterState(default_child);
 
-		// If the child we just entered is concurrent, we don't continue iterating, as their enter
-		// take care of continuing the enter of their respective child concurrent groups.
-		if ({{$internal}}::GetIsConcurrent(default_child))
+		// If the child we just entered is parallel, we don't continue iterating, as their enter
+		// take care of continuing the enter of their respective child parallel groups.
+		if ({{$internal}}::GetIsParallel(default_child))
 		{
 			break;
 		}
@@ -1216,12 +1216,12 @@ void Route::AppendDefaultEnters(EState state, Route* out)
 void Route::AppendDefaultExits(EState state, Route* out)
 {
 	// We only add default exists until we either find an invalid parent (meaning that we got into
-	// the root state, or we find a concurrent parent, which acts as the "root" of this concurrent
+	// the root state, or we find a parallel parent, which acts as the "root" of thisparallel
 	// group.
 	do {
 		out->AppendExitState(state);
 		state = GetParentState(state);
-	} while (state != EState::__Invalid__ && !GetIsConcurrent(state));
+	} while (state != EState::__Invalid__ && !GetIsParallel(state));
 }
 
 void Route::Compute(EState from, EState to, Route* out)
@@ -1243,7 +1243,7 @@ void Route::Compute(EState from, EState to, Route* out)
     // Since they are not the same, first we go from the |from|, compare, and then we compare
     // from the |to|. If not equal then, repeat the process.
 	//
-	// By definition, the common state between them will be the parent concurrent state.
+	// By definition, the common state between them will be the parent parallel state.
     while (from != to)
     {
         // Try to go up from the |from| side.

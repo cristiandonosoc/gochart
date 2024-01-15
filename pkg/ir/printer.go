@@ -91,7 +91,7 @@ func (ip *irPrinter) printState(state *State) {
 
 func (ip *irPrinter) printStateOptions(state *State) {
 	ip.p.WriteLine("Default: %v", state.Default)
-	ip.p.WriteLine("Concurrent: %t, ConcurrentGroup: %d", state.Concurrent, state.ConcurrentGroup)
+	ip.p.WriteLine("Parallel: %t, ParallelGroup: %d", state.Parallel, state.ParallelGroup)
 }
 
 func (ip *irPrinter) printTransitions(transitions []*Transition) {

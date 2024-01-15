@@ -64,9 +64,9 @@ func CompareState(t *testing.T, want, got *State) {
 
 	ctxStr := fmt.Sprintf("State: %s", want.Name)
 
-	// Compare concurrentness.
-	assert.Equal(t, want.Concurrent, got.Concurrent, ctxStr)
-	assert.Equal(t, want.ConcurrentGroup, got.ConcurrentGroup, ctxStr)
+	// Compare parallelness.
+	assert.Equal(t, want.Parallel, got.Parallel, ctxStr)
+	assert.Equal(t, want.ParallelGroup, got.ParallelGroup, ctxStr)
 
 	// Compare the enter reactions.
 	CompareReactions(t, want, want.EnterReactions, got.EnterReactions)

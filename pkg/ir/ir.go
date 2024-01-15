@@ -14,7 +14,7 @@ const (
 	InvalidStateName   = "__Invalid__"
 )
 
-type ConcurrentHead struct {
+type ParallelHead struct {
 	Id        int
 	HeadState *State
 }
@@ -30,8 +30,8 @@ type Gochart struct {
 
 	// Root is the base state of the complete gochart.
 	// Normally this is a "hidden" state created by the gochart.
-	Root            *State
-	ConcurrentHeads []*ConcurrentHead
+	Root          *State
+	ParallelHeads []*ParallelHead
 
 	// States are all the states, as defined in the order from the frontend.
 	States []*State
@@ -41,8 +41,8 @@ type Gochart struct {
 	FrontendData *frontend_common.GochartData
 }
 
-func (gc *Gochart) ConcurrentGroupCount() int {
-	return len(gc.ConcurrentHeads)
+func (gc *Gochart) ParallelGroupCount() int {
+	return len(gc.ParallelHeads)
 }
 
 // TRIGGER -----------------------------------------------------------------------------------------
@@ -97,8 +97,8 @@ type State struct {
 	Name    string
 	Default bool
 
-	Concurrent      bool
-	ConcurrentGroup int
+	Parallel      bool
+	ParallelGroup int
 
 	Options []*Option
 
@@ -169,17 +169,17 @@ func (s *State) IsParentOf(other *State) bool {
 	return false
 }
 
-func (s *State) GetConcurrentGroup() int {
+func (s *State) GetParallelGroup() int {
 	// Create a set of states.
 	headStates := make(map[*State]int)
-	for group, head := range s.gochart.ConcurrentHeads {
+	for group, head := range s.gochart.ParallelHeads {
 		headStates[head.HeadState] = group
 	}
 
 	// Now we search until we find a group.
 	current := s
 	for current != nil {
-		// See if this is a concurrent head.
+		// See if this is a parallel head.
 		if group, ok := headStates[current]; ok {
 			return group
 		}
@@ -187,7 +187,7 @@ func (s *State) GetConcurrentGroup() int {
 		current = current.Parent
 	}
 
-	// Arriving here means that this state wasn't child of any concurrent head.
+	// Arriving here means that this state wasn't child of any parallel head.
 	return 0
 }
 

@@ -116,7 +116,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	CompareState(t, want, gc.Root)
 }
 
-func TestConcurrentGroups(t *testing.T) {
+func TestParallelGroups(t *testing.T) {
 	wantTriggers := []*Trigger{
 		{
 			Name: "SomeTrigger",
@@ -125,77 +125,77 @@ func TestConcurrentGroups(t *testing.T) {
 
 	wantStates := []*State{
 		{
-			Name:            frontend_common.RootStateName,
-			ConcurrentGroup: 0,
+			Name:          frontend_common.RootStateName,
+			ParallelGroup: 0,
 		},
 		{
-			Name:            "A",
-			ConcurrentGroup: 0,
+			Name:          "A",
+			ParallelGroup: 0,
 		},
 		{
-			Name:            "B",
-			Default:         true,
-			ConcurrentGroup: 0,
+			Name:          "B",
+			Default:       true,
+			ParallelGroup: 0,
 		},
 		{
-			Name:            "C",
-			Concurrent:      true,
-			ConcurrentGroup: 0,
+			Name:          "C",
+			Parallel:      true,
+			ParallelGroup: 0,
 		},
 		{
-			Name:            "D",
-			Default:         true,
-			Concurrent:      true,
-			ConcurrentGroup: 0,
+			Name:          "D",
+			Default:       true,
+			Parallel:      true,
+			ParallelGroup: 0,
 		},
 		{
-			Name:            "E",
-			ConcurrentGroup: 3,
+			Name:          "E",
+			ParallelGroup: 3,
 		},
 		{
-			Name:            "F",
-			Concurrent:      true,
-			ConcurrentGroup: 4,
+			Name:          "F",
+			Parallel:      true,
+			ParallelGroup: 4,
 		},
 		{
-			Name:            "G",
-			ConcurrentGroup: 7,
+			Name:          "G",
+			ParallelGroup: 7,
 		},
 		{
-			Name:            "H",
-			Default:         true,
-			ConcurrentGroup: 1,
+			Name:          "H",
+			Default:       true,
+			ParallelGroup: 1,
 		},
 		{
-			Name:            "I",
-			ConcurrentGroup: 2,
+			Name:          "I",
+			ParallelGroup: 2,
 		},
 		{
-			Name:            "J",
-			Default:         true,
-			ConcurrentGroup: 3,
+			Name:          "J",
+			Default:       true,
+			ParallelGroup: 3,
 		},
 		{
-			Name:            "K",
-			ConcurrentGroup: 3,
+			Name:          "K",
+			ParallelGroup: 3,
 		},
 		{
-			Name:            "L",
-			Default:         true,
-			ConcurrentGroup: 5,
+			Name:          "L",
+			Default:       true,
+			ParallelGroup: 5,
 		},
 		{
-			Name:            "M",
-			ConcurrentGroup: 6,
+			Name:          "M",
+			ParallelGroup: 6,
 		},
 		{
-			Name:            "N",
-			Default:         true,
-			ConcurrentGroup: 7,
+			Name:          "N",
+			Default:       true,
+			ParallelGroup: 7,
 		},
 		{
-			Name:            "O",
-			ConcurrentGroup: 7,
+			Name:          "O",
+			ParallelGroup: 7,
 		},
 	}
 
@@ -225,7 +225,7 @@ func TestConcurrentGroups(t *testing.T) {
 	yf, err := gochart_lang.NewGochartLangFrontend()
 	require.NoError(t, err)
 
-	path, err := test_support.RunfilePath("testdata/concurrent.gochart")
+	path, err := test_support.RunfilePath("testdata/parallel.gochart")
 	require.NoError(t, err)
 
 	lf, err := files.LoadFileFromPath(path)
@@ -239,7 +239,7 @@ func TestConcurrentGroups(t *testing.T) {
 	gc, err := ProcessGochartData(gcdata)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Concurrent", gc.Name)
+	assert.Equal(t, "Parallel", gc.Name)
 
 	if assert.Equal(t, len(wantTriggers), len(gc.Triggers), "Different amount of triggers") {
 		for i := 0; i < len(wantTriggers); i++ {

@@ -1,4 +1,4 @@
-gochart GochartTest(concurrent)
+gochart GochartTest(parallel)
 {
     trigger ToggleActuator(EActuatorType actuator)
     trigger Update(float dt)

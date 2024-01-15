@@ -1,4 +1,4 @@
-#include "gochart_level_concurrent.define.h"
+#include "gochart_level_parallel.define.h"
 
 #include <test/test_support.h>
 
@@ -38,12 +38,12 @@ private:
     std::vector<std::string> Calls;
 };
 
-TEST(GochartLevelConcurrent, Test)
+TEST(GochartLevelParallel, Test)
 {
-    using namespace gochart::GochartLevelConcurrent;
+    using namespace gochart::GochartLevelParallel;
 
     Delegate delegate;
-    auto gochart = gochart::GochartLevelConcurrent::Create(&delegate);
+    auto gochart = gochart::GochartLevelParallel::Create(&delegate);
 
     gochart->Activate();
 
