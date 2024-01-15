@@ -1,10 +1,10 @@
 load("//:defs.bzl", "generate_gochart_cpp")
 
 cc_test(
-    name = "concurrent_test",
+    name = "parallel_test",
     size = "small",
     srcs = [
-        "concurrent_test.cpp",
+        "parallel_test.cpp",
         "delegate.h",
     ],
     deps = [
@@ -17,9 +17,9 @@ cc_test(
 cc_library(
     name = "gochart",
     hdrs = [
-        "concurrent.declare.h",
-        "concurrent.define.h",
-        "concurrent.forward_declare.h",
+        "parallel.declare.h",
+        "parallel.define.h",
+        "parallel.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart"],
@@ -27,6 +27,6 @@ cc_library(
 
 generate_gochart_cpp(
     name = "gen_gochart",
-    src = "concurrent.gochart",
-    file_prefix = "concurrent",
+    src = "parallel.gochart",
+    file_prefix = "parallel",
 )

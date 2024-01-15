@@ -21,7 +21,7 @@ namespace {{$internal}}
 struct TriggerEntry; // Forward declare.
 struct TriggerProcessingState; // Forward declare.
 
-constexpr size_t kConcurrentGroupCount = {{$sc.ConcurrentGroupCount}};
+constexpr size_t kParallelGroupCount = {{$sc.ParallelGroupCount}};
 
 } // namespace {{$internal}}
 
@@ -34,7 +34,7 @@ template <typename T>
 class Gochart
 {
 public:
-	using ConcurrentGroupStateArray = std::array<EState, {{$internal}}::kConcurrentGroupCount>;
+	using ParallelGroupStateArray = std::array<EState, {{$internal}}::kParallelGroupCount>;
 
 public:
     Gochart(T* owner);
@@ -46,14 +46,14 @@ public:
     T& GetOwner() { return *Owner; }
 	const T& GetOwner() const { return *Owner; }
 
-	// IsInStateExact will go over all the active concurrent group and check whether it is currently
+	// IsInStateExact will go over all the active parallel group and check whether it is currently
 	// in the required state. It will not consider parent states.
 	bool IsInStateExact(EState state) const;
 
 	// IsInState is like |IsInStateExact|, only that it will also check the parent states.
 	bool IsInState(EState state) const;
 
-	const ConcurrentGroupStateArray& GetCurrentStates() const { return CurrentStates; }
+	const ParallelGroupStateArray& GetCurrentStates() const { return CurrentStates; }
 
 public:
     // **** TRIGGER API BEGIN ****
@@ -80,9 +80,9 @@ private:
 	// Functional runtime.
     void EnterState(EState state, ETrigger trigger, const void* trigger_data);
 	void EvaluateLeafConditions(EState state, ETrigger trigger, const void* trigger_data);
-	void EvaluateConcurrentEnter(EState state, ETrigger trigger, const void* trigger_data);
+	void EvaluateParallelEnter(EState state, ETrigger trigger, const void* trigger_data);
     void ExitState(EState state, ETrigger trigger, const void* trigger_data);
-	void EvaluateConcurrentExit(EState state, ETrigger trigger, const void *trigger_data);
+	void EvaluateParallelExit(EState state, ETrigger trigger, const void *trigger_data);
     void CaptureTrigger(EState state, ETrigger trigger, const void* trigger_data);
     void ProcessTriggerQueue();
     void ProcessTransition(EState from, EState to, ETrigger trigger, const void* trigger_data);
@@ -151,7 +151,7 @@ private:
 	// **** PRIVATE CALLBACK API END ****
 
 private:
-	ConcurrentGroupStateArray CurrentStates;
+	ParallelGroupStateArray CurrentStates;
     {{$internal}}::TriggerProcessingState* ProcessingState = nullptr;
     T* Owner = nullptr;
     // State tracking flags.

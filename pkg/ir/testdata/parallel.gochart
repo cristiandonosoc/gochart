@@ -1,9 +1,9 @@
-gochart Concurrent {
+gochart Parallel {
 	trigger SomeTrigger()
 
 	state A {
 		state B {
-			state D(concurrent) {
+			state D(parallel) {
 				state H {
 					capture SomeTrigger
 				}
@@ -14,7 +14,7 @@ gochart Concurrent {
 			}
 		}
 
-		state C(concurrent) {
+		state C(parallel) {
 			state E {
 				state J {
 					capture SomeTrigger
@@ -25,7 +25,7 @@ gochart Concurrent {
 				}
 			}
 
-			state F(concurrent) {
+			state F(parallel) {
 				state L {
 					capture SomeTrigger
 				}

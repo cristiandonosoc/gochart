@@ -1,4 +1,4 @@
-gochart GochartLevelConcurrent(concurrent) {
+gochart GochartLevelParallel(parallel) {
 	trigger Move()
 
 	state ActuatorFirst {
@@ -15,7 +15,7 @@ gochart GochartLevelConcurrent(concurrent) {
 		enter
 		exit
 
-		state ActuatorThirdEmbed(concurrent) {
+		state ActuatorThirdEmbed(parallel) {
 			enter
 			exit
 

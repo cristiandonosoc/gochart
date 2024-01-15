@@ -4,7 +4,7 @@
 //  20:
 //  21: 			state Child12 {
 //  22: 				transition null > Child21
-//      				                  ^---> state "Child12" can only transition to states within its own concurrent group, under state "Group1"
+//      				                  ^---> state "Child12" can only transition to states within its own parallel group, under state "Group1"
 //  23: 			}
 //  24: 		}
 // --- ERROR END
@@ -12,7 +12,7 @@
 gochart Mumu {
 	trigger SomeTrigger()
 
-	state Root(concurrent) {
+	state Root(parallel) {
 		state Group1 {
 			state Child11 {
 				transition SomeTrigger > Child12

@@ -1,7 +1,7 @@
 #include <test/test_support.h>
 #include "delegate.h"
 
-#include "concurrent.define.h"
+#include "parallel.define.h"
 
 #include <gtest/gtest.h>
 
@@ -13,7 +13,7 @@
 namespace
 {
 
-using namespace gochart::Concurrent;
+using namespace gochart::Parallel;
 
 } // namespace
 
@@ -26,19 +26,19 @@ Delegate::~Delegate() = default;
 
 void Delegate::Begin()
 {
-    Gochart = gochart::Concurrent::Create(this);
+    Gochart = gochart::Parallel::Create(this);
     Gochart->Activate();
 }
 
 void Delegate::End() { Gochart->Deactivate(); }
 
-gochart::Concurrent::Gochart<Delegate>& Delegate::GetGochart()
+gochart::Parallel::Gochart<Delegate>& Delegate::GetGochart()
 {
     assert(Gochart);
     return *Gochart;
 }
 
-const gochart::Concurrent::Gochart<Delegate>& Delegate::GetGochart() const
+const gochart::Parallel::Gochart<Delegate>& Delegate::GetGochart() const
 {
     assert(Gochart);
     return *Gochart;
@@ -46,9 +46,9 @@ const gochart::Concurrent::Gochart<Delegate>& Delegate::GetGochart() const
 
 } // namespace test
 
-TEST(ConcurrentTest, SimpleCase)
+TEST(ParallelTest, SimpleCase)
 {
-    using namespace gochart::Concurrent;
+    using namespace gochart::Parallel;
 
     test::Delegate delegate;
     delegate.Begin();
@@ -127,9 +127,9 @@ TEST(ConcurrentTest, SimpleCase)
         delegate.GetCalls());
 }
 
-TEST(ConcurrentTest, ComplexCase)
+TEST(ParallelTest, ComplexCase)
 {
-    using namespace gochart::Concurrent;
+    using namespace gochart::Parallel;
 
     test::Delegate delegate;
     delegate.Begin();

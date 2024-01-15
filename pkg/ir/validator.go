@@ -64,11 +64,11 @@ func (sv *stateValidator) validate() error {
 
 func (sv *stateValidator) validateTransitions() error {
 	for _, transition := range sv.state.Transitions {
-		// Validate that the transition has the same concurrent group.
-		if sv.state.ConcurrentGroup != transition.To.ConcurrentGroup {
+		// Validate that the transition has the same parallel group.
+		if sv.state.ParallelGroup != transition.To.ParallelGroup {
 			return errors.Errorf(transition.FrontendData.Frontend_TargetPos, "Semantic",
-				"state %q can only transition to states within its own concurrent group, under %s",
-				sv.state.Name, sv.ih.getConcurrentGroupTitle(sv.state.ConcurrentGroup))
+				"state %q can only transition to states within its own parallel group, under %s",
+				sv.state.Name, sv.ih.getParallelGroupTitle(sv.state.ParallelGroup))
 		}
 	}
 

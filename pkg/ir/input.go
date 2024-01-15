@@ -17,8 +17,8 @@ type inputHandler struct {
 	root     *State
 	states   []*State
 
-	nextConcurrentGroup int
-	concurrentHeads     []*ConcurrentHead
+	nextParallelGroup int
+	parallelHeads   []*ParallelHead
 
 	triggerMap map[string]*Trigger
 	stateMap   map[string]*State
@@ -73,7 +73,7 @@ func processGochartDataInternal(gcdata *frontend_common.GochartData) (*Gochart, 
 		return nil, fmt.Errorf("validating input: %w", err)
 	}
 
-	gochart.ConcurrentHeads = ih.concurrentHeads
+	gochart.ParallelHeads = ih.parallelHeads
 	gochart.Triggers = ih.triggers
 	gochart.States = ih.states
 	gochart.TriggerMap = ih.triggerMap
@@ -216,15 +216,15 @@ func (ih *inputHandler) collectStates(rootState *State) error {
 		}
 	}
 
-	// Calculate concurrent-ness.
+	// Calculate parallel-ness.
 	// This is better if calculated top down.
-	rootState.ConcurrentGroup = 0
-	ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+	rootState.ParallelGroup = 0
+	ih.parallelHeads = append(ih.parallelHeads, &ParallelHead{
 		Id:        0,
 		HeadState: rootState,
 	})
-	if err := ih.calculateConcurrentness(rootState); err != nil {
-		return fmt.Errorf("calculating concurrentness for root state %q: %w", rootState.Name, err)
+	if err := ih.calculateParallelness(rootState); err != nil {
+		return fmt.Errorf("calculating parallelness for root state %q: %w", rootState.Name, err)
 	}
 
 	ih.root = rootState
@@ -367,39 +367,39 @@ func (ih *inputHandler) createTransition(tdata *frontend_common.TransitionData) 
 	return transition, from, nil
 }
 
-func (ih *inputHandler) calculateConcurrentness(state *State) error {
-	return ih.calculateConcurrentnessDFS(state)
+func (ih *inputHandler) calculateParallelness(state *State) error {
+	return ih.calculateParallelnessDFS(state)
 }
 
-// calculateConcurrentnessDFS traverse the gochart tree in BFS order, calculating concurrent
+// calculateParallelnessDFS traverse the gochart tree in BFS order, calculatingparallel
 // groups as it finds them.
-func (ih *inputHandler) calculateConcurrentnessDFS(state *State) error {
+func (ih *inputHandler) calculateParallelnessDFS(state *State) error {
 	for _, child := range state.Children {
-		// If it's not a concurrent state, we use the parent concurrent group.
+		// If it's not a parallel state, we use the parent parallel group.
 		// Otherwise we create a new group for this child.
-		group := state.ConcurrentGroup
-		if state.Concurrent {
-			ih.nextConcurrentGroup++
-			group = ih.nextConcurrentGroup
-			ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+		group := state.ParallelGroup
+		if state.Parallel {
+			ih.nextParallelGroup++
+			group = ih.nextParallelGroup
+			ih.parallelHeads = append(ih.parallelHeads, &ParallelHead{
 				Id:        group,
 				HeadState: child,
 			})
 		}
-		child.ConcurrentGroup = group
+		child.ParallelGroup = group
 
 		// We iterate over the children immediatelly to perform the DFS search.
-		if err := ih.calculateConcurrentnessDFS(child); err != nil {
-			return fmt.Errorf("calculating concurrent group for state %q: %w", child.SafeName(), err)
+		if err := ih.calculateParallelnessDFS(child); err != nil {
+			return fmt.Errorf("calculating parallel group for state %q: %w", child.SafeName(), err)
 		}
 	}
 
 	return nil
 }
 
-// calculateConcurrentnessBFS traverse the gochart tree in BFS order, calculating concurrent
+// calculateParallelnessBFS traverse the gochart tree in BFS order, calculatingparallel
 // groups as it finds them.
-func (ih *inputHandler) calculateConcurrentnessBFS(state *State) error {
+func (ih *inputHandler) calculateParallelnessBFS(state *State) error {
 	// Create a queue with states to calculate.
 	queue := list.New()
 	for _, child := range state.Children {
@@ -416,18 +416,18 @@ func (ih *inputHandler) calculateConcurrentnessBFS(state *State) error {
 			return fmt.Errorf("state %q has a nil parent", current.Name)
 		}
 
-		// If we're not a concurrent state, we pass use the parent concurrent Group.
-		// Otherwise, we create a new concurrent group for each child.
-		group := parent.ConcurrentGroup
-		if parent.Concurrent {
-			ih.nextConcurrentGroup++
-			group = ih.nextConcurrentGroup
-			ih.concurrentHeads = append(ih.concurrentHeads, &ConcurrentHead{
+		// If we're not a parallel state, we pass use the parent parallel Group.
+		// Otherwise, we create a new parallel group for each child.
+		group := parent.ParallelGroup
+		if parent.Parallel {
+			ih.nextParallelGroup++
+			group = ih.nextParallelGroup
+			ih.parallelHeads = append(ih.parallelHeads, &ParallelHead{
 				Id:        group,
 				HeadState: current,
 			})
 		}
-		current.ConcurrentGroup = group
+		current.ParallelGroup = group
 
 		// Push the children of this state into the queue.
 		for _, child := range current.Children {
@@ -438,8 +438,8 @@ func (ih *inputHandler) calculateConcurrentnessBFS(state *State) error {
 	return nil
 }
 
-func (ih *inputHandler) getConcurrentGroupTitle(concurrentGroup int) string {
-	head := ih.concurrentHeads[concurrentGroup]
+func (ih *inputHandler) getParallelGroupTitle(parallelGroup int) string {
+	head := ih.parallelHeads[parallelGroup]
 
 	// If the state is nil, it means that this is a root state.
 	if head.HeadState == nil {

@@ -1,4 +1,4 @@
-#include "concurrent.forward_declare.h"
+#include "parallel.forward_declare.h"
 
 #include <test/test_support.h>
 
@@ -26,8 +26,8 @@ public:
     Delegate();
     ~Delegate();
 
-    gochart::Concurrent::Gochart<Delegate>& GetGochart();
-    const gochart::Concurrent::Gochart<Delegate>& GetGochart() const;
+    gochart::Parallel::Gochart<Delegate>& GetGochart();
+    const gochart::Parallel::Gochart<Delegate>& GetGochart() const;
     const std::vector<std::string>& GetCalls() const { return Calls; }
 
     void SetCallback(const std::string& key, Callback&& callback)
@@ -77,7 +77,7 @@ private:
         }
     }
 
-    std::unique_ptr<gochart::Concurrent::Gochart<Delegate>> Gochart;
+    std::unique_ptr<gochart::Parallel::Gochart<Delegate>> Gochart;
     std::vector<std::string> Calls;
     std::map<std::string, Callback> Callbacks;
 };

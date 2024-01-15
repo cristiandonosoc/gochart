@@ -1,4 +1,4 @@
-gochart Concurrent {
+gochart Parallel {
 	trigger ActivateActuator(test::EActuatorType actuator, bool activate)
 
 	trigger StartSpawning()
@@ -11,7 +11,7 @@ gochart Concurrent {
 
 	trigger Update(float dt)
 
-	state Root(concurrent) {
+	state Root(parallel) {
 		exit
 
 		state MainActuator {
@@ -81,7 +81,7 @@ gochart Concurrent {
 				}
 			}
 
-			state AimingActive(concurrent) {
+			state AimingActive(parallel) {
 				transition ActivateActuator > AimingInactive if {
 					return actuator == test::EActuatorType::Aiming && !activate;
 				}
