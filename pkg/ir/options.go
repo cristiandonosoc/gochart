@@ -20,8 +20,8 @@ type OptionDefinition struct {
 var (
 	// Gochart Options ----------------------------------------------------------------------------
 
-	kGochartOption_Parallel = "parallel"
-	kGochartOption_Namespace  = "namespace"
+	kGochartOption_Parallel  = "parallel"
+	kGochartOption_Namespace = "namespace"
 
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
@@ -40,7 +40,7 @@ var (
 
 	// State Options ---------------------------------------------------------------------------------
 
-	kStateOption_Default    = "default"
+	kStateOption_Default  = "default"
 	kStateOption_Parallel = "parallel"
 
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{

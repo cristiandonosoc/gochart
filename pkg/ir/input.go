@@ -18,7 +18,7 @@ type inputHandler struct {
 	states   []*State
 
 	nextParallelGroup int
-	parallelHeads   []*ParallelHead
+	parallelHeads     []*ParallelHead
 
 	triggerMap map[string]*Trigger
 	stateMap   map[string]*State
