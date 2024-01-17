@@ -1,5 +1,9 @@
 # Gochart
 
+<p align="center">
+    <img src="./extras/images/gochart_logo.png" width="200" />
+</p>
+
 Gochart is statechart code generator capable of targeting multiple backends, though currently C++ is
 the only one available. While not bound to it at all, it was thought to be used within Unreal as a
 way of describing gameplay state machines in a more robust manner.
@@ -11,7 +15,7 @@ machine definition that permits several interesting patterns that are very usefu
 (Finite State Machines). This is especially useful when defining gameplay logic for games, which
 tend to be very FSM-oriented.
 
-See [Statechart Doc](<PATH TO STATECHART DOC>) for more data.
+See [Gocharts Doc](docs/gochart.md) for more data.
 
 ## Installation & Usage
 
