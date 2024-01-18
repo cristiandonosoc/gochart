@@ -75,6 +75,39 @@ class Gochart;
 The `delegate` type is meant for a class that will hold the callback definitions that gochart will
 call for the different events (reactions, captures, etc.).
 
+Normal usage would be the following:
+
+```
+// In header:
+    using GochartType = ::gochart::<NAMESPACE>::Gochart;
+
+    // If you're forward declaring.
+    std::unique_ptr<GochartType> Gochart;
+
+// In your cpp (normally on init or begin play):
+    // We need to pass a pointer to the delegate in the constructor.
+    Gochart = std::make_unique<GochartType>(this);
+```
+
+For unreal, you can use `TPimplPtr` instead of `std::unique_ptr`. In certain cases in Unrela, the
+standard pointer won't be able to work with the pure forwarded type.
+
+IMPORTANT: The gochart instance will have a non-owning pointer to the delegate. It is your
+responsibility to ensure that the delegate outlives the gochart instance. The simplest way of
+achieving this is to simply have the delegate own the gochart. This also implies that the delegate
+should be stable in memory.
+
+If you're using the declare header rather than the forward declare, you can generate generate the
+type directly:
+```
+// In header.
+using GochartType = ::gochart::<NAMESPACE>::Gochart;
+GochartType gochart;
+
+// In cpp.
+gochart.SetOwner(this);
+```
+
 ### Headers
 
 The Gochart tool will generate 3 headers, normally named for the namespace above.
@@ -96,7 +129,7 @@ This header declares the generated Gochart class.
 This holds the actual logic of the gochart logic. This is meant to be compiled only once, so should
 be added to a particular .cpp file, so that it only gets added in one translation unit.
 
-### States
+## States
 
 The main difference between gocharts and other FSMs is that states have parenthood, a "branch" of
 them is active at any particular time (except in the case of parallel states, but we can skip that
@@ -124,13 +157,64 @@ well. This means that on a transition, gocharts change from a leaf state to anot
 
 In the example above, the gochart would only be able to transition between G and F.
 
-### Triggers
+## Triggers
 
 Triggers are the main way users of gochart can interact with the state machine. By sending in
 triggers, the gochart will react accordingly, normally in the shape of a [transition](#Transitions)
 or a [capture](#Captures).
 
-### Reactions
+They are identified by the `trigger` keyword and can only be written at the gochart level:
+```
+gochart Example {
+    trigger Example()
+    trigger WithArguments(std::string foo, float dt)
+}
+```
+
+Triggers will generate functions on the gochart instance that can be used to "send" those triggers
+to the gochart:
+```
+gochart->TriggerExample();
+gochart->TriggerWithArguments("foo", 16.6f);
+```
+
+
+### Trigger Lifetime
+
+Triggers propagate to the gochart and run into completion, running all the appropiate transitions,
+captures, reactions, etc. It is fairly common that one of this reactions can send a trigger
+themselves. For example:
+```
+state SomeState {
+    // Once SomeTrigger gets called, it could trigger this capture, which will in turn queue the
+    // |SomeOtherTrigger| trigger, which will be processed afterwards.
+    capture SomeTrigger do { gochart.TriggerSomeOtherTrigger(); }
+}
+```
+
+Gochart internally has a queue of all the pending triggers waiting to run. Queued triggers are run
+in FIFO order. Once the a `Trigger*` functions returns, it means that all triggers up to that point
+has been run (including the ones that were queued afterwards). At that point, the gochart can be
+considered "stable".
+
+### Trigger Arguments
+
+Gochart is able to parse C++ in the arguments and generate the correct signature. If ever other
+languages are supported (eg. C#, Go, etc.), Gochart should be able to parse those as well.
+
+An important thing to note is that for a trigger to process, Gochart will copy the argument values
+into an internal struct. This means that the arguments _should_ be trivially or cheaply copiable
+types. If you need to pass expensive types, you should pass them as pointers:
+```
+gochart SomeGochart {
+    trigger SomeTrigger(MyExpensiveType* foo, const std::vector<ExpensiveStuff>* list)
+}
+```
+
+NOTE: Because I don't like having references as members, passing references as triggers arguments is
+forbidden (it will fail to compile). Use pointers instead.
+
+## Reactions
 
 A state can "react" to either being entered, which is when the state is changing from inactive to
 active, or being exited, which is changing from active to inactive. Parent states will always enter
