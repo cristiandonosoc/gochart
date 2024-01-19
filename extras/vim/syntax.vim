@@ -51,7 +51,7 @@ highlight link gochartTransitionDoCode Float
 
 highlight link gochartStatement Statement
 
-syntax match gochartComment "//.*$"
+syntax region gochartCommand start="//" end="$" contains=@Spell
 highlight link gochartComment Comment
 
 let b:current_syntax = "gochart"
