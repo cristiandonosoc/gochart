@@ -193,7 +193,7 @@ state SomeState {
 ```
 
 Gochart internally has a queue of all the pending triggers waiting to run. Queued triggers are run
-in FIFO order. Once the a `Trigger*` functions returns, it means that all triggers up to that point
+in FIFO order. Once the `Trigger*` functions returns, it means that all triggers up to that point
 has been run (including the ones that were queued afterwards). At that point, the gochart can be
 considered "stable".
 
@@ -219,7 +219,33 @@ forbidden (it will fail to compile). Use pointers instead.
 A state can "react" to either being entered, which is when the state is changing from inactive to
 active, or being exited, which is changing from active to inactive. Parent states will always enter
 before their children, and will always exit after their children. See the [Transition](#transition)
-section for more details.
+section for more details about how entering and exiting states.
+
+Reactions can have the following shapes:
+```
+state SomeState {
+    // This is a "naked" enter, which will be called always when the state becomes active.
+    enter
+
+    // This is a trigger-linked enter, which will only will be called if the state is being entered
+    // because that particular trigger was triggered.
+    enter SomeTrigger
+
+    // The equivalent can be done for exits:
+    exit SomeTrigger
+    exit
+}
+```
+
+In the example above, Gochart will require the delegate to have the following functions, that it
+will call when this reactions are happening:
+
+```
+// Naked enters generate a function with the format State<STATE_NAME>_Enter:
+void StateSomeState_Enter();
+
+// Trigger-linked enters genera
+```
 
 TODO: Write
 
