@@ -92,10 +92,11 @@ Normal usage would be the following:
 For unreal, you can use `TPimplPtr` instead of `std::unique_ptr`. In certain cases in Unrela, the
 standard pointer won't be able to work with the pure forwarded type.
 
-IMPORTANT: The gochart instance will have a non-owning pointer to the delegate. It is your
-responsibility to ensure that the delegate outlives the gochart instance. The simplest way of
-achieving this is to simply have the delegate own the gochart. This also implies that the delegate
-should be stable in memory.
+[!IMPORTANT]
+The gochart instance will have a non-owning pointer to the delegate. It is your responsibility to
+ensure that the delegate outlives the gochart instance. The simplest way of achieving this is to
+simply have the delegate own the gochart. This also implies that the delegate should be stable in
+memory.
 
 If you're using the declare header rather than the forward declare, you can generate generate the
 type directly:
@@ -157,6 +158,10 @@ well. This means that on a transition, gocharts change from a leaf state to anot
 
 In the example above, the gochart would only be able to transition between G and F.
 
+[!TIP]
+An enum with all the states present in that gochart can be found in `gochart::<NAMESPACE>::EState`.
+You can print their name with `gochart::<NAMESPACE>::ToString(EState)`.
+
 ## Triggers
 
 Triggers are the main way users of gochart can interact with the state machine. By sending in
@@ -178,6 +183,9 @@ gochart->TriggerExample();
 gochart->TriggerWithArguments("foo", 16.6f);
 ```
 
+[!TIP]
+An enum with all the triggers present in the gochart is located in `gochart::<NAMESPACE>::ETrigger`.
+You can print their name with `gochart::<NAMESPACE>::ToString(ETrigger)`.
 
 ### Trigger Lifetime
 
@@ -211,8 +219,54 @@ gochart SomeGochart {
 }
 ```
 
-NOTE: Because I don't like having references as members, passing references as triggers arguments is
-forbidden (it will fail to compile). Use pointers instead.
+[!NOTE]
+Because I don't like having references as members, passing references as triggers arguments is
+forbidden (Gochart will issue an error). Use pointers instead.
+
+## Conditions/Actions
+
+Most elements of gocharts "react" to some manner to triggers, either by transitioning to other
+states, reacting to states being activated/deactivated or simply responding to triggers.
+
+The main mechanism Gochart uses in this case is to call a function on to the delegate that has a
+specific name and signature that is depending on the element and trigger. See each specific element
+below to see the format of this generated function.
+
+### Inlined Condition
+
+Many elements permit to embed a "condition", which is an inlined C++ function that has to return a
+boolean value. The main use case for this
+
+Instead of having Gochart call a generate function, you can inline C++ code directly with the `if`
+keyword.
+```
+enter do { gochart.GetOwner().SomeFunction(); }
+```
+
+All inlined functions have a `gochart` variable with is a reference to the gochart instance. You can
+use that to trigger things on the statechart or alternatively you can use the `GetOwner()` function
+to get a reference to the delegate itself.
+
+In the case of trigger-linked reactions, the trigger parameters will also be available:
+```
+trigger SomeTrigger(float dt, const std::vector<std::string>* list)
+
+...
+
+exit SomeTrigger do {
+    gochart.GetOwner().Update(dt);
+#if UE_DEBUG
+    debug::Print(*list);
+#endif // UE_DEBUG
+}
+```
+
+[!CAUTION]
+Note that in the example above, we are "injecting" a `UE_DEBUG` symbol into the generated code.
+Depending on whether you are forward declaring or not, this might not be possible.
+See [usage patterns](advanced.md#usage_patters) for more details.
+
+
 
 ## Reactions
 
@@ -244,11 +298,33 @@ will call when this reactions are happening:
 // Naked enters generate a function with the format State<STATE_NAME>_Enter:
 void StateSomeState_Enter();
 
-// Trigger-linked enters genera
+// Trigger-linked enters generate a named function State<STATE_NAME>_Enter<TRIGGER_NAME>:
+// It will have the arguments parameters of the trigger passed into it.
+trigger SomeTrigger(float dt, const std::vector<std::string>* list)
+
+void StateSomeState_EnterSomeTrigger(float dt, const std::vector<std::string>* list);
+```
+The same happens for exit reactions, except with `Exit` instead of `Enter`.
+
+### Inlined Condition
+
+You can add a condition to the reaction that determines whether the action (callback) will be called.
+You can do that by using the `if` keyword, which permits to embed inlined C++, which has to return
+a boolean value
+
+```
+enter if
 ```
 
-TODO: Write
+
+[!IMPORTANT]
 
 
 
+### Inlined Action
+
+## Captures
+
+Captures are similar to reactions that only happen when that particular state is active. If an
+active state has a capture for that
 
