@@ -92,11 +92,11 @@ Normal usage would be the following:
 For unreal, you can use `TPimplPtr` instead of `std::unique_ptr`. In certain cases in Unrela, the
 standard pointer won't be able to work with the pure forwarded type.
 
-[!IMPORTANT]
-The gochart instance will have a non-owning pointer to the delegate. It is your responsibility to
-ensure that the delegate outlives the gochart instance. The simplest way of achieving this is to
-simply have the delegate own the gochart. This also implies that the delegate should be stable in
-memory.
+> [!IMPORTANT]
+> The gochart instance will have a non-owning pointer to the delegate. It is your responsibility to
+> ensure that the delegate outlives the gochart instance. The simplest way of achieving this is to
+> simply have the delegate own the gochart. This also implies that the delegate should be stable in
+> memory.
 
 If you're using the declare header rather than the forward declare, you can generate generate the
 type directly:
@@ -158,9 +158,9 @@ well. This means that on a transition, gocharts change from a leaf state to anot
 
 In the example above, the gochart would only be able to transition between G and F.
 
-[!TIP]
-An enum with all the states present in that gochart can be found in `gochart::<NAMESPACE>::EState`.
-You can print their name with `gochart::<NAMESPACE>::ToString(EState)`.
+> [!TIP]
+> An enum with all the states present in that gochart can be found in `gochart::<NAMESPACE>::EState`.
+> You can print their name with `gochart::<NAMESPACE>::ToString(EState)`.
 
 ## Triggers
 
@@ -183,9 +183,9 @@ gochart->TriggerExample();
 gochart->TriggerWithArguments("foo", 16.6f);
 ```
 
-[!TIP]
-An enum with all the triggers present in the gochart is located in `gochart::<NAMESPACE>::ETrigger`.
-You can print their name with `gochart::<NAMESPACE>::ToString(ETrigger)`.
+> [!TIP]
+> An enum with all the triggers present in the gochart is located in `gochart::<NAMESPACE>::ETrigger`.
+> You can print their name with `gochart::<NAMESPACE>::ToString(ETrigger)`.
 
 ### Trigger Lifetime
 
@@ -219,9 +219,9 @@ gochart SomeGochart {
 }
 ```
 
-[!NOTE]
-Because I don't like having references as members, passing references as triggers arguments is
-forbidden (Gochart will issue an error). Use pointers instead.
+> [!NOTE]
+> Because I don't like having references as members, passing references as triggers arguments is
+> forbidden (Gochart will issue an error). Use pointers instead.
 
 ## Conditions/Actions
 
@@ -232,20 +232,58 @@ The main mechanism Gochart uses in this case is to call a function on to the del
 specific name and signature that is depending on the element and trigger. See each specific element
 below to see the format of this generated function.
 
+> [!IMPORTANT]
+> All embedded functions receive the following arguments:
+> - A `gochart` variable, which is a reference to the gochart instance. You can use this to query or
+>   dispatch other triggers.
+> - The `gochart` variable also has a `GetOwner()` function, which returns a reference to the owning
+>   delegate. This can be used to query elements of the owning class or to call some other functions
+>   defined in the delegate.
+> - If the function is linked to a trigger, the trigger arguments will be present as well.
+
 ### Inlined Condition
 
 Many elements permit to embed a "condition", which is an inlined C++ function that has to return a
-boolean value. The main use case for this
+boolean value. The main use case for this to only run the element if the condition succeed. Note
+that  the effect of a failed (or successful) condition differs from to event.
+Check each individual element's section to see what the condition does.
 
-Instead of having Gochart call a generate function, you can inline C++ code directly with the `if`
-keyword.
+Inlined conditions use the `if` keyword, followed by a bracketed section of inlined C++:
+
 ```
-enter do { gochart.GetOwner().SomeFunction(); }
+capture if { return gochart.GetOwner().IsReady(); }
 ```
 
-All inlined functions have a `gochart` variable with is a reference to the gochart instance. You can
-use that to trigger things on the statechart or alternatively you can use the `GetOwner()` function
-to get a reference to the delegate itself.
+> [!NOTE]
+> Note that the return is important, as you could embed more complicated logic in there.
+
+In the case of triggered-linked elements, the arguments of trigger are available to the inlined
+condition (this is likely the most common case for inlined conditions):
+
+```
+trigger SomeEvent(EEventType event)
+
+...
+
+capture if { return event == EEventType::SomeType; }
+```
+
+> [!NOTE]
+> Conditional functions are always const, so both the `gochart` and `gochart.GetOwner()` will return
+> const references. Keep that in mind when planning which functions to call.
+
+### Inlined Actions
+
+Most elements (such as `capture` or `transitions`) allow to run an embedded action when they are
+triggered. Note that this might change the generated code, so check each element accordingly.
+
+```
+enter do { gochart.GetOwner().AddCount(); }
+```
+
+> [!NOTE]
+> Action embedded functions are non-const, so they can introduce side effects.
+> Keep this in mind when using them.
 
 In the case of trigger-linked reactions, the trigger parameters will also be available:
 ```
@@ -261,12 +299,23 @@ exit SomeTrigger do {
 }
 ```
 
-[!CAUTION]
-Note that in the example above, we are "injecting" a `UE_DEBUG` symbol into the generated code.
-Depending on whether you are forward declaring or not, this might not be possible.
-See [usage patterns](advanced.md#usage_patters) for more details.
+> [!CAUTION]
+> Note that in the example above, we are "injecting" a `UE_DEBUG` symbol into the generated code.
+> Depending on whether you are forward declaring or not, this might not be possible.
+> See [usage patterns](advanced.md#usage_patters) for more details.
 
+### Inlined Condition + Action
 
+In some cases, elements will allow to both inlined conditions and actions. The condition always goes
+before the action:
+
+```
+transition SomeTrigger > SomeState if {
+    return some_parameter < 5;
+} do {
+    gochart.GetOwner().LogTransition();
+}
+```
 
 ## Reactions
 
@@ -308,20 +357,28 @@ The same happens for exit reactions, except with `Exit` instead of `Enter`.
 
 ### Inlined Condition
 
-You can add a condition to the reaction that determines whether the action (callback) will be called.
-You can do that by using the `if` keyword, which permits to embed inlined C++, which has to return
-a boolean value
+Reactions permit to have an inlined condition. If failed, it will not run the action (whether
+inlined or not).
 
 ```
-enter if
+enter if { return some_condition; }
 ```
 
-
-[!IMPORTANT]
-
-
+> [!IMPORTANT]
+> The reaction inlined condition DOES NOT change the fact that state will be entered. It only
+> affects whether the reaction callback will be issued.
 
 ### Inlined Action
+
+Reactions permit inlined actions. If set, Gochart *WILL NOT* generate a callback function needed by
+delegate, as the inlined action took its place:
+
+```
+enter do { some_action(); }
+```
+
+> [!TIP]
+> Reactions permit both inlined condition and action.
 
 ## Captures
 
