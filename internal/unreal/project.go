@@ -21,7 +21,7 @@ const (
 	kModuleBuilderWorkerCount     = 100
 )
 
-// UnrealProject represets an indexed Unreal project.
+// UnrealProject represents an indexed Unreal project.
 type UnrealProject struct {
 	ProjectDir string
 	Modules    map[string]*UnrealModule

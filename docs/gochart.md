@@ -89,7 +89,7 @@ Normal usage would be the following:
     Gochart = std::make_unique<GochartType>(this);
 ```
 
-For unreal, you can use `TPimplPtr` instead of `std::unique_ptr`. In certain cases in Unrela, the
+For unreal, you can use `TPimplPtr` instead of `std::unique_ptr`. In certain cases in Unreal, the
 standard pointer won't be able to work with the pure forwarded type.
 
 > [!IMPORTANT]
@@ -187,11 +187,40 @@ gochart->TriggerWithArguments("foo", 16.6f);
 > An enum with all the triggers present in the gochart is located in `gochart::<NAMESPACE>::ETrigger`.
 > You can print their name with `gochart::<NAMESPACE>::ToString(ETrigger)`.
 
+### Trigger Propagation
+
+Trigger propagate by default from the more specific (eg. Leaf) state up, before evaluating the
+parent, up until the root. The trigger can be "handled" by a particular element (such as
+[transitions](#transitions) or [captures](#captures)). If a state does not capture the trigger, then
+the parent state is tried, and so forth.
+
+This is an important feature of statecharts, because you can "propagate" common actions to many
+states by defining them in the parent:
+
+```
+state Parent {
+    transition SomeTrigger > AnotherState
+
+    state Child1 { ... }
+    state Child2 { ... }
+    state Child3 { ... }
+}
+```
+
+Instead of defining a transition from `Child1`, `Child2`, and `Child3` to `AnotherState`, we can
+define it once at the `Parent` state level. Then when the `SomeTrigger` trigger is sent (unless one
+of the child captures it), it will propagate from the child into the parent and the transition will
+occur.
+
+Once a trigger is handled in a state, it *WILL NOT* propagate to the parent any longer (that's where
+the name `capture` comes from).
+
 ### Trigger Lifetime
 
-Triggers propagate to the gochart and run into completion, running all the appropiate transitions,
+Triggers propagate to the gochart and run into completion, running all the appropriate transitions,
 captures, reactions, etc. It is fairly common that one of this reactions can send a trigger
 themselves. For example:
+
 ```
 state SomeState {
     // Once SomeTrigger gets called, it could trigger this capture, which will in turn queue the
@@ -211,14 +240,13 @@ Gochart is able to parse C++ in the arguments and generate the correct signature
 languages are supported (eg. C#, Go, etc.), Gochart should be able to parse those as well.
 
 An important thing to note is that for a trigger to process, Gochart will copy the argument values
-into an internal struct. This means that the arguments _should_ be trivially or cheaply copiable
+into an internal struct. This means that the arguments _should_ be trivially or cheaply copyable
 types. If you need to pass expensive types, you should pass them as pointers:
 ```
 gochart SomeGochart {
     trigger SomeTrigger(MyExpensiveType* foo, const std::vector<ExpensiveStuff>* list)
 }
 ```
-
 > [!NOTE]
 > Because I don't like having references as members, passing references as triggers arguments is
 > forbidden (Gochart will issue an error). Use pointers instead.
@@ -248,24 +276,15 @@ boolean value. The main use case for this to only run the element if the conditi
 that  the effect of a failed (or successful) condition differs from to event.
 Check each individual element's section to see what the condition does.
 
-Inlined conditions use the `if` keyword, followed by a bracketed section of inlined C++:
-
-```
-capture if { return gochart.GetOwner().IsReady(); }
-```
-
-> [!NOTE]
-> Note that the return is important, as you could embed more complicated logic in there.
-
+Inlined conditions use the `if` keyword, followed by a bracketed section of inlined C++.
 In the case of triggered-linked elements, the arguments of trigger are available to the inlined
-condition (this is likely the most common case for inlined conditions):
+condition (this is likely the most common case for inlined conditions).
 
 ```
-trigger SomeEvent(EEventType event)
-
-...
-
-capture if { return event == EEventType::SomeType; }
+// Different examples of conditional inlined functions.
+enter if { return gochart.GetOwner().SomeCondition(); }
+capture SomeTrigger if { return gochart.GetOwner().SomeCondition(); }
+transition SomeTrigger > OtherState if { return gochart.GetOwner().SomeCondition(); }
 ```
 
 > [!NOTE]
@@ -278,7 +297,10 @@ Most elements (such as `capture` or `transitions`) allow to run an embedded acti
 triggered. Note that this might change the generated code, so check each element accordingly.
 
 ```
-enter do { gochart.GetOwner().AddCount(); }
+// Different examples of inlined action function.
+enter do { gochart.GetOwner().SomeAction(); }
+capture SomeTrigger do { gochart.GetOwner().SomeAction(); }
+transition SomeTrigger > OtherState do { gochart.GetOwner().SomeAction(); }
 ```
 
 > [!NOTE]
@@ -306,8 +328,8 @@ exit SomeTrigger do {
 
 ### Inlined Condition + Action
 
-In some cases, elements will allow to both inlined conditions and actions. The condition always goes
-before the action:
+Whenever an element supports a condition and an action, they can be used together.
+The condition always goes before the action:
 
 ```
 transition SomeTrigger > SomeState if {
@@ -321,7 +343,7 @@ transition SomeTrigger > SomeState if {
 
 A state can "react" to either being entered, which is when the state is changing from inactive to
 active, or being exited, which is changing from active to inactive. Parent states will always enter
-before their children, and will always exit after their children. See the [Transition](#transition)
+before their children, and will always exit after their children. See the [Transitions](#transitions)
 section for more details about how entering and exiting states.
 
 Reactions can have the following shapes:
@@ -377,11 +399,130 @@ delegate, as the inlined action took its place:
 enter do { some_action(); }
 ```
 
-> [!TIP]
-> Reactions permit both inlined condition and action.
+## Transitions
+
+Transitions are the mechanism in which we can instruct a gochart to change the current active state.
+Transitions are linked to a trigger they are meant to react to, but also they can react immediately.
+These are called [null transitions](#null_transitions).
+
+```
+state SomeState {
+    // Transitions have a format "transition <TRIGGER_NAME> > <TARGET_STATE_NAME>.
+    transition SomeTrigger > OtherState
+}
+```
+
+The example above says that if the state `SomeState` is active and the trigger `SomeTrigger` is
+sent, then the statechart will transition to `OtherState`.
+
+### Transition Routes
+
+Whenever a transition is triggered, Gochart will determine the "route" between the current state and
+the target one. The route is roughly described with the following algorithm:
+
+1. Find the common parent between source and target (can be the statechart).
+2. Exit all the states from the source until the common parent, starting from the most leaf first.
+3. Enter all the states from the common parent up to the target state, more root state first.
+
+Example:
+```
+state A {
+    state B {
+        state C {
+            trigger SomeTrigger > E
+            trigger AnotherTrigger > D
+        }
+    }
+
+    state D {
+        state E {
+            ...
+        }
+    }
+}
+```
+
+In this example, when in C and `SomeTrigger` occurs:
+
+1. The common parent state would be A.
+2. We would exit C, then B.
+3. We would enter D and then E.
+
+### Transition to non-leave states (default child)
+
+In the example above, note that when `AnotherTrigger` happens, the transition goes into D, which is
+not a leaf state. As explained [here](#states), gochart always are active in a leaf state. What
+happens when we transition to a non-leaf state, upon entering, if it the last state of the route
+(aka. We are not transition to a more specific state), the state will then enter the *default child*.
+
+The *default child* is the state that any state with children will enter to when transition to it
+without a specific route. By default it is the first defined children in the state, but this can be
+overridden with the [default state option](options.md#state_default).
+
+### Null Transitions
+
+Null transitions are a special transition that is not associated with any trigger, but rather
+*happens immediately* when the state is entered. This is normally used to have states do some action
+on enter before moving to other state.
+
+Null transitions use the `null` keyword in place of the `<TRIGGER_NAME>`:
+
+```
+state SomeState {
+    // Upon entering, this state will transition right away to |OtherState|.
+    transition null > OtherState
+}
+```
+
+Null transitions can be conditional, meaning that will only be activated if the condition is
+successful.
+
+> [!NOTE]
+> You can mix conditional and non-conditional null transitions, but the non-conditional has to be
+> defined at the end, as they are evaluated in order. You can only have one non-conditional null
+> transition defined in a state.
 
 ## Captures
 
 Captures are similar to reactions that only happen when that particular state is active. If an
-active state has a capture for that
+active state has a capture for that trigger, it will said that it will be captured and will call the
+callback:
 
+```
+trigger SomeTrigger(float dt)
+
+...
+
+state SomeState {
+    capture SomeTrigger
+}
+```
+
+This will expect a function with the pattern `State<STATE_NAME>_Capture<TRIGGER_NAME>`:
+
+```
+void StateSomeState_CaptureSomeTrigger(float dt);
+```
+
+Any arguments present in the trigger will be forwarded into the capture.
+
+### Inline condition
+
+Captures permit to have an inlined condition. This will determine whether the capture will take
+place or not.
+
+```
+capture SomeTrigger if { return dt > 16.6f; }
+```
+
+> [!IMPORTANT]
+> If the condition is false, it would be as if the capture was not present. This means that the
+> trigger could propagate into the parent. See [trigger lifetime](#trigger_lifetime).
+
+### Inline action
+
+Instead of expecting a function on the delegate, captures support an inlined action function:
+
+```
+capture SomeTrigger do { gochart.GetOwner().LogTiming(dt); }
+```
