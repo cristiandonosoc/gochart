@@ -59,50 +59,61 @@ gochart(parallel) {
 }
 ```
 
-### 
+## State-level options
+
+These are options that are supported on the State element and change the behavior for that state only.
 
 | Name | Description |
 | --- | --- |
-| Flag | test_bool |
+| Flag | default |
 | Kind | boolean |
 
 **Description**
 
-Option added for testing purposes.
+Whether this particular state should be considered the default entry point for the parent state for the parent state.
+
+By default, the first child is considered to be the default entry point, but this can be override with this option.
+There can only be one default child per state.
+
+While valid, it is redundant to set the default flag for the first child.
 
 **Synopsis:**
 ```
+state Parent {
+	state Child1 {
+		...
+	}
 
+	state Child2(default) {
+		...
+	}
+}
 ```
-
-### 
 
 | Name | Description |
 | --- | --- |
-| Flag | test_int |
-| Kind | int |
+| Flag | parallel |
+| Kind | boolean |
 
 **Description**
 
-Option added for testing purposes.
+Whether the child states of this state should be considered running in parallel within each other.
+
+When this option is defined, all child states will run as separate parallel gochart groups and the
+gochart is considered to be in all those states simultaneously.
+
+See https://github.com/cristiandonosoc/gochart/docs/concurrent.md for more details.
 
 **Synopsis:**
 ```
+state SomeState(parallel) {
+	...
+	state ParallelChild1 {
+		...
+	}
 
-```
-
-### 
-
-| Name | Description |
-| --- | --- |
-| Flag | test_string |
-| Kind | string |
-
-**Description**
-
-Option added for testing purposes.
-
-**Synopsis:**
-```
-
+	state ParallelChild2 {
+		...
+	}
+}
 ```

@@ -30,3 +30,26 @@ These are options that are supported on the Gochart element, which defines the G
 ```
 
 {{- end }}
+
+## State-level options
+
+These are options that are supported on the State element and change the behavior for that state only.
+
+{{- range .StateOptions }}
+{{- $option := . }}
+
+| Name | Description |
+| --- | --- |
+| Flag | {{ $option.Name }} |
+| Kind | {{ $option.Kind }} |
+
+**Description**
+
+{{ $option.Description }}
+
+**Synopsis:**
+```
+{{$option.Synopsis}}
+```
+
+{{- end }}

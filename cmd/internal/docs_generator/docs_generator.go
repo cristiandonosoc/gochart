@@ -34,25 +34,19 @@ type TemplateContext struct {
 	StateOptions   []*OptionData
 }
 
-func collectGochartOptions() []*OptionData {
-	irOpts := ir.GochartOptionDefinitions()
-
-	options := make([]*OptionData, 0, len(irOpts))
-	for _, irOpt := range irOpts {
+func collectOptionData(definitions []*ir.OptionDefinition) []*OptionData {
+	options := make([]*OptionData, 0, len(definitions))
+	for _, definition := range definitions {
 		options = append(options, &OptionData{
-			Name:        irOpt.Name,
-			FlagName:    irOpt.FlagName,
-			Kind:        irOpt.Kind.String(),
-			Description: irOpt.Description,
-			Synopsis:    strings.TrimSpace(irOpt.Synopsis),
+			Name:        definition.Name,
+			FlagName:    definition.FlagName,
+			Kind:        definition.Kind.String(),
+			Description: definition.Description,
+			Synopsis:    strings.TrimSpace(definition.Synopsis),
 		})
 	}
 
 	return options
-}
-
-func collectStateOptions() []*OptionData {
-	return nil
 }
 
 func internalMain() error {
@@ -69,8 +63,8 @@ func internalMain() error {
 	}
 
 	context := &TemplateContext{}
-	context.GochartOptions = collectGochartOptions()
-	context.StateOptions = collectStateOptions()
+	context.GochartOptions = collectOptionData(ir.GochartOptionDefinitions())
+	context.StateOptions = collectOptionData(ir.StateOptionDefinitions())
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, context); err != nil {

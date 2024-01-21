@@ -122,16 +122,15 @@ state SomeState(parallel) {
 	})
 )
 
-// GochartOptionDefinitions returns a sorted list of options definitions.
-func GochartOptionDefinitions() []*OptionDefinition {
-	options := make([]*OptionDefinition, 0, len(kGochartOptionDefinitions))
+func collectOptionDefinitions(definitions map[string]*OptionDefinition) []*OptionDefinition {
+	options := make([]*OptionDefinition, 0, len(definitions))
 
-	for _, o := range kGochartOptionDefinitions {
-		if o.TestingOption {
+	for _, definition := range definitions {
+		if definition.TestingOption {
 			continue
 		}
 
-		options = append(options, o)
+		options = append(options, definition)
 	}
 
 	sort.Slice(options, func(i, j int) bool {
@@ -139,6 +138,16 @@ func GochartOptionDefinitions() []*OptionDefinition {
 	})
 
 	return options
+}
+
+// GochartOptionDefinitions returns a sorted list of options definitions.
+func GochartOptionDefinitions() []*OptionDefinition {
+	return collectOptionDefinitions(kGochartOptionDefinitions)
+}
+
+// StateOptionDefinitions returns a sorted list of options definitions.
+func StateOptionDefinitions() []*OptionDefinition {
+	return collectOptionDefinitions(kStateOptionDefinitions)
 }
 
 func addHiddenTestingOptions(options map[string]*OptionDefinition) map[string]*OptionDefinition {
