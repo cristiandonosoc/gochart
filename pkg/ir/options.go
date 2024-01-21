@@ -80,7 +80,20 @@ gochart(namespace = "SomeOtherNamespace") {
 			Description: `Whether this particular state should be considered the default entry point for the parent state for the parent state.
 
 By default, the first child is considered to be the default entry point, but this can be override with this option.
-There can only be one default child per state.`,
+There can only be one default child per state.
+
+While valid, it is redundant to set the default flag for the first child.`,
+			Synopsis: `
+state Parent {
+	state Child1 {
+		...
+	}
+
+	state Child2(default) {
+		...
+	}
+}
+`,
 			Handler: StateOptionHandler(parseStateOption_Default),
 		},
 		kStateOption_Parallel: {
@@ -93,6 +106,17 @@ When this option is defined, all child states will run as separate parallel goch
 gochart is considered to be in all those states simultaneously.
 
 See https://github.com/cristiandonosoc/gochart/docs/concurrent.md for more details.`,
+			Synopsis: `
+state SomeState(parallel) {
+	...
+	state ParallelChild1 {
+		...
+	}
+
+	state ParallelChild2 {
+		...
+	}
+}`,
 			Handler: StateOptionHandler(parseStateOption_Parallel),
 		},
 	})
@@ -103,6 +127,10 @@ func GochartOptionDefinitions() []*OptionDefinition {
 	options := make([]*OptionDefinition, 0, len(kGochartOptionDefinitions))
 
 	for _, o := range kGochartOptionDefinitions {
+		if o.TestingOption {
+			continue
+		}
+
 		options = append(options, o)
 	}
 
