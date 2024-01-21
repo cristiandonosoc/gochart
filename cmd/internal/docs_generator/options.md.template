@@ -1,0 +1,29 @@
+# Options
+
+These are the state options available for Gochart, States and other elements of Gochart.
+
+> [!NOTE]
+> This fill is automatically generated from the contents of the actual options code located at
+> [pkg/ir/options.go](/pkg/ir/options.go).
+
+## Gochart-level options
+
+These are options that are supported on the Gochart element, which defines the Gochart as a whole.
+
+{{- range .GochartOptions }}
+{{- $option := . }}
+
+### {{ $option.FlagName }}
+
+| Name | Description |
+| --- | --- |
+| Flag | {{ $option.Name }} |
+| Kind | {{ $option.Kind }} |
+| Description | {{ $option.Description }} |
+
+**Synopsis:**
+```
+{{$option.Synopsis}}
+```
+
+{{- end }}

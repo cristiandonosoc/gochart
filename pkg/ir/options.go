@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
@@ -9,9 +10,13 @@ import (
 )
 
 type OptionDefinition struct {
-	Name        string
+	// Name is the actual value that needs to be written in the gochart.
+	Name string
+	// FlagName is the public "documentation" driven name of this option.
+	FlagName    string
 	Kind        frontend_common.OptionValueKind
 	Description string
+	Synopsis    string
 	Handler     any
 
 	TestingOption bool
@@ -25,16 +30,35 @@ var (
 
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
-			Name:        kGochartOption_Parallel,
-			Kind:        frontend_common.OptionValueKind_Boolean,
-			Description: "Whether the root states of the gochart should be considered running in parallel within each other.",
-			Handler:     GochartOptionHandler(parseGochartOption_Parallel),
+			Name:     kGochartOption_Parallel,
+			FlagName: kGochartOption_Parallel,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Whether the root states of the gochart should be considered running in parallel within each other.
+
+When this option is defined, all child states will run as separate parallel gochart groups and the
+gochart is considered to be in all those states simultaneously.
+
+See https://github.com/cristiandonosoc/gochart/docs/concurrent.md for more details.`,
+			Handler: GochartOptionHandler(parseGochartOption_Parallel),
 		},
 		kGochartOption_Namespace: {
-			Name:        kGochartOption_Namespace,
-			Kind:        frontend_common.OptionValueKind_String,
-			Description: "The name of the namespace to generate. Otherwise the name of gochart will be used.",
-			Handler:     GochartOptionHandler(parseGochartOption_Namespace),
+			Name:     kGochartOption_Namespace,
+			FlagName: kGochartOption_Namespace,
+			Kind:     frontend_common.OptionValueKind_String,
+			Description: `The name of the namespace to generate in |gochart::<NAMESPACE>|.
+Otherwise the name of gochart will be used.`,
+			Synopsis: `
+gochart(parallel) {
+	...
+	state ParallelChild1 {
+		...
+	}
+
+	state ParallelChild2 {
+		...
+	}
+}`,
+			Handler: GochartOptionHandler(parseGochartOption_Namespace),
 		},
 	})
 
@@ -45,19 +69,44 @@ var (
 
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStateOption_Default: {
-			Name:        kStateOption_Default,
-			Kind:        frontend_common.OptionValueKind_Boolean,
-			Description: "Whether this particular state should be considered the default entry point for the parent state for the parent state.",
-			Handler:     StateOptionHandler(parseStateOption_Default),
+			Name:     kStateOption_Default,
+			FlagName: kStateOption_Default,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Whether this particular state should be considered the default entry point for the parent state for the parent state.
+
+By default, the first child is considered to be the default entry point, but this can be override with this option.
+There can only be one default child per state.`,
+			Handler: StateOptionHandler(parseStateOption_Default),
 		},
 		kStateOption_Parallel: {
-			Name:        kStateOption_Parallel,
-			Kind:        frontend_common.OptionValueKind_Boolean,
-			Description: "Whether this state is to be considered a parallel one.",
-			Handler:     StateOptionHandler(parseStateOption_Parallel),
+			Name:     kStateOption_Parallel,
+			FlagName: kStateOption_Parallel,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Whether the child states of this state should be considered running in parallel within each other.
+
+When this option is defined, all child states will run as separate parallel gochart groups and the
+gochart is considered to be in all those states simultaneously.
+
+See https://github.com/cristiandonosoc/gochart/docs/concurrent.md for more details.`,
+			Handler: StateOptionHandler(parseStateOption_Parallel),
 		},
 	})
 )
+
+// GochartOptionDefinitions returns a sorted list of options definitions.
+func GochartOptionDefinitions() []*OptionDefinition {
+	options := make([]*OptionDefinition, 0, len(kGochartOptionDefinitions))
+
+	for _, o := range kGochartOptionDefinitions {
+		options = append(options, o)
+	}
+
+	sort.Slice(options, func(i, j int) bool {
+		return options[i].Name < options[j].Name
+	})
+
+	return options
+}
 
 func addHiddenTestingOptions(options map[string]*OptionDefinition) map[string]*OptionDefinition {
 	options["test_bool"] = &OptionDefinition{
