@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "docs_generator_lib",
+    srcs = ["docs_generator.go"],
+    embedsrcs = ["options.md.template"],
+    importpath = "github.com/cristiandonosoc/gochart/cmd/internal/docs_generator",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/files",
+        "//pkg/ir",
+    ],
+)
+
+go_binary(
+    name = "docs_generator",
+    embed = [":docs_generator_lib"],
+    visibility = ["//cmd:__subpackages__"],
+)

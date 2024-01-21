@@ -4,8 +4,8 @@ cc_test(
     name = "parallel_test",
     size = "small",
     srcs = [
-        "parallel_test.cpp",
         "delegate.h",
+        "parallel_test.cpp",
     ],
     deps = [
         ":gochart",

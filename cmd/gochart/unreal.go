@@ -106,7 +106,6 @@ func unrealCommands() []*cli.Command {
 								uptodate = "[*** WILL REGENERATE ***]"
 							}
 
-
 							fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
 							fmt.Printf("- PATH: %s\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
 							fmt.Printf("- EXPECTED OUTPUTS:\n")
