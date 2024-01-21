@@ -39,14 +39,6 @@ When this option is defined, all child states will run as separate parallel goch
 gochart is considered to be in all those states simultaneously.
 
 See https://github.com/cristiandonosoc/gochart/docs/concurrent.md for more details.`,
-			Handler: GochartOptionHandler(parseGochartOption_Parallel),
-		},
-		kGochartOption_Namespace: {
-			Name:     kGochartOption_Namespace,
-			FlagName: kGochartOption_Namespace,
-			Kind:     frontend_common.OptionValueKind_String,
-			Description: `The name of the namespace to generate in |gochart::<NAMESPACE>|.
-Otherwise the name of gochart will be used.`,
 			Synopsis: `
 gochart(parallel) {
 	...
@@ -58,6 +50,19 @@ gochart(parallel) {
 		...
 	}
 }`,
+			Handler: GochartOptionHandler(parseGochartOption_Parallel),
+		},
+		kGochartOption_Namespace: {
+			Name:     kGochartOption_Namespace,
+			FlagName: kGochartOption_Namespace,
+			Kind:     frontend_common.OptionValueKind_String,
+			Description: `The name of the namespace to generate in |gochart::<NAMESPACE>|.
+Otherwise the name of gochart will be used.`,
+			Synopsis: `
+gochart(namespace = "SomeOtherNamespace") {
+	...
+}
+`,
 			Handler: GochartOptionHandler(parseGochartOption_Namespace),
 		},
 	})

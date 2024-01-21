@@ -19,7 +19,10 @@ These are options that are supported on the Gochart element, which defines the G
 | --- | --- |
 | Flag | {{ $option.Name }} |
 | Kind | {{ $option.Kind }} |
-| Description | {{ $option.Description }} |
+
+**Description**
+
+{{ $option.Description }}
 
 **Synopsis:**
 ```
