@@ -26,7 +26,7 @@
 	],
 	"PreBuildSteps": {
 		"Win64": [
-			"C:\\cdc\\projects\\gochart\\bazel-bin\\cmd\\gochart\\gochart_\\gochart.exe unreal generate $(ProjectDir)"
+			"gochart.exe unreal generate --unreal_strategy=UHT $(ProjectDir)"
 		]
 	}
 }

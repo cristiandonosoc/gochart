@@ -5,6 +5,7 @@ package unreal
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cristiandonosoc/gochart/internal/build"
@@ -23,8 +24,7 @@ const (
 type GenerationStrategy int
 
 const (
-	// Intermediate means generating files into the project's intermediate files.
-	GenerationStrategy_Intermediate GenerationStrategy = iota
+	GenerationStrategy_Invalid GenerationStrategy = iota
 
 	// Inline means generating the files right next to the gochart file.
 	GenerationStrategy_Inline
@@ -32,19 +32,44 @@ const (
 	// ModuleGeneratedDir creates a Generated directory in the module root and append the internal
 	// route to it.
 	GenerationStrategy_ModuleGeneratedDir
+
+	// UHT means generating files into the project's intermediate files, in the UHT folder.
+	GenerationStrategy_UHT
 )
 
 func (gs GenerationStrategy) String() string {
 	switch gs {
-	case GenerationStrategy_Intermediate:
-		return "Intermediate"
 	case GenerationStrategy_Inline:
 		return "Inline"
 	case GenerationStrategy_ModuleGeneratedDir:
 		return "ModuleGeneratedDir"
+	case GenerationStrategy_UHT:
+		return "UHT"
 	default:
 		return "<unknown>"
 	}
+}
+
+func (gs GenerationStrategy) Valid() bool {
+	return gs != GenerationStrategy_Invalid
+}
+
+func ListGenerationStrategies() []GenerationStrategy {
+	return []GenerationStrategy{
+		GenerationStrategy_Inline,
+		GenerationStrategy_ModuleGeneratedDir,
+		GenerationStrategy_UHT,
+	}
+}
+
+func NewGenerationStrategy(value string) GenerationStrategy {
+	for _, gs := range ListGenerationStrategies() {
+		if strings.ToLower(gs.String()) == strings.ToLower(value) {
+			return gs
+		}
+	}
+
+	return GenerationStrategy_Invalid
 }
 
 // Options -----------------------------------------------------------------------------------------
@@ -63,7 +88,7 @@ func defaultOptions() *Options {
 		Version:  build.BuildVersion(),
 		Time:     time.Now(),
 		Platform: unreal.UnrealPlatform_Windows,
-		Strategy: GenerationStrategy_Intermediate,
+		Strategy: GenerationStrategy_Invalid,
 	}
 
 	return options
@@ -215,5 +240,9 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Op
 }
 
 func (ugb *unrealGochartBackend) validate() error {
+	if !ugb.options.Strategy.Valid() {
+		return fmt.Errorf("invalid generation strategy. Is the --unreal_strategy set?")
+	}
+
 	return nil
 }

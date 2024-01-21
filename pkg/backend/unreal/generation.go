@@ -247,7 +247,7 @@ func calculateGochartOutputDir(project *unreal.UnrealProject, platform unreal.Un
 
 	var dir string
 	switch strategy {
-	case GenerationStrategy_Intermediate:
+	case GenerationStrategy_UHT:
 		// First it's built by the intermediate platform location.
 		dir = filepath.Join(project.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc")
 

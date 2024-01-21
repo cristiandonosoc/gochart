@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/cristiandonosoc/gochart/internal/option"
 	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	kFlag_UnrealStrategy = "unreal_strategy"
 )
 
 func relFilePath(projectPath, filePath string) string {
@@ -20,7 +25,43 @@ func relFilePath(projectPath, filePath string) string {
 }
 
 func unrealInvocationFlags() []cli.Flag {
-	return []cli.Flag{}
+	var flags []cli.Flag
+
+	flags = append(flags, frontend.SetFlags()...)
+
+	// Add the strategy flag.
+	{
+		strategies := unreal_backend.ListGenerationStrategies()
+
+		options := make([]string, 0, len(strategies))
+		for _, strategy := range strategies {
+			options = append(options, strategy.String())
+		}
+
+		flags = append(flags, &cli.StringFlag{
+			Name:     kFlag_UnrealStrategy,
+			Usage:    fmt.Sprintf("The `STRATEGY` about where to generate the output files. Values %s", options),
+			Required: true,
+		})
+	}
+
+	return flags
+}
+
+func unrealOptionsFromFlags(cliCtx *cli.Context) ([]option.Option, error) {
+	var options []option.Option
+
+	{
+		strategyValue := cliCtx.String(kFlag_UnrealStrategy)
+		strategy := unreal_backend.NewGenerationStrategy(strategyValue)
+		if !strategy.Valid() {
+			return nil, fmt.Errorf("Invalid strategy %q", strategyValue)
+		}
+
+		options = append(options, unreal_backend.WithStrategy(strategy))
+	}
+
+	return options, nil
 }
 
 func unrealCommands() []*cli.Command {
@@ -28,11 +69,11 @@ func unrealCommands() []*cli.Command {
 		{
 			Name:        "unreal",
 			Description: "Commands associated with the Unreal integration",
-			Flags:       frontend.SetFlags(),
 			Subcommands: []*cli.Command{
 				{
 					Name:  "list",
 					Usage: "list [PROJECT_DIR]",
+					Flags: unrealInvocationFlags(),
 					Action: func(cliCtx *cli.Context) error {
 						if cliCtx.Args().Len() != 1 {
 							return fmt.Errorf("Usage: %s", cliCtx.Command.Usage)
@@ -46,7 +87,12 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("creating unreal backend: %w", err)
 						}
 
-						goutputs, err := ugb.List(ctx)
+						options, err := unrealOptionsFromFlags(cliCtx)
+						if err != nil {
+							return fmt.Errorf("parsing options from flags: %w", err)
+						}
+
+						goutputs, err := ugb.List(ctx, options...)
 						if err != nil {
 							return fmt.Errorf("listing project: %w", err)
 						}
@@ -55,10 +101,11 @@ func unrealCommands() []*cli.Command {
 						fmt.Printf("Found %v gocharts:\n", len(goutputs))
 						for _, goutput := range goutputs {
 							fmt.Println("-----------------------------------------------------------------------")
-							uptodate := ""
+							uptodate := "[UP TO DATE]"
 							if !goutput.UpToDate() {
-								uptodate = "*WILL REGENERATE*"
+								uptodate = "[*** WILL REGENERATE ***]"
 							}
+
 
 							fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
 							fmt.Printf("- PATH: %s\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
@@ -89,7 +136,12 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("creating unreal backend: %w", err)
 						}
 
-						goutputs, err := ugb.Generate(ctx)
+						options, err := unrealOptionsFromFlags(cliCtx)
+						if err != nil {
+							return fmt.Errorf("parsing options from flags: %w", err)
+						}
+
+						goutputs, err := ugb.Generate(ctx, options...)
 						if err != nil {
 							return fmt.Errorf("generating gocharts: %w", err)
 						}
