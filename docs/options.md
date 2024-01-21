@@ -6,6 +6,53 @@ These are the state options available for Gochart, States and other elements of 
 > This fill is automatically generated from the contents of the actual options code located at
 > [pkg/ir/options.go](/pkg/ir/options.go).
 
+## Option Kinds
+
+Options are mostly located within parenthesis after the element they are defined
+There are 3 kinds of values:
+
+### Boolean Options
+
+This is a simple on/off kind of flag. You can define it as either true or false:
+
+```
+// Just stating the flag name is the same as writing the explicit value for true.
+// The two following are identical.
+state Foo(boolean_flag) { ... }
+state Foo(boolean_flag = true) { ... }
+
+// For disabling the flag:
+state Foo(boolean_flag = false) { ... }
+```
+
+### Integer Options
+
+These are flags intended to support a numeric value associated with them.
+If declared, they must have a value associated to them.
+
+```
+state Foo(int_flag = 22) { ... }
+```
+
+### String Options
+
+These have a string associated with them.
+If declared, they must have a value associated with them.
+
+```
+state Foo(string_flag = "string_value!") { ... }
+```
+
+### Multiple Options
+
+An element can have multiple options at the same time. They are separated by comma:
+
+```
+state Foo(boolean_without_value, boolean_with_value = false, int_flag = 33, string_flag = "value!") {
+	...
+}
+```
+
 ## Gochart-level options
 
 These are options that are supported on the Gochart element, which defines the Gochart as a whole.
@@ -63,6 +110,8 @@ gochart(parallel) {
 
 These are options that are supported on the State element and change the behavior for that state only.
 
+### default
+
 | Name | Description |
 | --- | --- |
 | Flag | default |
@@ -89,6 +138,8 @@ state Parent {
 	}
 }
 ```
+
+### parallel
 
 | Name | Description |
 | --- | --- |
