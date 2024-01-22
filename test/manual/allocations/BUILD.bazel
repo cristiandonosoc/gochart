@@ -1,0 +1,44 @@
+load("//:defs.bzl", "generate_gochart_cpp")
+
+cc_binary(
+    name = "allocations",
+    srcs = ["allocations.cpp"],
+    deps = [
+        ":gochart_simple",
+		":gochart_parallel",
+    ],
+)
+
+cc_library(
+    name = "gochart_simple",
+    hdrs = [
+        "simple.declare.h",
+        "simple.define.h",
+        "simple.forward_declare.h",
+    ],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart_simple"],
+)
+
+generate_gochart_cpp(
+    name = "gen_gochart_simple",
+    src = "simple.gochart",
+    file_prefix = "simple",
+)
+
+cc_library(
+    name = "gochart_parallel",
+    hdrs = [
+        "parallel.declare.h",
+        "parallel.define.h",
+        "parallel.forward_declare.h",
+    ],
+    include_prefix = ".",  # Add -I of dependencies.
+    deps = [":gen_gochart_parallel"],
+)
+
+generate_gochart_cpp(
+    name = "gen_gochart_parallel",
+    src = "parallel.gochart",
+    file_prefix = "parallel",
+)

@@ -1,0 +1,73 @@
+// This is a comment
+gochart Simple {
+	trigger Update(bool tick)		// This is another comment
+
+	trigger ActivateDoorActuator(bool active)
+	trigger ToggleDoor(bool open, bool fast)
+	trigger DoorMovingDone(bool opened)
+
+	trigger TransferToWindow()
+
+	state Root
+	{
+		state Door
+		{
+			capture Update
+
+			state DoorInactive
+			{
+				transition ActivateDoorActuator > DoorActive if {
+					return active;
+				} do {
+					gochart.GetOwner().ActionFunction(active);
+				}
+
+				transition TransferToWindow > Window
+
+				capture Update
+			}
+
+			state DoorActive
+			{
+				transition ActivateDoorActuator > DoorInactive if { return !active; }
+
+				state DoorOpened
+				{
+					transition ToggleDoor > DoorMoving
+
+					capture Update if { return tick; }
+				}
+
+				state DoorMoving
+				{
+					enter ToggleDoor
+
+					transition DoorMovingDone > DoorClosed
+				}
+
+				state DoorClosed
+				{
+					transition ToggleDoor > DoorMoving
+				}
+			}
+		}
+
+		state Window
+		{
+			state WindowInitial
+			{
+				enter
+				exit
+
+				transition null > WindowIdle do {
+					gochart.GetOwner().NullTransitionCall();
+				}
+			}
+
+			state WindowIdle {
+				enter
+			}
+		}
+	}
+}
+// Last comment
