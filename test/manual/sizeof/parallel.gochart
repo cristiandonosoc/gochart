@@ -1,0 +1,109 @@
+gochart Parallel {
+	trigger ActivateActuator(bool activate)
+
+	trigger StartSpawning()
+	trigger Spawned()
+	trigger SpawningActuatorDone()
+
+	trigger TargetAcquired()
+	trigger TargetConfirmed()
+	trigger TargetDispatched()
+
+	trigger Update(float dt)
+
+	state Root(parallel) {
+		exit
+
+		state MainActuator {
+			exit
+
+			transition TargetDispatched > Attack
+
+			state Idle {
+				transition StartSpawning > WaitingOnSpawning
+			}
+
+			state WaitingOnSpawning {
+				transition SpawningActuatorDone > Ready
+			}
+
+			state Ready {
+				enter
+			}
+
+			state Attack {
+				enter
+				exit
+			}
+		}
+
+		state SpawnActuator {
+			exit
+
+			state SpawnInactive {
+				transition ActivateActuator > SpawnActive
+			}
+
+			state SpawnActive {
+				exit
+
+				transition ActivateActuator > SpawnInactive
+
+				state SpawnIdle {
+					transition StartSpawning > SpawnInProgress
+				}
+
+				state SpawnInProgress {
+					transition Spawned > SpawnDone
+				}
+
+				state SpawnDone {
+					enter
+
+					transition null > SpawnIdle do {
+						gochart.TriggerSpawningActuatorDone();
+					}
+				}
+			}
+		}
+
+		state AimingActuator {
+			enter
+			exit
+
+			state AimingInactive {
+				transition ActivateActuator > AimingActive
+			}
+
+			state AimingActive(parallel) {
+				transition ActivateActuator > AimingInactive
+
+				enter
+				exit
+
+				state AimingSearcher {
+					capture Update
+				}
+
+				state AimingAnalyzer {
+					enter
+					exit
+
+					capture TargetAcquired
+				}
+
+				state AimingDispatcher {
+					exit
+
+					state AimingDispatcherIdle {
+						transition TargetConfirmed > AimingDispatcherDispatching
+					}
+
+					state AimingDispatcherDispatching {
+						transition TargetDispatched > AimingDispatcherIdle
+					}
+				}
+			}
+		}
+	}
+}

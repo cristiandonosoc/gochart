@@ -151,9 +151,9 @@ private:
 	// **** PRIVATE CALLBACK API END ****
 
 private:
-	ParallelGroupStateArray CurrentStates;
     {{$internal}}::TriggerProcessingState* ProcessingState = nullptr;
     T* Owner = nullptr;
+	ParallelGroupStateArray CurrentStates;
     // State tracking flags.
     std::bitset<8> StateFlags;
 
