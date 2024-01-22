@@ -113,19 +113,30 @@ gochart.SetOwner(this);
 
 The Gochart tool will generate 3 headers, normally named for the namespace above.
 
-- `<NAMESPACE>.gochart.forward_declare.h`
+> [!NOTE}
+> The value of `PREFIX` depends of how the files were generated, but normally it comes directly from
+> the name of the gochart file (so if it's called `elevator.gochart`, you would get an `elevator` as
+> prefix.
+
+- `<PREFIX>.gochart.forward_declare.h`
 
 This one declares the state and triggers enums, as well as a forward declaration of the class above.
 This is useful when we want to embed delegates types into the triggers. This means that we will have
 to use a pimpl idiom and rely on the .cpp file to compile in the details.
 
-See [usage patterns](advanced.md#usage_patters) for more details.
+See [usage patterns](advanced.md#usage-patters) for more details.
 
-- `<NAMESPACE>.gochart.declare.h`
+- `<PREFIX>.gochart.declare.h`
 
-This header declares the generated Gochart class.
+This header declares the generated Gochart class. In here the actual Gochart class is declared,
+though most of the logic is not present here. This can be useful for when you don't want to use an
+allocation (because of the [pimpl idiom](https://en.cppreference.com/w/cpp/language/pimpl), as you
+can get the actual class which is already declared.
 
-- `<NAMESPACE>.gochart.define.h`
+Note that in that case, you might not be able to use some defined values within your gochart. See
+[usage patterns](advanced.md#usage-patters) for more details.
+
+- `<PREFIX>.gochart.define.h`
 
 This holds the actual logic of the gochart logic. This is meant to be compiled only once, so should
 be added to a particular .cpp file, so that it only gets added in one translation unit.
