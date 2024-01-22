@@ -16,6 +16,7 @@
 #define GOCHART_UNUSED __attribute__((unused))
 #endif
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cassert>
