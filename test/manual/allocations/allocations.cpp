@@ -1,4 +1,5 @@
 #include <new>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <format>
@@ -11,34 +12,32 @@
 
 int number_of_allocs = 0;
 
-void* operator new(std::size_t size) throw(std::bad_alloc) {
+void* operator new(std::size_t size) {
   ++number_of_allocs;
   void *p = malloc(size);
-  if(!p) throw std::bad_alloc();
   return p;
 }
 
-void* operator new  [](std::size_t size) throw(std::bad_alloc) {
+void* operator new  [](std::size_t size) {
   ++number_of_allocs;
   void *p = malloc(size);
-  if(!p) throw std::bad_alloc();
   return p;
 }
 
-void* operator new  [](std::size_t size, const std::nothrow_t&) throw() {
+void* operator new  [](std::size_t size, const std::nothrow_t&) {
   ++number_of_allocs;
   return malloc(size);
 }
-void* operator new   (std::size_t size, const std::nothrow_t&) throw() {
+void* operator new   (std::size_t size, const std::nothrow_t&) {
   ++number_of_allocs;
   return malloc(size);
 }
 
 
-void operator delete(void* ptr) throw() { free(ptr); }
-void operator delete (void* ptr, const std::nothrow_t&) throw() { free(ptr); }
-void operator delete[](void* ptr) throw() { free(ptr); }
-void operator delete[](void* ptr, const std::nothrow_t&) throw() { free(ptr); }
+void operator delete(void* ptr) { free(ptr); }
+void operator delete (void* ptr, const std::nothrow_t&) { free(ptr); }
+void operator delete[](void* ptr) { free(ptr); }
+void operator delete[](void* ptr, const std::nothrow_t&) { free(ptr); }
 
 namespace test
 {
