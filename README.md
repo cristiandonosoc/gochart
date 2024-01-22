@@ -8,6 +8,10 @@ Gochart is statechart code generator capable of targeting multiple backends, tho
 the only one available. While not bound to it at all, it was thought to be used within Unreal as a
 way of describing gameplay state machines in a more robust manner.
 
+It is meant to be performance oriented, geared to be used in games, such as the ones made in Unreal:
+- Low memory footprint: The generated class is 24 bytes big in the best case, 32 in normal cases.
+- No memory allocations: Gocharts do not perform any memory allocations at all.
+
 ## Statecharts
 
 [Statecharts](https://statecharts.dev/what-is-a-statechart.html) are an useful hierarchical state
