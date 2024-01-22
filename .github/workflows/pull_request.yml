@@ -21,4 +21,7 @@ jobs:
           ~/.cache/bazel
     - uses: actions/checkout@v4
     - name: run tests
+      env:
+        CC: gcc-10    # C++20 support.
+        CXX: g++-10
       run: bazel test //...
