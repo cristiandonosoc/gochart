@@ -29,11 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run tests
+        env:
+          CC: gcc-13   # C++20 support.
+          CXX: g++-13
         run: bazel test //...
       - name: Package build
         env:
           STABLE_GOCHART_VERSION: ${{ github.ref_name }}
           STABLE_GOCHART_GIT_COMMIT: ${{ github.sha }}
+          CC: gcc-13    # C++20 support.
+          CXX: g++-13
         run: bazel build --workspace_status_command="python build/build_stamp.py" --stamp //:pkg_release
       - name: Copy it to workspace root
         run: cp $(bazel cquery //:pkg_release --output=files 2>/dev/null) ${{ github.workspace }}/
