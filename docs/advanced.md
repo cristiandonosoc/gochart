@@ -74,7 +74,7 @@ Print(gochart.GetCurrentStates());      // Prints [B, C].
 
 // We can then issue other triggers.
 gochart.TriggerToggle2();
-Print(gochart.GetCurrentStates());      // Prints [A, D]/
+Print(gochart.GetCurrentStates());      // Prints [A, D].
 ```
 
 ### Transitions within parallel regions
@@ -161,7 +161,7 @@ regions below it gets exited as well.
 > parent region. Again, it is bad practice to rely on this fact.
 
 > [!TIP]
-> See [the parallel test to see a working example of nested parallel behavior](test/integration/cpp/parallel).
+> See [the parallel test to see a working example of nested parallel behavior](/test/integration/cpp/parallel).
 
 
 
