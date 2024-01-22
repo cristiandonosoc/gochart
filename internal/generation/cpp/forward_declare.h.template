@@ -5,6 +5,8 @@
 {{- $namespace := printf "gochart::%s" $sc.Namespace }}
 {{- $internal := "internal" }}
 
+#include <cstdint>
+
 /***************************************************************************************************
  *
  * If you're looking for the signature you must implement for the gochart delegate.
@@ -36,7 +38,8 @@ namespace {{$namespace}}
 template <typename T>
 class Gochart;	// Forward declare.
 
-enum class ETrigger
+// TODO(cdc): Automatically expand this to uint16 if ever need more than 254 triggers.
+enum class ETrigger : uint8_t
 {
 	__Invalid__,
 	{{- range $sc.Triggers }}
@@ -45,7 +48,8 @@ enum class ETrigger
 };
 const char* ToString(ETrigger trigger);
 
-enum class EState
+// TODO(cdc): Automatically expand this to uint16 if ever need more than 254 states.
+enum class EState : uint8_t
 {
 	__Invalid__,
 	{{- range $sc.States}}
