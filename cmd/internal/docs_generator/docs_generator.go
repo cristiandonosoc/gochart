@@ -52,7 +52,7 @@ func collectOptionData(definitions []*ir.OptionDefinition) []*OptionData {
 func internalMain() error {
 	fmt.Println(os.Args)
 	if len(os.Args) != 2 {
-		return fmt.Errorf("Usage: docs_generator [REPO_ROOT] [OUTPUT_MARKDOWN_FILEPATH]")
+		return fmt.Errorf("Usage: docs_generator [OUTPUT_MARKDOWN_FILEPATH]")
 	}
 
 	output := os.Args[1]
