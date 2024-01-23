@@ -1,0 +1,21 @@
+name: Generate Docs
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  create_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate options Docs
+        run: bazel run //cmd/internal/docs_generator -- {{ github.workspace }}/docs/options.md
+      - name: Generate example headers.
+        run: bazel run //cmd/gochart -- {{github.workspace}}/example_generated/simple.gochart {{github.workspace}}/example_generated simple
+
+
+
+
+
+
