@@ -13,6 +13,14 @@ jobs:
         run: bazel run //cmd/internal/docs_generator -- {{ github.workspace }}/docs/options.md
       - name: Generate example headers.
         run: bazel run //cmd/gochart -- {{github.workspace}}/example_generated/simple.gochart {{github.workspace}}/example_generated simple
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: "Update docs for {{github.ref_name}}"
+          add: "docs/"
+
+
 
 
 
