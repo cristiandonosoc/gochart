@@ -8,6 +8,8 @@
 #pragma once
 
 
+#include <cstdint>
+
 /***************************************************************************************************
  *
  * If you're looking for the signature you must implement for the gochart delegate.
@@ -30,7 +32,8 @@ namespace gochart::Door
 template <typename T>
 class Gochart;	// Forward declare.
 
-enum class ETrigger
+// TODO(cdc): Automatically expand this to uint16 if ever need more than 254 triggers.
+enum class ETrigger : uint8_t
 {
 	__Invalid__,
 	Update,
@@ -41,7 +44,8 @@ enum class ETrigger
 };
 const char* ToString(ETrigger trigger);
 
-enum class EState
+// TODO(cdc): Automatically expand this to uint16 if ever need more than 254 states.
+enum class EState : uint8_t
 {
 	__Invalid__,
 	__Root__,

@@ -8,7 +8,7 @@
 #pragma once
 
 
-#include "simple.forward_declare.h"
+#include "simple.gochart.forward_declare.h"
 
 #include <array>
 #include <bitset>
@@ -185,9 +185,9 @@ private:
 	// **** PRIVATE CALLBACK API END ****
 
 private:
-	ParallelGroupStateArray CurrentStates;
     internal::TriggerProcessingState* ProcessingState = nullptr;
     T* Owner = nullptr;
+	ParallelGroupStateArray CurrentStates;
     // State tracking flags.
     std::bitset<8> StateFlags;
 

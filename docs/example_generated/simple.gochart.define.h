@@ -8,7 +8,7 @@
 #pragma once
 
 
-#include "simple.declare.h"
+#include "simple.gochart.declare.h"
 
 // TODO(cdc): This is very simple, but something fancier to support more compilers could be needed.
 #ifdef _MSC_VER
@@ -19,6 +19,7 @@
 #define GOCHART_UNUSED __attribute__((unused))
 #endif
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cassert>
