@@ -3,7 +3,7 @@
 #include <CoreMinimal.h>
 #include <GameFramework/Actor.h>
 
-#include "GochartTestActor.forward_declare.h"
+#include "GochartTestActor.gochart.forward_declare.h"
 
 #include "GochartTestActor.generated.h"
 

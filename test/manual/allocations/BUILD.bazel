@@ -4,17 +4,17 @@ cc_binary(
     name = "allocations",
     srcs = ["allocations.cpp"],
     deps = [
+        ":gochart_parallel",
         ":gochart_simple",
-		":gochart_parallel",
     ],
 )
 
 cc_library(
     name = "gochart_simple",
     hdrs = [
-        "simple.declare.h",
-        "simple.define.h",
-        "simple.forward_declare.h",
+        "simple.gochart.declare.h",
+        "simple.gochart.define.h",
+        "simple.gochart.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart_simple"],
@@ -29,9 +29,9 @@ generate_gochart_cpp(
 cc_library(
     name = "gochart_parallel",
     hdrs = [
-        "parallel.declare.h",
-        "parallel.define.h",
-        "parallel.forward_declare.h",
+        "parallel.gochart.declare.h",
+        "parallel.gochart.define.h",
+        "parallel.gochart.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart_parallel"],

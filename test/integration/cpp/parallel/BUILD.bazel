@@ -17,9 +17,9 @@ cc_test(
 cc_library(
     name = "gochart",
     hdrs = [
-        "parallel.declare.h",
-        "parallel.define.h",
-        "parallel.forward_declare.h",
+        "parallel.gochart.declare.h",
+        "parallel.gochart.define.h",
+        "parallel.gochart.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart"],

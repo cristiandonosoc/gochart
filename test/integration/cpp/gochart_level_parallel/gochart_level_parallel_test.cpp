@@ -1,4 +1,4 @@
-#include "gochart_level_parallel.define.h"
+#include "gochart_level_parallel.gochart.define.h"
 
 #include <test/test_support.h>
 

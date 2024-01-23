@@ -1,4 +1,4 @@
-#include "parallel.forward_declare.h"
+#include "parallel.gochart.forward_declare.h"
 
 #include <test/test_support.h>
 

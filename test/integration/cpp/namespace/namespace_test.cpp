@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include <original_name.define.h>
+#include <original_name.gochart.define.h>
 
 class Delegate
 {

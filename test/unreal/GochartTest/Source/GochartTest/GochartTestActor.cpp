@@ -1,6 +1,6 @@
 ﻿#include <GochartTest/GochartTestActor.h>
 
-#include "GochartTestActor.define.h"
+#include "GochartTestActor.gochart.define.h"
 
 namespace
 {

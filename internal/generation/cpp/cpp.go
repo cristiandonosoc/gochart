@@ -97,15 +97,15 @@ func CalculateExpectedPaths(config *Config) ([]*common.BackendOutput, error) {
 	outputs := []*common.BackendOutput{
 		{
 			Name:         kOutputName_ForwardDeclare,
-			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.forward_declare.h", config.FilePrefix)),
+			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.gochart.forward_declare.h", config.FilePrefix)),
 		},
 		{
 			Name:         kOutputName_Declare,
-			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.declare.h", config.FilePrefix)),
+			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.gochart.declare.h", config.FilePrefix)),
 		},
 		{
 			Name:         kOutputName_Define,
-			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.define.h", config.FilePrefix)),
+			ExpectedPath: filepath.Join(config.OutputDir, fmt.Sprintf("%s.gochart.define.h", config.FilePrefix)),
 		},
 	}
 
