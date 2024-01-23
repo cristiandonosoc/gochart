@@ -1,4 +1,4 @@
-#include "simple.define.h"
+#include "simple.gochart.define.h"
 
 #include <gtest/gtest.h>
 

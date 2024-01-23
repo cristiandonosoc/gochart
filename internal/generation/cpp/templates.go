@@ -129,15 +129,15 @@ func newTemplateContext(config *Config, sc *ir.Gochart) *templateContext {
 }
 
 func (tc *templateContext) ForwardDeclareInclude() string {
-	return fmt.Sprintf("%s.forward_declare.h", tc.Config.FilePrefix)
+	return fmt.Sprintf("%s.gochart.forward_declare.h", tc.Config.FilePrefix)
 }
 
 func (tc *templateContext) DeclareInclude() string {
-	return fmt.Sprintf("%s.declare.h", tc.Config.FilePrefix)
+	return fmt.Sprintf("%s.gochart.declare.h", tc.Config.FilePrefix)
 }
 
 func (tc *templateContext) DefineInclude() string {
-	return fmt.Sprintf("%s.define.h", tc.Config.FilePrefix)
+	return fmt.Sprintf("%s.gochart.define.h", tc.Config.FilePrefix)
 }
 
 // TEMPLATE HELPER FUNCTIONS -----------------------------------------------------------------------

@@ -50,8 +50,8 @@ enum class EActuatorType : uint8_t
 
 } // namespace test
 
-#include "simple.define.h"
-#include "parallel.define.h"
+#include "simple.gochart.define.h"
+#include "parallel.gochart.define.h"
 
 class Delegate
 {

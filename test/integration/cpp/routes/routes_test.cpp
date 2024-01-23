@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include <routes.define.h>
+#include <routes.gochart.define.h>
 
 class Delegate
 {

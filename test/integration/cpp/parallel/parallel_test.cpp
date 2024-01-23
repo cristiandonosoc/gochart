@@ -1,7 +1,7 @@
 #include <test/test_support.h>
 #include "delegate.h"
 
-#include "parallel.define.h"
+#include "parallel.gochart.define.h"
 
 #include <gtest/gtest.h>
 
