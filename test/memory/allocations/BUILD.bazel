@@ -9,6 +9,18 @@ cc_binary(
     ],
 )
 
+cc_test(
+    name = "allocations_test",
+    size = "small",
+    srcs = ["allocations_test.cpp"],
+    deps = [
+        ":gochart_parallel",
+        ":gochart_simple",
+        "//test/support/cpp:test_support",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "gochart_simple",
     hdrs = [
