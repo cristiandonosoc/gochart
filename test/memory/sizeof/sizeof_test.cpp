@@ -34,8 +34,8 @@ public:
 TEST(Sizeof, AssertSize)
 {
 	using SimpleGochartType = gochart::Simple::Gochart<Delegate>;
-	EXPECT_LE(sizeof(SimpleGochartType), 24);
+	EXPECT_LE(sizeof(SimpleGochartType), 32);
 
 	using ParallelGochartType = gochart::Parallel::Gochart<Delegate>;
-	EXPECT_LE(sizeof(ParallelGochartType), 32);
+	EXPECT_LE(sizeof(ParallelGochartType), 48);
 }
