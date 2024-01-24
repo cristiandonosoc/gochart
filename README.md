@@ -36,8 +36,13 @@ gochart backend cpp generate elevator.gochart Gameplay\ elevator
 ```
 Will generate
 ```
-What would this generate?
+Gameplay\elevator.gochart.forward_declare.h
+Gameplay\elevator.gochart.declare.h
+Gameplay\elevator.gochart.define.h
 ```
+
+> [!TIP]
+> What those headers mean is explained in the [docs](docs/gochart.md#c++-integration)
 
 ### Unreal
 
@@ -46,8 +51,9 @@ Gochart also has a special mode for detecting all the gocharts present in an Unr
 gochart unreal generate [UNREAL_PROJECT_SOURCE_DIR]
 ```
 
-IMPORTANT: Refer [unreal.md](<PATH TO UNREAL MD>) for the options, as those will determine where
-there generated code will be created.
+> [!TIP]
+> Refer to the [unreal integration docs](docs/unreal.md) for the options, as those will determine
+> where the generated code will be created.
 
 ## Building
 
@@ -82,14 +88,25 @@ dependencies within Bazel.
 
 ## Tests
 
-We leverage Bazel for managing cross language tests, in which we build the tool , use it to generate
+Gocharts has a decent battery of tests, from the frontend right to integration tests (generate
 C++ from a gochart file and then run that C++ to ensure it is working as intended as a test, using
-GTest.
+GTest).
 
-For building in C++, you will need a correctly set C++ toolchain. For Windows the easiest way is to
-install Visual Studio to get the MSVC toolchain. In Linux, both GCC or Clang should work correctly.
+We leverage Bazel for managing go's and cross language tests. For building in C++, you will need a
+correctly set C++ toolchain. For Windows the easiest way is to install Visual Studio to get the MSVC
+toolchain. In Linux, both GCC or Clang should work correctly. Refer to the Bazel docs.
 
 After that, the tests should work correctly:
 ```
 bazel test //...
 ```
+
+## Contributing
+
+I'm happy to receive contributions and pull requests, though I will ask you that all tests pass in
+your machine before sending a pull request. Pull requests have Github Actions associated with them
+than will ensure that gofmt and other tests pass.
+
+> [!NOTE]
+> Even though I normally develop in Windows, currently the CI is setup so that it runs tests on
+> linux machines, so your code should work on both.
