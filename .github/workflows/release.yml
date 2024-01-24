@@ -4,8 +4,7 @@ on:
   push:
     tags:
       - "v*" # Matches v0.1.0, v1.2, v.2, etc.
-permissions:
-  contents: write
+permissions: write-all
 
 jobs:
   create_release:
