@@ -1,11 +1,23 @@
 load("//:defs.bzl", "generate_gochart_cpp")
 
 cc_binary(
-    name = "sizeof",
-    srcs = ["sizeof.cpp"],
+    name = "allocations",
+    srcs = ["allocations.cpp"],
     deps = [
         ":gochart_parallel",
         ":gochart_simple",
+    ],
+)
+
+cc_test(
+    name = "allocations_test",
+    size = "small",
+    srcs = ["allocations_test.cpp"],
+    deps = [
+        ":gochart_parallel",
+        ":gochart_simple",
+        "//test/support/cpp:test_support",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
