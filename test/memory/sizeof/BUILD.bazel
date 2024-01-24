@@ -1,14 +1,5 @@
 load("//:defs.bzl", "generate_gochart_cpp")
 
-cc_binary(
-    name = "sizeof",
-    srcs = ["sizeof.cpp"],
-    deps = [
-        ":gochart_parallel",
-        ":gochart_simple",
-    ],
-)
-
 cc_test(
     name = "sizeof_test",
     size = "small",
@@ -24,9 +15,9 @@ cc_test(
 cc_library(
     name = "gochart_simple",
     hdrs = [
-        "simple.gochart.declare.h",
-        "simple.gochart.define.h",
-        "simple.gochart.forward_declare.h",
+        "sizeof_simple.gochart.declare.h",
+        "sizeof_simple.gochart.define.h",
+        "sizeof_simple.gochart.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart_simple"],
@@ -35,15 +26,15 @@ cc_library(
 generate_gochart_cpp(
     name = "gen_gochart_simple",
     src = "simple.gochart",
-    file_prefix = "simple",
+    file_prefix = "sizeof_simple",
 )
 
 cc_library(
     name = "gochart_parallel",
     hdrs = [
-        "parallel.gochart.declare.h",
-        "parallel.gochart.define.h",
-        "parallel.gochart.forward_declare.h",
+        "sizeof_parallel.gochart.declare.h",
+        "sizeof_parallel.gochart.define.h",
+        "sizeof_parallel.gochart.forward_declare.h",
     ],
     include_prefix = ".",  # Add -I of dependencies.
     deps = [":gen_gochart_parallel"],
@@ -52,5 +43,5 @@ cc_library(
 generate_gochart_cpp(
     name = "gen_gochart_parallel",
     src = "parallel.gochart",
-    file_prefix = "parallel",
+    file_prefix = "sizeof_parallel",
 )

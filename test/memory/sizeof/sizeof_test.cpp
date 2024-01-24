@@ -1,10 +1,9 @@
-#include "simple.gochart.define.h"
-#include "parallel.gochart.define.h"
+#include "sizeof_parallel.gochart.declare.h"
+#include "sizeof_simple.gochart.declare.h"
 
 #include <gtest/gtest.h>
 
-#include <format>
-#include <iostream>
+#include <string>
 #include <vector>
 
 class Delegate
@@ -23,19 +22,16 @@ public:
     void NullTransitionCall() { TrackCall(__FUNCTION__); }
     // Gochart end.
 
-    void TrackCall(const std::string& function_name)
-    {
-        Calls.push_back(function_name);
-    }
+    void TrackCall(const std::string& function_name) { Calls.push_back(function_name); }
 
     std::vector<std::string> Calls;
 };
 
 TEST(Sizeof, AssertSize)
 {
-	using SimpleGochartType = gochart::Simple::Gochart<Delegate>;
-	EXPECT_LE(sizeof(SimpleGochartType), 32);
+    using SimpleGochartType = gochart::Simple::Gochart<Delegate>;
+    EXPECT_LE(sizeof(SimpleGochartType), 32);
 
-	using ParallelGochartType = gochart::Parallel::Gochart<Delegate>;
-	EXPECT_LE(sizeof(ParallelGochartType), 48);
+    using ParallelGochartType = gochart::Parallel::Gochart<Delegate>;
+    EXPECT_LE(sizeof(ParallelGochartType), 48);
 }
