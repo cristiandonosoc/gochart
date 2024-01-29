@@ -67,7 +67,7 @@ bazel build //cmd/gochart
 
 With native Go:
 ```
-go build cmd/gochart
+go build ./cmd/gochart
 ```
 
 ### Gazelle

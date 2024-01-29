@@ -14,30 +14,16 @@ Gochart actually is able to analyze an unreal project and understand modules wit
 it to generate module specific C++ code. Gochart leverages Go parallelism to be able to index big
 Unreal projects quickly (indexing the complete Unreal Editor source takes under a second).
 
-## Listing Gocharts
-
-You can list all sources within a project using the `gochart unreal list` command.
-It will find all the .gochart files within a project, if it would re-generate the files (or the
-current ones are up to date) and the expected paths of these outputs.
-
-```
-$ gochart unreal list test/unreal/GochartTest
-
-Listing gocharts at Unreal project at D:\projects\gochart\test\unreal\GochartTest
-Found 1 gocharts:
------------------------------------------------------------------------
-GochartTestActor *WILL REGENERATE*
-- PATH: Source\GochartTest\GochartTestActor.gochart
-- EXPECTED OUTPUTS:
-  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.forward_declare.h
-  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.declare.h
-  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.define.h
-```
-
 ## Generation Strategies
 
 Gochart has several strategies about where to output the generated files. The decision of where they
 should be generated depends on how you want to handle them.
+
+You need to specify the selected strategy by using the `--unreal_strategy` flag in the unreal
+commands:
+```
+gochart unreal list --unreal_strategy=Inline [args...]
+```
 
 > [!IMPORTANT]
 > Some of these strategies permit to add the generated files into the version control systems. While
@@ -48,6 +34,9 @@ should be generated depends on how you want to handle them.
 > reconcile.
 
 ### Strategy: Inlined
+
+| --- | --- |
+| Flag | `--unreal_strategy=Inline` |
 
 This is the simplest strategy, the files will be generated next to the .gochart file.
 This is similar to what `gochart backend cpp generate` does.
@@ -63,6 +52,9 @@ TODO: Add example
 
 ### Strategy: Module Generated Directory
 
+| --- | --- |
+| Flag | `--unreal_strategy=ModuleGeneratedDir` |
+
 This approach will create a `Generated` folder at the root of each module and insert the generated
 files there, keeping the same internal path of the .gochart file within the module.
 
@@ -76,6 +68,9 @@ TODO: Add Examples
 - Requires minor configuration to the .Build.cs files so that the include paths can be found.
 
 ### Strategy: Intermediate UHT
+
+| --- | --- |
+| Flag | `--unreal_strategy=UHT` |
 
 > [!NOTE]
 > While the approach of this strategy is solid, using the UHT directory for this is a *hack*, but
@@ -93,9 +88,54 @@ meant for generated files and UBT already correctly sets up the C++ includes for
 - Not meant for versioning files, would need to run the tool every time.
     - See [how to hook gochart to the build](#hooking_gochart_to_the_build)
 
+## Listing Gocharts
+
+You can list all sources within a project using the `gochart unreal list` command.
+It will find all the .gochart files within a project, if it would re-generate the files (or the
+current ones are up to date) and the expected paths of these outputs.
+
+```
+$ gochart unreal list --unreal_strategy=UHT test/unreal/GochartTest
+
+Listing gocharts at Unreal project at D:\projects\gochart\test\unreal\GochartTest
+Found 1 gocharts:
+-----------------------------------------------------------------------
+GochartTestActor *WILL REGENERATE*
+- PATH: Source\GochartTest\GochartTestActor.gochart
+- EXPECTED OUTPUTS:
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.forward_declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.define.h
+```
+
 ## Unreal Generate
 
-TODO: Write
+Generate works similar to `List`, but will actually go ahead and generate the files according to
+the provided strategy:
+
+```
+$ gochart unreal generate --unreal_strategy=UHT test/unreal/GochartTest
+
+Found 1 gocharts:
+- D:\projects\gochart\test\unreal\GochartTest\Source\GochartTest\GochartTestActor.gochart
+Generation result:
+- GochartTestActor:
+  > Generated D:\projects\gochart\test\unreal\GochartTest\Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.forward_declare.h
+  > Generated D:\projects\gochart\test\unreal\GochartTest\Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.declare.h
+  > Generated D:\projects\gochart\test\unreal\GochartTest\Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.define.h
+```
+
+Gochart should be smart enough to detect when it does not need to regenerate the files when
+appropriate and will inform in that case:
+
+```
+$ gochart unreal generate --unreal_strategy=UHT test/unreal/GochartTest
+
+Found 1 gocharts:
+- D:\projects\gochart\test\unreal\GochartTest\Source\GochartTest\GochartTestActor.gochart
+Generation result:
+- GochartTestActor UP TO DATE
+```
 
 ## Hooking Gochart to the Build
 
