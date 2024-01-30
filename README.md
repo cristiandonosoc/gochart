@@ -55,6 +55,11 @@ gochart unreal generate [UNREAL_PROJECT_SOURCE_DIR]
 > Refer to the [unreal integration docs](docs/unreal.md) for the options, as those will determine
 > where the generated code will be created.
 
+## Roadmap
+
+There is no current timeline, but you can check the [TODO.md](TODO.md) file for some ideas on things
+that we want to add.
+
 ## Building
 
 We use [Bazel](https://bazel.build/) as the main build system for the project, though standard Go
