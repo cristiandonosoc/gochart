@@ -1,0 +1,7 @@
+gochart Counter {
+	trigger Add(int number)
+
+	state Root {
+		capture Add
+	}
+}
