@@ -50,6 +50,29 @@ TODO: Add example
 *Cons*
 - Can be quite noisy, as you generate quite a bit of generated code along side the normal source.
 
+#### Example Listing
+
+```
+$ gochart unreal list --unreal_strategy=Inline test/unreal/GochartTest
+
+Listing gocharts at Unreal project at D:\projects\gochart\test\unreal\GochartTest\
+Found 2 gocharts:
+-----------------------------------------------------------------------
+Counter [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\AnotherDir\Counter.gochart
+- EXPECTED OUTPUTS:
+  > Source\GochartTest\AnotherDir\Counter.gochart.forward_declare.h
+  > Source\GochartTest\AnotherDir\Counter.gochart.declare.h
+  > Source\GochartTest\AnotherDir\Counter.gochart.define.h
+-----------------------------------------------------------------------
+GochartTestActor [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\GochartTestActor.gochart
+- EXPECTED OUTPUTS:
+  > Source\GochartTest\GochartTestActor.gochart.forward_declare.h
+  > Source\GochartTest\GochartTestActor.gochart.declare.h
+  > Source\GochartTest\GochartTestActor.gochart.define.h
+```
+
 ### Strategy: Module Generated Directory
 
 | --- | --- |
@@ -67,6 +90,29 @@ TODO: Add Examples
 *Cons*
 - Requires minor configuration to the .Build.cs files so that the include paths can be found.
 
+#### Example Listing
+
+```
+$ gochart unreal list --unreal_strategy=ModuleGeneratedDir test/unreal/GochartTest
+
+Listing gocharts at Unreal project at D:\projects\gochart\test\unreal\GochartTest\
+Found 2 gocharts:
+-----------------------------------------------------------------------
+Counter [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\AnotherDir\Counter.gochart
+- EXPECTED OUTPUTS:
+  > Source\GochartTest\Generated\AnotherDir\Counter.gochart.forward_declare.h
+  > Source\GochartTest\Generated\AnotherDir\Counter.gochart.declare.h
+  > Source\GochartTest\Generated\AnotherDir\Counter.gochart.define.h
+-----------------------------------------------------------------------
+GochartTestActor [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\GochartTestActor.gochart
+- EXPECTED OUTPUTS:
+  > Source\GochartTest\Generated\GochartTestActor.gochart.forward_declare.h
+  > Source\GochartTest\Generated\GochartTestActor.gochart.declare.h
+  > Source\GochartTest\Generated\GochartTestActor.gochart.define.h
+```
+
 ### Strategy: Intermediate UHT
 
 | --- | --- |
@@ -81,6 +127,14 @@ This strategy generates the header files into the same directory where UHT would
 generated source files within the Intermediate folder. We piggy-back on this directory because it is
 meant for generated files and UBT already correctly sets up the C++ includes for us.
 
+This strategy generates the module internal path into the UHT folder. Meaning that if the gochart
+file was in `<MODULE_DIR>/Some/Internal/Folder/MyGochart.gochart`, the files will be generated in
+`<INTERMEDIATE_PATH>/Some/Internal/Folder`. This has consequences of the includes you have to add:
+
+```
+#include "Some/Internal/Folder/MyGochart.gochart.forward_declare.h
+```
+
 *Pros*
 - Clean, as all the files will be generated outside the Source directory, in the Intermediate dir.
 
@@ -88,11 +142,41 @@ meant for generated files and UBT already correctly sets up the C++ includes for
 - Not meant for versioning files, would need to run the tool every time.
     - See [how to hook gochart to the build](#hooking_gochart_to_the_build)
 
+#### Example Listing
+
+> [!IMPORTANT]
+> Note in the case of `Counter.gochart`, it is under the `AnotherDir` directory, which means that it
+> was placed under that directory within the UHT folder. That means that you would need to prepend
+> `AnotherDir` to the include path.
+
+```
+$ gochart unreal list --unreal_strategy=UHT test/unreal/GochartTest
+
+Listing gocharts at Unreal project at D:\projects\gochart\test\unreal\GochartTest\
+Found 2 gocharts:
+-----------------------------------------------------------------------
+Counter [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\AnotherDir\Counter.gochart
+- EXPECTED OUTPUTS:
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\AnotherDir\Counter.gochart.forward_declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\AnotherDir\Counter.gochart.declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\AnotherDir\Counter.gochart.define.h
+-----------------------------------------------------------------------
+GochartTestActor [*** WILL REGENERATE ***]
+- PATH: Source\GochartTest\GochartTestActor.gochart
+- EXPECTED OUTPUTS:
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.forward_declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.declare.h
+  > Intermediate\Build\Win64\UnrealEditor\Inc\GochartTest\UHT\GochartTestActor.gochart.define.
+```
+
 ## Listing Gocharts
 
 You can list all sources within a project using the `gochart unreal list` command.
 It will find all the .gochart files within a project, if it would re-generate the files (or the
 current ones are up to date) and the expected paths of these outputs.
+
+See examples of each strategy of how this looks.
 
 ```
 $ gochart unreal list --unreal_strategy=UHT test/unreal/GochartTest
