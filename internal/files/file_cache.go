@@ -46,16 +46,12 @@ var gFileCache *fileCache
 // FileCache represents a view to files loaded in memory.
 type fileCache struct {
 	files map[string]*LoadedFile
-	// DisallowKeyCollision determines whether the cache will look for key collisions.
-	// Normally we disallow this for tests.
-	DisallowKeyCollision bool
 }
 
 func GlobalFileCache() *fileCache {
 	once.Do(func() {
 		gFileCache = &fileCache{
-			files:                map[string]*LoadedFile{},
-			DisallowKeyCollision: false,
+			files: map[string]*LoadedFile{},
 		}
 	})
 
@@ -92,10 +88,10 @@ func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile
 // This is normally used for in-memory files, usually for testing purposes.
 func (fc *fileCache) NewFromData(key string, data []byte, overwrite bool) (*LoadedFile, error) {
 	// We should not have the key already.
-	if !fc.DisallowKeyCollision && !overwrite {
+	if !overwrite {
 		if _, ok := fc.files[key]; ok {
+			return nil, fmt.Errorf("key %q is already in use", key)
 		}
-		return nil, fmt.Errorf("key %q is already in use", key)
 	}
 
 	file := &LoadedFile{
