@@ -10,10 +10,10 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/build"
 	"github.com/cristiandonosoc/gochart/internal/option"
-	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
+	"github.com/cristiandonosoc/gunreal/pkg/unreal"
 )
 
 const (
@@ -79,7 +79,7 @@ type Options struct {
 	Version string
 	Time    time.Time
 
-	Platform unreal.UnrealPlatform
+	Platform unreal.Platform
 	Strategy GenerationStrategy
 }
 
@@ -87,7 +87,7 @@ func defaultOptions() *Options {
 	options := &Options{
 		Version:  build.BuildVersion(),
 		Time:     time.Now(),
-		Platform: unreal.UnrealPlatform_Windows,
+		Platform: unreal.Platform_Windows,
 		Strategy: GenerationStrategy_Invalid,
 	}
 
@@ -113,7 +113,7 @@ func WithTime(t time.Time) option.Option {
 	})
 }
 
-func WithPlatform(platform unreal.UnrealPlatform) option.Option {
+func WithPlatform(platform unreal.Platform) option.Option {
 	return optWrapper(func(options *Options) {
 		options.Platform = platform
 	})
@@ -128,7 +128,7 @@ func WithStrategy(strategy GenerationStrategy) option.Option {
 // Backend -----------------------------------------------------------------------------------------
 
 type unrealGochartBackend struct {
-	Project         *unreal.UnrealProject
+	Project         *unreal.Project
 	gochartFrontend frontend.GochartFrontend
 	options         *Options
 }
@@ -138,7 +138,7 @@ func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGoc
 		return nil, fmt.Errorf("missing project dir")
 	}
 
-	project, err := unreal.IndexUnrealProject(ctx, projectDir)
+	project, err := unreal.IndexProject(ctx, projectDir)
 	if err != nil {
 		return nil, fmt.Errorf("indexing unreal project: %w", err)
 	}
@@ -155,7 +155,7 @@ func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGoc
 }
 
 type GochartOutput struct {
-	Gochart *unreal.UnrealFile
+	Gochart *unreal.File
 	Outputs []*common.BackendOutput
 }
 

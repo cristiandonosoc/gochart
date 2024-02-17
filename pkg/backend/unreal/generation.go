@@ -12,16 +12,16 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/build"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
-	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gunreal/pkg/unreal"
 
 	"golang.org/x/sync/errgroup"
 )
 
 func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
-	project *unreal.UnrealProject, gocharts []string) ([]*GochartOutput, error) {
+	project *unreal.Project, gocharts []string) ([]*GochartOutput, error) {
 
 	// We generate the gocharts in a parallel fashion.
 	g, ctx := errgroup.WithContext(ctx)
@@ -103,7 +103,7 @@ func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
 }
 
 func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
-	project *unreal.UnrealProject, gochartPath string) (*GochartOutput, error) {
+	project *unreal.Project, gochartPath string) (*GochartOutput, error) {
 
 	if err := checkIfContextIsValid(ctx); err != nil {
 		return nil, fmt.Errorf("context is not longer valid: %w", err)
@@ -135,7 +135,7 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 // generated. This also returns the cpp_gen.Config used, so it the same can be used if the indeed
 // we want to generate the files.
 func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath string) (*GochartOutput, *cpp_gen.Config, error) {
-	gochart, err := ugb.Project.NewUnrealFile(gochartPath)
+	gochart, err := ugb.Project.NewFile(gochartPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting gochart unreal file: %w", err)
 	}
@@ -196,7 +196,7 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 }
 
 func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
-	gochart *unreal.UnrealFile, cppGenConfig *cpp_gen.Config) ([]*common.BackendOutput, error) {
+	gochart *unreal.File, cppGenConfig *cpp_gen.Config) ([]*common.BackendOutput, error) {
 
 	if err := checkIfContextIsValid(ctx); err != nil {
 		return nil, fmt.Errorf("context is no longer valid: %w", err)
@@ -242,8 +242,8 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 
 // gochartOutputPaths gets the output paths belonging to this particular gochart.
 // Intermediate/Build/<PLATFORM>/UnrealEditor/Inc/Gochart/<MODULE>/<INTERNAL_PATH>/<NAME>.gochart.(h|cpp)
-func calculateGochartOutputDir(project *unreal.UnrealProject, platform unreal.UnrealPlatform, strategy GenerationStrategy,
-	gochart *unreal.UnrealFile) (string, error) {
+func calculateGochartOutputDir(project *unreal.Project, platform unreal.Platform, strategy GenerationStrategy,
+	gochart *unreal.File) (string, error) {
 
 	var dir string
 	switch strategy {
