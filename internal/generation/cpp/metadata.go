@@ -41,7 +41,12 @@ func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
 
 	metadata := &common.Metadata{}
 
-	for _, line := range bo.DiskContent.Lines {
+	lines, err := bo.DiskContent.Lines()
+	if err != nil {
+		return nil, fmt.Errorf("reading lines from %q: %w", bo.DiskContent.Key, err)
+	}
+
+	for _, line := range lines {
 		line := strings.TrimSpace(line)
 		if line == "" {
 			continue

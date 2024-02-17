@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 func toUnix(path string) string {

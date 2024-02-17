@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bazelbuild/rules_go v0.41.0
+	github.com/cristiandonosoc/golib v0.1.0
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4

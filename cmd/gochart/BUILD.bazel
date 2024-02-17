@@ -11,7 +11,6 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//internal/cmd/version",
-        "//internal/files",
         "//internal/option",
         "//pkg/backend",
         "//pkg/backend/cpp",

@@ -11,11 +11,11 @@ import (
 	"sync"
 
 	"github.com/cristiandonosoc/gochart/internal/build"
-	"github.com/cristiandonosoc/gochart/internal/files"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"golang.org/x/sync/errgroup"
 )

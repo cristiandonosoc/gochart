@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func TestReadSimpleYaml(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/simple.yaml")
 	require.NoError(t, err)
 
-	lf, err := files.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPathWithKey(path, path, true)
 	require.NoError(t, err)
 
 	gcdata, err := yf.Process(lf)
@@ -228,7 +228,7 @@ func TestParallelGroups(t *testing.T) {
 	path, err := test_support.RunfilePath("testdata/parallel.gochart")
 	require.NoError(t, err)
 
-	lf, err := files.LoadFileFromPath(path)
+	lf, err := files.LoadFileFromPathWithKey(path, path, true)
 	require.NoError(t, err)
 
 	gcdata, err := yf.Process(lf)

@@ -1,8 +1,8 @@
 package gochart_lang
 
 import (
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 type frontendTranslator struct {
@@ -152,13 +152,5 @@ func tokenToPosition(lf *files.LoadedFile, token *Token) *files.LoadedFilePositi
 		return nil
 	}
 
-	return newLoadedFilePosition(lf, token.line, token.char)
-}
-
-func newLoadedFilePosition(lf *files.LoadedFile, line, char int) *files.LoadedFilePosition {
-	return &files.LoadedFilePosition{
-		File: lf,
-		Line: line,
-		Char: char,
-	}
+	return files.NewLoadedFilePosition(lf, token.line, token.char)
 }

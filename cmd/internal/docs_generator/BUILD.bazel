@@ -6,10 +6,7 @@ go_library(
     embedsrcs = ["options.md.template"],
     importpath = "github.com/cristiandonosoc/gochart/cmd/internal/docs_generator",
     visibility = ["//visibility:private"],
-    deps = [
-        "//internal/files",
-        "//pkg/ir",
-    ],
+    deps = ["//pkg/ir"],
 )
 
 go_binary(

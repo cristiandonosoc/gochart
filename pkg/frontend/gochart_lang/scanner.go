@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 // ScanError is a custom error associated with scanning.
@@ -881,5 +881,5 @@ func isRuneWhitespace(r rune) bool {
 }
 
 func (s *Scanner) newFrontendError(err error) error {
-	return errors.Errorf(newLoadedFilePosition(s.lf, s.line, s.currentRuneCountInLine), "Scanner", "%s", err)
+	return errors.Errorf(files.NewLoadedFilePosition(s.lf, s.line, s.currentRuneCountInLine), "Scanner", "%s", err)
 }

@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"github.com/urfave/cli/v2"
 )

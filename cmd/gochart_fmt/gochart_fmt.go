@@ -7,10 +7,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/backend/formatter"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+	"github.com/cristiandonosoc/golib/pkg/files"
 	"github.com/urfave/cli/v2"
 )
 

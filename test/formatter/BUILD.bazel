@@ -5,11 +5,11 @@ go_test(
     srcs = ["formatter_test.go"],
     data = glob(["testdata/**"]),
     deps = [
-        "//internal/files",
         "//internal/test_support",
         "//pkg/backend/formatter",
         "//pkg/frontend/gochart_lang",
         "//pkg/ir",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_stretchr_testify//require",
     ],
 )

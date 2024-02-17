@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 // validate is called once the complete gochart has been parsed and collected.
