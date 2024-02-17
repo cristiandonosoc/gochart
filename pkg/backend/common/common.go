@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 type Metadata struct {

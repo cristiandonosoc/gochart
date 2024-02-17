@@ -13,9 +13,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/errors",
-        "//internal/files",
         "//internal/option",
         "//pkg/frontend/common",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
     ],
 )
 
@@ -28,9 +28,9 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":gochart_lang"],
     deps = [
-        "//internal/files",
         "//internal/test_support",
         "//pkg/frontend/common",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

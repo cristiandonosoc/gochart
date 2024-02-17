@@ -5,9 +5,9 @@ package yaml
 import (
 	"fmt"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"gopkg.in/yaml.v2"
 )

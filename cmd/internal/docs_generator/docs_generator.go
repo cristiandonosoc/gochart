@@ -9,7 +9,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
 
@@ -71,7 +70,7 @@ func internalMain() error {
 		return fmt.Errorf("executing template: %w", err)
 	}
 
-	if err := files.WriteToFile(output, &buf); err != nil {
+	if err := os.WriteFile(output, buf.Bytes(), 0644); err != nil {
 		return fmt.Errorf("writing generated docs to %q: %w", output, err)
 	}
 

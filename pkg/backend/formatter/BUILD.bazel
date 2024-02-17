@@ -10,10 +10,10 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/formatter",
     visibility = ["//visibility:public"],
     deps = [
-        "//internal/files",
         "//internal/option",
         "//pkg/backend/common",
         "//pkg/frontend/common",
         "//pkg/ir",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
     ],
 )

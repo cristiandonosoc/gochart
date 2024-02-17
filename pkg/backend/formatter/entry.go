@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 // gochartFormatter --------------------------------------------------------------------------------
@@ -540,7 +540,8 @@ func lineDistanceWithLastEntry(entry formatterEntry) int {
 		// We actually want the line before current, but because line numbers are 1-indexed, just using
 		// the current value will give us the previous line.
 		if i := current - 2; i >= 0 {
-			line := entry.FrontendEntry().Position().File.Lines[i]
+			lines, _ := entry.FrontendEntry().Position().File.Lines()
+			line := lines[i]
 			line = strings.TrimSpace(line)
 			if line == "{" {
 				distance--

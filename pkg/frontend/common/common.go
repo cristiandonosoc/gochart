@@ -4,7 +4,7 @@ package common
 import (
 	"fmt"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 const (

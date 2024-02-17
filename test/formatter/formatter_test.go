@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	"github.com/cristiandonosoc/gochart/pkg/backend/formatter"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +27,8 @@ func TestEnsureFormatterDoesNotChangeAST(t *testing.T) {
 
 	for _, rf := range runfiles {
 		t.Run(filepath.Base(rf), func(t *testing.T) {
-			wantLF, err := files.LoadFileFromPath(rf)
+			base := filepath.Base(rf)
+			wantLF, err := files.LoadFileFromPathWithKey(base+"-want", rf, true)
 			require.NoError(t, err)
 
 			wantGcData, err := gf.Process(wantLF)
@@ -45,7 +46,7 @@ func TestEnsureFormatterDoesNotChangeAST(t *testing.T) {
 			content, err := io.ReadAll(output.Content)
 			require.NoError(t, err)
 
-			gotLF, err := files.LoadFileFromData(content)
+			gotLF, err := files.NewFromData(base+"-got", content, true)
 			require.NoError(t, err)
 
 			gotGcData, err := gf.Process(gotLF)
@@ -71,8 +72,9 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 
 	for _, rf := range runfiles {
 		t.Run(filepath.Base(rf), func(t *testing.T) {
+			base := filepath.Base(rf)
 			// We load the file for the first time.
-			lf, err := files.LoadFileFromPath(rf)
+			lf, err := files.LoadFileFromPathWithKey(base, rf, true)
 			require.NoError(t, err)
 
 			gcdata, err := gf.Process(lf)
@@ -93,7 +95,7 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 				wantContent, err := io.ReadAll(wantOutput.Content)
 				require.NoError(t, err)
 
-				wantLF, err := files.LoadFileFromData(wantContent)
+				wantLF, err := files.NewFromData(base+"-want", wantContent, true)
 				require.NoError(t, err)
 
 				wantGcData, err := gf.Process(wantLF)
@@ -115,7 +117,7 @@ func TestThatFormatterIsIdempotent(t *testing.T) {
 
 				require.Equal(t, wantContent, gotContent)
 
-				gotLF, err := files.LoadFileFromData(gotContent)
+				gotLF, err := files.NewFromData(base+"-got", gotContent, true)
 				require.NoError(t, err)
 
 				gotGcData, err := gf.Process(gotLF)

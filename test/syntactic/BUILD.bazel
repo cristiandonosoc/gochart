@@ -5,9 +5,9 @@ go_test(
     srcs = ["syntactic_test.go"],
     data = glob(["testdata/**"]),
     deps = [
-        "//internal/files",
         "//internal/test_support",
         "//pkg/frontend/gochart_lang",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

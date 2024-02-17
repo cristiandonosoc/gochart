@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/golib/pkg/files"
 
 	"golang.org/x/sync/errgroup"
 )

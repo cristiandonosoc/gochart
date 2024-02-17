@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 
-	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
@@ -110,7 +110,12 @@ func backendCommands() []*cli.Command {
 								}
 
 								for _, output := range outputs {
-									if err := files.WriteToFile(output.ExpectedPath, output.Content); err != nil {
+									data, err := io.ReadAll(output.Content)
+									if err != nil {
+										return fmt.Errorf("reading content: %w", err)
+									}
+
+									if err := os.WriteFile(output.ExpectedPath, data, 0644); err != nil {
 										return fmt.Errorf("outputing %q to %q: %w", output.Name, output.ExpectedPath, err)
 									}
 									fmt.Println("Generated", output.ExpectedPath)
