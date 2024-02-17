@@ -5,7 +5,7 @@ go_library(
     srcs = ["unreal_lister.go"],
     importpath = "github.com/cristiandonosoc/gochart/cmd/internal/unreal_lister",
     visibility = ["//visibility:private"],
-    deps = ["//internal/unreal"],
+    deps = ["@com_github_cristiandonosoc_gunreal//pkg/unreal:go_default_library"],
 )
 
 go_binary(

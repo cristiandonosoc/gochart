@@ -32,10 +32,16 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
 
+
 load("//:deps.bzl", "go_dependencies")
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
+
+
+load("//:local_deps.bzl", "go_local_dependencies")
+go_local_dependencies()
+
 
 # Gtest --------------------------------------------------------------------------------------------
 

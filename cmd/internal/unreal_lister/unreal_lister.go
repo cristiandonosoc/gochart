@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cristiandonosoc/gochart/internal/unreal"
+	"github.com/cristiandonosoc/gunreal/pkg/unreal"
 )
 
 func internalMain() error {
@@ -23,7 +23,7 @@ func internalMain() error {
 
 	start := time.Now()
 
-	project, err := unreal.IndexUnrealProject(ctx, projectDir)
+	project, err := unreal.IndexProject(ctx, projectDir)
 	if err != nil {
 		return fmt.Errorf("indexing unreal project at %q: %w", projectDir, err)
 	}
@@ -31,7 +31,7 @@ func internalMain() error {
 	duration := time.Since(start)
 
 	// Go over the modules, but in a sorted fashion.
-	modules := make([]*unreal.UnrealModule, 0, len(project.Modules))
+	modules := make([]*unreal.Module, 0, len(project.Modules))
 
 	for _, module := range project.Modules {
 		modules = append(modules, module)
