@@ -74,8 +74,8 @@ func (uf *File) Name() string {
 	return strings.TrimSuffix(base, extension)
 }
 
-// InternalPath is the path of the file _within_ the module (basically stripping the module path).
-func (uf *File) InternalPath() string {
+// ModulePath is the path of the file _within_ the module (basically stripping the module path).
+func (uf *File) ModulePath() string {
 	return strings.TrimPrefix(uf.Path, uf.Module.BaseDir)
 }
 
