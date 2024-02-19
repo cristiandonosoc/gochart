@@ -24,4 +24,5 @@ jobs:
       env:
         CC: gcc-13    # C++20 support.
         CXX: g++-13
+        GOCHART_TEST_TMP_DIR: ${{ runner.temp }}
       run: bazel test //...
