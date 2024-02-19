@@ -19,11 +19,7 @@ import (
 )
 
 func TestList(t *testing.T) {
-	// Create a temp directory
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-
-	tmp, err := os.MkdirTemp(pwd, "unreal-test-list")
+	tmp, err := os.MkdirTemp("", "unreal-test-list")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmp)
 
