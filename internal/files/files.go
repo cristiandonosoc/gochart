@@ -47,19 +47,31 @@ func StatFile(path string) (fs.FileInfo, bool, error) {
 
 // CopyFile
 func CopyFile(src, dst string) error {
-	return CopyFileAdvanced(src, dst, CopyFileAdvancedOptions{
-		Sync: false,
-	})
+	return CopyFileAdvanced(src, dst, nil)
 }
 
 type CopyFileAdvancedOptions struct {
 	// DstCreateDir determines whether to try to create the owning directory of the dst file.
-	DstCreateDir bool
+	DstCreateDir         bool
+	DstCreateDirFileMode fs.FileMode
+
 	// Sync ensures any buffered data is sent immediatelly.
 	Sync bool
 }
 
-func CopyFileAdvanced(src, dst string, options CopyFileAdvancedOptions) error {
+var (
+	GDefaultCopyFileAdvancedOptions = CopyFileAdvancedOptions{
+		DstCreateDir:         false,
+		DstCreateDirFileMode: 0755,
+		Sync:                 false,
+	}
+)
+
+func CopyFileAdvanced(src, dst string, options *CopyFileAdvancedOptions) error {
+	if options == nil {
+		options = &GDefaultCopyFileAdvancedOptions
+	}
+
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening %q: %w", src, err)
@@ -68,7 +80,7 @@ func CopyFileAdvanced(src, dst string, options CopyFileAdvancedOptions) error {
 
 	if options.DstCreateDir {
 		dir := filepath.Dir(dst)
-		if err := os.MkdirAll(dir, fs.ModeDir); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("mkdirall %q: %w", dir, err)
 		}
 	}
@@ -126,9 +138,9 @@ func CopyDirRecursive(from, to string) error {
 		dst := filepath.Join(to, file)
 
 		options := CopyFileAdvancedOptions{
-			DstCreateDir: true,
+			DstCreateDir:         true,
 		}
-		if err := CopyFileAdvanced(src, dst, options); err != nil {
+		if err := CopyFileAdvanced(src, dst, &options); err != nil {
 			return fmt.Errorf("copying %q -> %q: %w", src, dst, err)
 		}
 	}
