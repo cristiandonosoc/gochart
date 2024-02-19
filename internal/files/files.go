@@ -68,7 +68,7 @@ func CopyFileAdvanced(src, dst string, options CopyFileAdvancedOptions) error {
 
 	if options.DstCreateDir {
 		dir := filepath.Dir(dst)
-		if err := os.MkdirAll(dir, 0644); err != nil {
+		if err := os.MkdirAll(dir, fs.ModeDir); err != nil {
 			return fmt.Errorf("mkdirall %q: %w", dir, err)
 		}
 	}
