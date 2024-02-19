@@ -89,12 +89,18 @@ func (cpp *cppGochartBackend) Generate(ctx context.Context, gc *ir.Gochart, opts
 	}
 
 	config := &cpp_gen.Config{
-		Version:           cpp.options.Version,
+		Metadata: &common.Metadata{
+			Version: cpp.options.Version,
+		},
 		Time:              cpp.options.Time,
 		OutputDir:         cpp.options.OutputDir,
 		FilePrefix:        cpp.options.FilePrefix,
 		GenerateOutputDir: false,
 		Verbose:           cpp.options.Verbose,
+	}
+
+	if err := config.Metadata.Validate(); err != nil {
+		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
 	outputs, err := cpp_gen.Generate(gc, config)

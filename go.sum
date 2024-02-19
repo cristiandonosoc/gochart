@@ -8,10 +8,10 @@ github.com/bazelbuild/rules_go v0.41.0 h1:JzlRxsFNhlX+g4drDRPhIaU5H5LnI978wdMJ0v
 github.com/bazelbuild/rules_go v0.41.0/go.mod h1:TMHmtfpvyfsxaqfL9WnahCsXMWDMICTw7XeK9yVb+YU=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
-github.com/cristiandonosoc/golib v0.1.0 h1:zZ6eErGZBLulusM+a4hPZoG31IJ4NiIa8T7VF6BeQD4=
-github.com/cristiandonosoc/golib v0.1.0/go.mod h1:2GRJUzRU5gzDsEYxt72NeMrfev5GmsgjyyfIfE2vZEI=
-github.com/cristiandonosoc/gunreal v0.1.0 h1:XZxYNNh68SPkfb2Gl9WlKvMjglQ7yJjrUSROr77j71k=
-github.com/cristiandonosoc/gunreal v0.1.0/go.mod h1:zYH/TI0Wj+6SpzHj4OBDQwl8a3DiesTdhQVztfwBWbU=
+github.com/cristiandonosoc/golib v0.1.2 h1:04AcjoxtPOx8esNoWUIUmgdTDB973N6sUPQttBYErl4=
+github.com/cristiandonosoc/golib v0.1.2/go.mod h1:2GRJUzRU5gzDsEYxt72NeMrfev5GmsgjyyfIfE2vZEI=
+github.com/cristiandonosoc/gunreal v0.1.1 h1:HdvikIAjjnl1lUffibkSKP2J7xl/NUaWWzM0uv5UCEQ=
+github.com/cristiandonosoc/gunreal v0.1.1/go.mod h1:PA1I8k9xdmQs7NkDeRHF85IH6ICF/m0AwWOS5xsbkwI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

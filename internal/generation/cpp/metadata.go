@@ -9,30 +9,27 @@ import (
 )
 
 const (
-	kHeaderBeginMarker = "GOCHART_HEADER_START"
-	kHeaderEndMarker   = "GOCHART_HEADER_END"
+	kMetadataHeader_BeginMarker = "GOCHART_HEADER_START"
+	kMetadataHeader_EndMarker   = "GOCHART_HEADER_END"
 
-	kVersionKey = "GOCHART_VERSION"
+	kMetadataKey_Version      = "GOCHART_VERSION"
+	kMetadataKey_UnrealModule = "GOCHART_UNREAL_MODULE"
+	kMetadataKey_ModulePath   = "GOCHART_MODULE_PATH"
 )
 
-func LoadMetadata(bo *common.BackendOutput) error {
-	if bo.Metadata != nil {
-		return nil
-	}
-
+func ReadMetadata(bo *common.BackendOutput) (*common.Metadata, error) {
 	if !bo.IsLoadedFromDisk() {
 		if err := bo.LoadFromDisk(); err != nil {
-			return fmt.Errorf("loading file: %w", err)
+			return nil, fmt.Errorf("loading file: %w", err)
 		}
 	}
 
 	metadata, err := parseLines(bo)
 	if err != nil {
-		return fmt.Errorf("parsing lines for metadata: %w", err)
+		return nil, fmt.Errorf("parsing lines for metadata: %w", err)
 	}
 
-	bo.Metadata = metadata
-	return nil
+	return metadata, nil
 }
 
 func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
@@ -59,7 +56,7 @@ func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
 
 		// Search for the begin marker.
 		if !foundBeginMarker {
-			if strings.Contains(line, kHeaderBeginMarker) {
+			if strings.Contains(line, kMetadataHeader_BeginMarker) {
 				foundBeginMarker = true
 			}
 
@@ -67,7 +64,7 @@ func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
 		}
 
 		// Check if we're not done with the header.
-		if strings.Contains(line, kHeaderEndMarker) {
+		if strings.Contains(line, kMetadataHeader_EndMarker) {
 			foundEndMarker = true
 			break
 		}
@@ -79,9 +76,9 @@ func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
 	}
 
 	if !foundBeginMarker {
-		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kHeaderBeginMarker)
+		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kMetadataHeader_BeginMarker)
 	} else if !foundEndMarker {
-		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kHeaderEndMarker)
+		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kMetadataHeader_EndMarker)
 	}
 
 	return metadata, nil
@@ -101,8 +98,12 @@ func parseMetadataLine(metadata *common.Metadata, line string) error {
 	value := matches[2]
 
 	switch key {
-	case kVersionKey:
+	case kMetadataKey_Version:
 		metadata.Version = value
+	case kMetadataKey_UnrealModule:
+		metadata.UnrealModule = value
+	case kMetadataKey_ModulePath:
+		metadata.GochartModulePath = value
 	default:
 		return fmt.Errorf("unknown header key %q", key)
 	}

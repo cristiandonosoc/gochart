@@ -19,7 +19,7 @@ go_library(
     deps = [
         "//pkg/backend/common",
         "//pkg/ir",
-        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_masterminds_sprig_v3//:sprig",
     ],
 )

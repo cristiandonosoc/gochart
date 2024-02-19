@@ -1,5 +1,7 @@
 name: pull request tests
 on: [pull_request]
+permissions: write-all
+
 jobs:
   gofmt:
     name: Run gofmt
@@ -24,4 +26,5 @@ jobs:
       env:
         CC: gcc-13    # C++20 support.
         CXX: g++-13
-      run: bazel test //...
+        GOCHART_TEST_TMP_DIR: ${{ runner.temp }}
+      run: bazel test //... --test_env=GOCHART_TEST_TMP_DIR

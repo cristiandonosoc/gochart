@@ -146,37 +146,52 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 	}
 
 	// Get where the files would be generated.
-	cppGenConfig := &cpp_gen.Config{
+
+	metadata := &common.Metadata{
 		Version:           ugb.options.Version,
+		IsUnrealGochart:   true,
+		UnrealModule:      gochart.Module.Name,
+		GochartModulePath: gochart.ModulePath(),
+	}
+
+	cppGenConfig := &cpp_gen.Config{
+		Metadata:          metadata,
 		Time:              ugb.options.Time,
 		OutputDir:         outputDir,
 		FilePrefix:        gochart.Name(),
 		GenerateOutputDir: true,
 	}
+
+	if err := cppGenConfig.Metadata.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("validating config: %w", err)
+	}
+
 	expectedOutputs, err := cpp_gen.CalculateExpectedPaths(cppGenConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("calculating expected outputs: %w", err)
 	}
 
 	for _, expectedOutput := range expectedOutputs {
-		stat, err := files.StatFile(expectedOutput.ExpectedPath)
+		stat, found, err := files.StatFile(expectedOutput.ExpectedPath)
 		if err != nil {
 			return nil, nil, fmt.Errorf("stating %q: %w", expectedOutput.ExpectedPath, err)
 		}
 
 		// If the file doesn't exist, it must be regenerated.
-		if stat == nil {
+		if !found {
 			continue
 		}
 
 		// Since the file is in disk, we check if it was made by the same version.
 		if expectedOutput.Metadata == nil {
-			if err := cpp_gen.LoadMetadata(expectedOutput); err != nil {
+			metadata, err := cpp_gen.ReadMetadata(expectedOutput)
+			if err != nil {
 				return nil, nil, fmt.Errorf("loading metadata for %q: %w", expectedOutput.ExpectedPath, err)
 			}
+			expectedOutput.Metadata = metadata
 		}
 
-		// If they were n ot made by the same version, we know it must be regenerated.
+		// If they were not made by the same version, we know it must be regenerated.
 		if expectedOutput.Metadata.Version != build.BuildVersion() {
 			continue
 		}
@@ -185,6 +200,8 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 		if gochart.FileInfo.ModTime().Before(stat.ModTime()) {
 			expectedOutput.UpToDate = true
 		}
+
+		expectedOutput.Metadata.IsUnrealGochart = true
 	}
 
 	goutput := &GochartOutput{
@@ -252,12 +269,12 @@ func calculateGochartOutputDir(project *unreal.Project, platform unreal.Platform
 		dir = filepath.Join(project.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc")
 
 		// Then we get to the per module place and internal path.
-		dir = filepath.Join(dir, gochart.Module.Name, "UHT", filepath.Dir(gochart.InternalPath()))
+		dir = filepath.Join(dir, gochart.Module.Name, "UHT", filepath.Dir(gochart.ModulePath()))
 	case GenerationStrategy_Inline:
 		dir = filepath.Dir(gochart.Path)
 	case GenerationStrategy_ModuleGeneratedDir:
 		dir = filepath.Join(gochart.Module.BaseDir, "Generated")
-		dir = filepath.Join(dir, filepath.Dir(gochart.InternalPath()))
+		dir = filepath.Join(dir, filepath.Dir(gochart.ModulePath()))
 	default:
 		return "", fmt.Errorf("unknown generation strategy: %s", strategy)
 	}

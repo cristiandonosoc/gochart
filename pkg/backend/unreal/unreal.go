@@ -5,6 +5,7 @@ package unreal
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -201,6 +202,10 @@ func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option
 
 		goutputs = append(goutputs, goutput)
 	}
+
+	sort.Slice(goutputs, func(i, j int) bool {
+		return goutputs[i].Gochart.Name() < goutputs[j].Gochart.Name()
+	})
 
 	return goutputs, nil
 }

@@ -9,12 +9,42 @@ import (
 )
 
 type Metadata struct {
-	// What version of Gochart was used to generate this file.
+	// Version establishes of Gochart was used to generate this file.
 	Version string
+
+	// IsUnrealGochart determines whether this is a gochart generated as part of an unreal project.
+	IsUnrealGochart bool
+
+	// UnrealModule represents the module name where this gochart has been installed in.
+	// Only required when |IsUnrealGochart| is true.
+	UnrealModule string
+
+	// ModulePath is the module internal path to the gochart file.
+	// This can be used to determine whether the generation gochart file still exists.
+	// Only required when |IsUnrealGochart| is true.
+	GochartModulePath string
+}
+
+func (m *Metadata) Validate() error {
+	if m.Version == "" {
+		return fmt.Errorf("missing version")
+	}
+
+	if m.IsUnrealGochart {
+		if m.UnrealModule == "" {
+			return fmt.Errorf("missing unreal module")
+		}
+
+		if m.GochartModulePath == "" {
+			return fmt.Errorf("missing module path")
+		}
+	}
+
+	return nil
 }
 
 // BackendOutput represents an output file as calculated by a backend.
-// Has all the information needed so that callers can take appropiate actions, such as printing
+// Has all the information needed so that callers can take appropriate actions, such as printing
 // them, writing them to files, etc.
 type BackendOutput struct {
 	Name string

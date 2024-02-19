@@ -18,7 +18,8 @@ const (
 )
 
 type Config struct {
-	Version           string
+    Metadata *common.Metadata
+
 	Time              time.Time
 	OutputDir         string
 	FilePrefix        string
@@ -27,9 +28,13 @@ type Config struct {
 }
 
 func (c *Config) validate() error {
-	if c.Version == "" {
-		return fmt.Errorf("missing version")
-	}
+    if c.Metadata == nil {
+        return fmt.Errorf("no metadata present!")
+    }
+
+    if err := c.Metadata.Validate(); err != nil {
+        return fmt.Errorf("validating metadata: %w", err)
+    }
 
 	if c.Time.IsZero() {
 		return fmt.Errorf("non set time")

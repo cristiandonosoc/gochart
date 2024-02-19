@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//internal/option",
         "//pkg/frontend/common",
-        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_golib//pkg/files",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

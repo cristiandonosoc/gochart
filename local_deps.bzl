@@ -6,10 +6,17 @@ load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 def go_local_dependencies():
     pass
-#    go_repository(
-#        name = "com_github_cristiandonosoc_gunreal",
-#        importpath = "github.com/cristiandonosoc/gunreal",
-#        vcs = "git",
-#        remote = "D:\\projects\\go\\gunreal",
-#        commit = "80a15b903f6b3c7f4e5bf834cdcb757e95f1c19f",
-#    )
+    # go_repository(
+    #     name = "com_github_cristiandonosoc_golib",
+    #     importpath = "github.com/cristiandonosoc/golib",
+    #     vcs = "git",
+    #     remote = "/home/cdc/projects/golib",
+    #     commit = "0e389513eeb4d7a12998a01f7e86744ef33244f7",
+    # )
+    # go_repository(
+    #     name = "com_github_cristiandonosoc_gunreal",
+    #     importpath = "github.com/cristiandonosoc/gunreal",
+    #     vcs = "git",
+    #     remote = "D:\\projects\\go\\gunreal",
+    #     commit = "5f38dcaab0b7dc072f31587b86ccc407e0e53596",
+    # )
