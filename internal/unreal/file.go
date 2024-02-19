@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
 const (
@@ -76,7 +78,8 @@ func (uf *File) Name() string {
 
 // ModulePath is the path of the file _within_ the module (basically stripping the module path).
 func (uf *File) ModulePath() string {
-	return strings.TrimPrefix(uf.Path, uf.Module.BaseDir)
+	path := files.ToUnixPath(strings.TrimPrefix(uf.Path, uf.Module.BaseDir))
+	return strings.TrimPrefix(path, "/")
 }
 
 // Exists returns whether the given file exists in disk or not.

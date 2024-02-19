@@ -62,9 +62,9 @@ func (up *Project) NewFile(path string) (*File, error) {
 		module = m
 	}
 
-	stat, err := files.StatFile(path)
-	if err != nil {
-		return nil, err
+	stat, found, err := files.StatFile(path)
+	if err != nil || !found {
+		return nil, fmt.Errorf("stating %q: %w (found: %t)", path, err, found)
 	}
 
 	return &File{
