@@ -147,12 +147,21 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 
 	// Get where the files would be generated.
 	cppGenConfig := &cpp_gen.Config{
-		Version:           ugb.options.Version,
+		Metadata: &common.Metadata{
+			Version:      ugb.options.Version,
+			UnrealModule: gochart.Module.Name,
+			ModulePath:   gochart.ModulePath(),
+		},
 		Time:              ugb.options.Time,
 		OutputDir:         outputDir,
 		FilePrefix:        gochart.Name(),
 		GenerateOutputDir: true,
 	}
+
+	if err := cppGenConfig.Metadata.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("validating config: %w", err)
+	}
+
 	expectedOutputs, err := cpp_gen.CalculateExpectedPaths(cppGenConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("calculating expected outputs: %w", err)
@@ -176,7 +185,7 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 			}
 		}
 
-		// If they were n ot made by the same version, we know it must be regenerated.
+		// If they were not made by the same version, we know it must be regenerated.
 		if expectedOutput.Metadata.Version != build.BuildVersion() {
 			continue
 		}
@@ -252,12 +261,12 @@ func calculateGochartOutputDir(project *unreal.Project, platform unreal.Platform
 		dir = filepath.Join(project.ProjectDir, "Intermediate", "Build", string(platform), "UnrealEditor", "Inc")
 
 		// Then we get to the per module place and internal path.
-		dir = filepath.Join(dir, gochart.Module.Name, "UHT", filepath.Dir(gochart.InternalPath()))
+		dir = filepath.Join(dir, gochart.Module.Name, "UHT", filepath.Dir(gochart.ModulePath()))
 	case GenerationStrategy_Inline:
 		dir = filepath.Dir(gochart.Path)
 	case GenerationStrategy_ModuleGeneratedDir:
 		dir = filepath.Join(gochart.Module.BaseDir, "Generated")
-		dir = filepath.Join(dir, filepath.Dir(gochart.InternalPath()))
+		dir = filepath.Join(dir, filepath.Dir(gochart.ModulePath()))
 	default:
 		return "", fmt.Errorf("unknown generation strategy: %s", strategy)
 	}

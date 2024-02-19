@@ -33,7 +33,6 @@ func Runfiles(dir string) ([]string, error) {
 			}
 
 			candidates = append(candidates, rf.Path)
-
 		}
 	} else {
 		// Otherwise we open the dir and list it.

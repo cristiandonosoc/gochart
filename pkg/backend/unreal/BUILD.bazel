@@ -16,7 +16,7 @@ go_library(
         "//pkg/frontend",
         "//pkg/frontend/gochart_lang",
         "//pkg/ir",
-        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_cristiandonosoc_gunreal//pkg/unreal:go_default_library",
         "@org_golang_x_sync//errgroup",
     ],

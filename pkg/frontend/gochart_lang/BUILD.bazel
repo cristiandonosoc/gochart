@@ -15,7 +15,7 @@ go_library(
         "//internal/errors",
         "//internal/option",
         "//pkg/frontend/common",
-        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_golib//pkg/files",
     ],
 )
 
@@ -30,7 +30,7 @@ go_test(
     deps = [
         "//internal/test_support",
         "//pkg/frontend/common",
-        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
