@@ -6,34 +6,47 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"github.com/cristiandonosoc/golib/pkg/files"
 )
 
+var bazelCheckOnce sync.Once
+var gRunningAsBazelTest bool
+
+func runningAsBazelTest() bool {
+	bazelCheckOnce.Do(func() {
+		gRunningAsBazelTest = os.Getenv("BAZEL_TEST") == "1"
+	})
+
+	return gRunningAsBazelTest
+}
+
 func toUnix(path string) string {
 	return strings.ReplaceAll(path, "\\", "/")
+}
+
+// TestTmpDir returns a valid base string to be fed to os.MkdirTemp.
+func TestTmpBase() string {
+	if runningAsBazelTest() {
+		return os.Getenv("TEST_TMPDIR")
+	}
+
+	// Fallback to the system default.
+	return ""
 }
 
 // Runfiles returns a list of all the runfiles associated with this test that contains |dir|.
 // Typical use is Runfiles("testdata")
 func Runfiles(dir string) ([]string, error) {
-	// We attempt to query Bazel to see if it can find runfiles.
-	runfiles, err := bazel.ListRunfiles()
-	if err != nil {
-		return nil, fmt.Errorf("listing runfiles: %w", err)
-	}
-
 	var candidates []string
-
-	if len(runfiles) > 0 {
-		for _, rf := range runfiles {
-			if !strings.Contains(toUnix(rf.ShortPath), dir) {
-				continue
-			}
-
-			candidates = append(candidates, rf.Path)
+	if runningAsBazelTest() {
+		bazelCandidates, err := bazelCandidatesRunfiles(dir)
+		if err != nil {
+			return nil, fmt.Errorf("reading bazel runfiles: %w", err)
 		}
+		candidates = bazelCandidates
 	} else {
 		// Otherwise we open the dir and list it.
 		entries, err := os.ReadDir(dir)
@@ -56,6 +69,7 @@ func Runfiles(dir string) ([]string, error) {
 
 		if stat.IsDir() {
 			continue
+
 		}
 
 		result = append(result, candidate)
@@ -64,24 +78,48 @@ func Runfiles(dir string) ([]string, error) {
 	return result, nil
 }
 
-// RunfilePath tries to find a testdata file in a build system agnostic way, working for both Bazel
-// environments and default Go ones.
-func RunfilePath(path string) (string, error) {
+func bazelCandidatesRunfiles(dir string) ([]string, error) {
 	// We attempt to query Bazel to see if it can find runfiles.
 	runfiles, err := bazel.ListRunfiles()
 	if err != nil {
-		return "", fmt.Errorf("listing runfiles: %w", err)
+		return nil, fmt.Errorf("listing runfiles: %w", err)
 	}
 
-	// If we get runfiles, then we are running in a Bazel mode, so we return the files from there.
+	var candidates []string
 	if len(runfiles) > 0 {
-		// Bazel returns the runfiles as relative from the workspace root, so for now we do a simple
-		// suffix match. This might need some more thought in the future.
-		path = toUnix(path)
 		for _, rf := range runfiles {
-			if strings.HasSuffix(toUnix(rf.Path), path) {
-				return rf.Path, nil
+			if !strings.Contains(toUnix(rf.ShortPath), dir) {
+				continue
 			}
+
+			candidates = append(candidates, rf.Path)
+		}
+	}
+
+	return candidates, nil
+}
+
+// RunfilePath tries to find a testdata file in a build system agnostic way, working for both Bazel
+// environments and default Go ones.
+func RunfilePath(path string) (string, error) {
+	if runningAsBazelTest() {
+		// We attempt to query Bazel to see if it can find runfiles.
+		runfiles, err := bazel.ListRunfiles()
+		if err != nil {
+			return "", fmt.Errorf("listing runfiles: %w", err)
+		}
+
+		// If we get runfiles, then we are running in a Bazel mode, so we return the files from there.
+		if len(runfiles) > 0 {
+			// Bazel returns the runfiles as relative from the workspace root, so for now we do a simple
+			// suffix match. This might need some more thought in the future.
+			path = toUnix(path)
+			for _, rf := range runfiles {
+				if strings.HasSuffix(toUnix(rf.Path), path) {
+					return rf.Path, nil
+				}
+			}
+
 		}
 
 		return "", fmt.Errorf("cannot find %q", path)

@@ -10,8 +10,8 @@ def go_local_dependencies():
     #     name = "com_github_cristiandonosoc_golib",
     #     importpath = "github.com/cristiandonosoc/golib",
     #     vcs = "git",
-    #     remote = "D:\\projects\\go\\golib",
-    #     commit = "e804c8220979431253d13177bce6209bda18a483",
+    #     remote = "/home/cdc/projects/golib",
+    #     commit = "0e389513eeb4d7a12998a01f7e86744ef33244f7",
     # )
     # go_repository(
     #     name = "com_github_cristiandonosoc_gunreal",

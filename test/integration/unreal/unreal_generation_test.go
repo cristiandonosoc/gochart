@@ -19,7 +19,7 @@ import (
 )
 
 func TestList(t *testing.T) {
-	tmpBase := os.Getenv("GOCHART_TEST_TMP_DIR")
+	tmpBase := test_support.TestTmpBase()
 	tmp, err := os.MkdirTemp(tmpBase, "unreal-test-list")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmp)
