@@ -1,5 +1,7 @@
 name: pull request tests
 on: [pull_request]
+permissions: write-all
+
 jobs:
   gofmt:
     name: Run gofmt
