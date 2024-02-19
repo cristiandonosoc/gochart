@@ -22,7 +22,7 @@ type Metadata struct {
 	// ModulePath is the module internal path to the gochart file.
 	// This can be used to determine whether the generation gochart file still exists.
 	// Only required when |IsUnrealGochart| is true.
-	ModulePath string
+	GochartModulePath string
 }
 
 func (m *Metadata) Validate() error {
@@ -35,7 +35,7 @@ func (m *Metadata) Validate() error {
 			return fmt.Errorf("missing unreal module")
 		}
 
-		if m.ModulePath == "" {
+		if m.GochartModulePath == "" {
 			return fmt.Errorf("missing module path")
 		}
 	}

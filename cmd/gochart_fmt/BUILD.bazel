@@ -9,7 +9,7 @@ go_library(
         "//pkg/backend/formatter",
         "//pkg/frontend/gochart_lang",
         "//pkg/ir",
-        "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_urfave_cli_v2//:cli",
     ],
 )

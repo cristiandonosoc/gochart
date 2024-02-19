@@ -11,6 +11,6 @@ go_library(
         "//pkg/backend/common",
         "//pkg/frontend",
         "//pkg/ir",
-        "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
     ],
 )

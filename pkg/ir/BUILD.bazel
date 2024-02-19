@@ -17,7 +17,7 @@ go_library(
         "//internal/errors",
         "//internal/printer",
         "//pkg/frontend/common",
-        "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_stretchr_testify//assert",
     ],
 )
@@ -35,7 +35,7 @@ go_test(
         "//pkg/frontend/common",
         "//pkg/frontend/gochart_lang",
         "//pkg/frontend/yaml",
-        "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

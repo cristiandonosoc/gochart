@@ -1,0 +1,21 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+using UnrealBuildTool;
+using System.Collections.Generic;
+
+public class GochartTestTarget : TargetRules
+{
+	public GochartTestTarget(TargetInfo Target) : base(Target)
+	{
+		Type = TargetType.Game;
+		DefaultBuildSettings = BuildSettingsVersion.V4;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_3;
+		ExtraModuleNames.Add("GochartTest");
+		RegisterModulesCreatedByRider();
+	}
+
+	private void RegisterModulesCreatedByRider()
+	{
+		ExtraModuleNames.AddRange(new string[] { "GochartTestEditor" });
+	}
+}

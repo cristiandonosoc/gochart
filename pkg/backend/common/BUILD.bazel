@@ -5,5 +5,5 @@ go_library(
     srcs = ["common.go"],
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/common",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_cristiandonosoc_golib//pkg/files"],
+    deps = ["@com_github_cristiandonosoc_golib//pkg/files:go_default_library"],
 )

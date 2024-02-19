@@ -79,7 +79,7 @@ func RunfilePath(path string) (string, error) {
 		// suffix match. This might need some more thought in the future.
 		path = toUnix(path)
 		for _, rf := range runfiles {
-			if strings.HasSuffix(toUnix(rf.ShortPath), path) {
+			if strings.HasSuffix(toUnix(rf.Path), path) {
 				return rf.Path, nil
 			}
 		}
@@ -88,6 +88,10 @@ func RunfilePath(path string) (string, error) {
 	}
 
 	// If not, we attempt to find the file normally, as that would work for normal Go invocations.
+	if _, found, err := files.StatFile(path); err != nil || !found {
+		return "", fmt.Errorf("stat %q: %w (found: %t)", path, err, found)
+	}
+
 	return path, nil
 }
 

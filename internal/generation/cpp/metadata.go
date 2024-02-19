@@ -17,24 +17,19 @@ const (
 	kMetadataKey_ModulePath   = "GOCHART_MODULE_PATH"
 )
 
-func LoadMetadata(bo *common.BackendOutput) error {
-	if bo.Metadata != nil {
-		return nil
-	}
-
+func ReadMetadata(bo *common.BackendOutput) (*common.Metadata, error) {
 	if !bo.IsLoadedFromDisk() {
 		if err := bo.LoadFromDisk(); err != nil {
-			return fmt.Errorf("loading file: %w", err)
+			return nil, fmt.Errorf("loading file: %w", err)
 		}
 	}
 
 	metadata, err := parseLines(bo)
 	if err != nil {
-		return fmt.Errorf("parsing lines for metadata: %w", err)
+		return nil, fmt.Errorf("parsing lines for metadata: %w", err)
 	}
 
-	bo.Metadata = metadata
-	return nil
+	return metadata, nil
 }
 
 func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
@@ -108,7 +103,7 @@ func parseMetadataLine(metadata *common.Metadata, line string) error {
 	case kMetadataKey_UnrealModule:
 		metadata.UnrealModule = value
 	case kMetadataKey_ModulePath:
-		metadata.ModulePath = value
+		metadata.GochartModulePath = value
 	default:
 		return fmt.Errorf("unknown header key %q", key)
 	}

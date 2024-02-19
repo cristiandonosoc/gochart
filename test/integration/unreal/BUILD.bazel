@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "unreal_test",
+    srcs = ["unreal_generation_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        "//internal/build",
+        "//internal/option",
+        "//internal/test_support",
+        "//pkg/backend/common",
+        "//pkg/backend/unreal",
+        "@com_github_cristiandonosoc_golib//pkg/files:go_default_library",
+        "@com_github_cristiandonosoc_gunreal//pkg/unreal:go_default_library",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
