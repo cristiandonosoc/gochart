@@ -33,6 +33,19 @@ def go_dependencies():
     #)
 
     go_repository(
+        name = "com_github_cristiandonosoc_golib",
+        importpath = "github.com/cristiandonosoc/golib",
+        sum = "h1:60jmdF+9Z+vtt4rH+Zln3WI1bI/ry02iwfFT6ERtc2o=",
+        version = "v0.1.1",
+    )
+    go_repository(
+        name = "com_github_cristiandonosoc_gunreal",
+        importpath = "github.com/cristiandonosoc/gunreal",
+        sum = "h1:HdvikIAjjnl1lUffibkSKP2J7xl/NUaWWzM0uv5UCEQ=",
+        version = "v0.1.1",
+    )
+
+    go_repository(
         name = "com_github_davecgh_go_spew",
         importpath = "github.com/davecgh/go-spew",
         sum = "h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=",
