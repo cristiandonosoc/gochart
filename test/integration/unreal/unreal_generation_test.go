@@ -8,10 +8,10 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/build"
 	"github.com/cristiandonosoc/gochart/internal/option"
-	"github.com/cristiandonosoc/gochart/internal/test_support"
 	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
 	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/golib/pkg/test_support"
 	"github.com/cristiandonosoc/gunreal/pkg/unreal"
 
 	"github.com/stretchr/testify/assert"

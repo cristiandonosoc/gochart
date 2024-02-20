@@ -9,13 +9,14 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 	"github.com/cristiandonosoc/golib/pkg/files"
+	golib_test_support "github.com/cristiandonosoc/golib/pkg/test_support"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogicalErrors(t *testing.T) {
-	runfiles, err := test_support.Runfiles("testdata")
+	runfiles, err := golib_test_support.Runfiles("testdata")
 	require.NoError(t, err)
 
 	gf, err := gochart_lang.NewGochartLangFrontend()
