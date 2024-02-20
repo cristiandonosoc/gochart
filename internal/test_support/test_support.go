@@ -17,7 +17,29 @@ var gRunningAsBazelTest bool
 
 func runningAsBazelTest() bool {
 	bazelCheckOnce.Do(func() {
-		gRunningAsBazelTest = os.Getenv("BAZEL_TEST") == "1"
+		// Sadly this is not send on windows, so we rely on one of the other environment variables
+		// sent by Bazel as a proxy.
+		// See https://github.com/bazelbuild/bazel/issues/21420
+		if os.Getenv("BAZEL_TEST") == "1" {
+			gRunningAsBazelTest = true
+			return
+		}
+
+		// We use a couple of the "Bazel envs". This should give use "some" level of confidence.
+		envs := []string{
+			"TEST_TARGET",
+			"TEST_WORKSPACE",
+			"TEST_TMPDIR",
+		}
+
+		for _, env := range envs {
+			// As soon of any of this is empty, we assume we're not running on Bazel.
+			if os.Getenv(env) == "" {
+				return
+			}
+		}
+
+		gRunningAsBazelTest = true
 	})
 
 	return gRunningAsBazelTest
@@ -26,7 +48,7 @@ func runningAsBazelTest() bool {
 // TestTmpDir returns a valid base string to be fed to os.MkdirTemp.
 func TestTmpBase() string {
 	if runningAsBazelTest() {
-		return os.Getenv("TEST_TMPDIR")
+		os.Getenv("TEST_TMPDIR")
 	}
 
 	// Fallback to the system default.
