@@ -2,15 +2,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "test_support",
-    srcs = [
-        "bazel.go",
-        "inlined_errors.go",
-    ],
+    srcs = ["inlined_errors.go"],
     importpath = "github.com/cristiandonosoc/gochart/internal/test_support",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "@com_github_cristiandonosoc_golib//pkg/files",
-        "@com_github_stretchr_testify//require",
-        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
-    ],
+    deps = ["@com_github_stretchr_testify//require"],
 )

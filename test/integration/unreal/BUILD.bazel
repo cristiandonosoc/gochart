@@ -8,10 +8,10 @@ go_test(
     deps = [
         "//internal/build",
         "//internal/option",
-        "//internal/test_support",
         "//pkg/backend/common",
         "//pkg/backend/unreal",
         "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/test_support",
         "@com_github_cristiandonosoc_gunreal//pkg/unreal",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

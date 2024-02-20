@@ -28,9 +28,9 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":gochart_lang"],
     deps = [
-        "//internal/test_support",
         "//pkg/frontend/common",
         "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/test_support",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
