@@ -71,8 +71,15 @@ func (fc *fileCache) QueryKey(key string) (bool, *LoadedFile) {
 // The key of the file will be the absolute path of the file.
 func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile, error) {
 	// Check if the file is already read.
-	if file, ok := fc.files[key]; ok {
-		return file, nil
+	if !overwrite {
+		if lf, ok := fc.files[key]; ok {
+			return lf, nil
+		}
+	}
+
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("statting %q: %w", path, err)
 	}
 
 	data, err := os.ReadFile(path)
@@ -80,7 +87,13 @@ func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile
 		return nil, fmt.Errorf("reading %q: %w", path, err)
 	}
 
-	return fc.NewFromData(key, data, overwrite)
+	lf, err := fc.NewFromData(key, data, overwrite)
+	if err != nil {
+		return nil, err
+	}
+
+	lf.Stat = stat
+	return lf, nil
 }
 
 // NewFromData creates a new loadedFile with the provided key and content.

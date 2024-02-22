@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/fs"
 )
 
 type LoadedFile struct {
@@ -12,6 +13,7 @@ type LoadedFile struct {
 	lines []string
 
 	FromFile bool
+	Stat     fs.FileInfo
 }
 
 // LoadedFilePosition represents a single position (character) within a loaded file.
