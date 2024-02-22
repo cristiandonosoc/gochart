@@ -161,8 +161,13 @@ type GochartOutput struct {
 }
 
 func (o *GochartOutput) UpToDate() bool {
+	modTime := o.Gochart.FileInfo.ModTime()
 	for _, output := range o.Outputs {
-		if !output.UpToDate {
+		if !output.IsLoaded() {
+			return false
+		}
+
+		if output.DiskContent.Stat.ModTime().Before(modTime) {
 			return false
 		}
 	}

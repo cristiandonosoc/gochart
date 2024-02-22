@@ -22,8 +22,8 @@ def go_dependencies():
     go_repository(
         name = "com_github_cristiandonosoc_golib",
         importpath = "github.com/cristiandonosoc/golib",
-        sum = "h1:11ov6ft8LawYHh5lJzVAFIb8+3f75NwAUGdcfTB6XmY=",
-        version = "v0.1.4",
+        sum = "h1:UknrLPb07LqXhbsMFCXR2XdS1MK46EzycQQ/FE1zEKo=",
+        version = "v0.1.5",
     )
     go_repository(
         name = "com_github_cristiandonosoc_gunreal",

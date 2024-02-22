@@ -10,7 +10,7 @@ go 1.21
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/cristiandonosoc/golib v0.1.4
+	github.com/cristiandonosoc/golib v0.1.5
 	github.com/cristiandonosoc/gunreal v0.1.1
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7

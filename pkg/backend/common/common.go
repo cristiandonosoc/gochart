@@ -4,6 +4,7 @@ package common
 import (
 	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
 )
@@ -23,6 +24,8 @@ type Metadata struct {
 	// This can be used to determine whether the generation gochart file still exists.
 	// Only required when |IsUnrealGochart| is true.
 	GochartModulePath string
+
+	Stat fs.FileInfo
 }
 
 func (m *Metadata) Validate() error {
@@ -50,8 +53,6 @@ type BackendOutput struct {
 	Name string
 	// ExpectedPath is the path where this output file should be written to.
 	ExpectedPath string
-	// Whether this file is already up to date in disk, so it was not generated.
-	UpToDate bool
 
 	Metadata *Metadata
 
@@ -59,12 +60,13 @@ type BackendOutput struct {
 	DiskContent *files.LoadedFile
 }
 
-func (bo *BackendOutput) IsLoadedFromDisk() bool {
+func (bo *BackendOutput) IsLoaded() bool {
 	return bo.DiskContent != nil
 }
 
-func (bo *BackendOutput) LoadFromDisk() error {
-	if bo.IsLoadedFromDisk() {
+// EnsureLoad makes sure that the file and metadata are loaded.
+func (bo *BackendOutput) EnsureLoadFromDisk() error {
+	if bo.IsLoaded() {
 		return nil
 	}
 

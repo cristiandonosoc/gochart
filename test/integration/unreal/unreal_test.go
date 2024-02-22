@@ -69,6 +69,7 @@ func copyProject(t *testing.T, dir string) {
 
 type testBuildDescription struct {
 	Platform   unreal.Platform
+	Version    string
 	ProjectDir string
 	Strategy   unreal_backend.GenerationStrategy
 }
@@ -80,31 +81,60 @@ type testGochartDescription struct {
 	ModulePath string
 }
 
-func calculateStrategyBaseDir(t *testing.T, build *testBuildDescription, gochart *testGochartDescription) string {
-	switch build.Strategy {
+func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGochartDescription) string {
+	switch bd.Strategy {
 	case unreal_backend.GenerationStrategy_Inline:
-		return filepath.Dir(gochart.Path)
+		return filepath.Dir(gd.Path)
 	case unreal_backend.GenerationStrategy_ModuleGeneratedDir:
-		return filepath.Join(build.ProjectDir, "Generated", filepath.Dir(gochart.Path))
+		return filepath.Join(bd.ProjectDir, "Generated", filepath.Dir(gd.Path))
 	case unreal_backend.GenerationStrategy_UHT:
-		base := filepath.Join(build.ProjectDir, "Intermediate", "Build", build.Platform.String(), "UnrealEditor", "Inc")
-		return filepath.Join(base, gochart.ModuleName, "UHT", filepath.Dir(gochart.ModulePath))
+		base := filepath.Join(bd.ProjectDir, "Intermediate", "Build", bd.Platform.String(), "UnrealEditor", "Inc")
+		return filepath.Join(base, gd.ModuleName, "UHT", filepath.Dir(gd.ModulePath))
 	}
 
-	t.Fatalf("unknown strategy %q", build.Strategy)
+	t.Fatalf("unknown strategy %q", bd.Strategy)
 	return ""
 }
 
-func obtainProjectGoutputs(t *testing.T, strategy unreal_backend.GenerationStrategy, projectDir string) []*unreal_backend.GochartOutput {
+func generateBackendOutputs(t *testing.T, bd *testBuildDescription, gd *testGochartDescription) []*backend_common.BackendOutput {
 	version := build.BuildVersion()
+	baseDir := calculateStrategyBaseDir(t, bd, gd)
 
-	build := &testBuildDescription{
+	metadata := &backend_common.Metadata{
+		Version:           version,
+		IsUnrealGochart:   true,
+		UnrealModule:      gd.ModuleName,
+		GochartModulePath: files.ToUnixPath(gd.ModulePath),
+	}
+
+	return []*backend_common.BackendOutput{
+		{
+			Name:         "forward_declare",
+			ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.forward_declare.h", gd.FilePrefix)),
+			Metadata:     metadata,
+		},
+		{
+			Name:         "declare",
+			ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.declare.h", gd.FilePrefix)),
+			Metadata:     metadata,
+		},
+		{
+			Name:         "define",
+			ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.define.h", gd.FilePrefix)),
+			Metadata:     metadata,
+		},
+	}
+}
+
+func obtainProjectGoutputs(t *testing.T, strategy unreal_backend.GenerationStrategy, projectDir string) []*unreal_backend.GochartOutput {
+	bd := &testBuildDescription{
 		Platform:   unreal.Platform_Windows,
+		Version:    build.BuildVersion(),
 		ProjectDir: projectDir,
 		Strategy:   strategy,
 	}
 
-	gocharts := []*testGochartDescription{
+	gds := []*testGochartDescription{
 		{
 			Path:       filepath.Join(projectDir, "Source", "GochartTest", "AnotherDir", "Counter.gochart"),
 			FilePrefix: "Counter",
@@ -119,44 +149,15 @@ func obtainProjectGoutputs(t *testing.T, strategy unreal_backend.GenerationStrat
 		},
 	}
 
-	generateBackendOutputs := func(t *testing.T, build *testBuildDescription, gochart *testGochartDescription) []*backend_common.BackendOutput {
-		baseDir := calculateStrategyBaseDir(t, build, gochart)
+	goutputs := make([]*unreal_backend.GochartOutput, 0, len(gds))
 
-		metadata := &backend_common.Metadata{
-			Version:           version,
-			IsUnrealGochart:   true,
-			UnrealModule:      gochart.ModuleName,
-			GochartModulePath: files.ToUnixPath(gochart.ModulePath),
-		}
-
-		return []*backend_common.BackendOutput{
-			{
-				Name:         "forward_declare",
-				ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.forward_declare.h", gochart.FilePrefix)),
-				Metadata:     metadata,
-			},
-			{
-				Name:         "declare",
-				ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.declare.h", gochart.FilePrefix)),
-				Metadata:     metadata,
-			},
-			{
-				Name:         "define",
-				ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.define.h", gochart.FilePrefix)),
-				Metadata:     metadata,
-			},
-		}
-	}
-
-	goutputs := make([]*unreal_backend.GochartOutput, 0, len(gocharts))
-
-	for _, gochart := range gocharts {
+	for _, gd := range gds {
 		goutput := &unreal_backend.GochartOutput{
 			Gochart: &unreal.File{
-				Path: gochart.Path,
+				Path: gd.Path,
 			},
 		}
-		goutput.Outputs = generateBackendOutputs(t, build, gochart)
+		goutput.Outputs = generateBackendOutputs(t, bd, gd)
 
 		goutputs = append(goutputs, goutput)
 	}
