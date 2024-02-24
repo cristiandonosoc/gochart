@@ -106,7 +106,7 @@ func generateBackendOutputs(t *testing.T, config *testConfig, bd *testBuildDescr
 		}
 	}
 
-	return []*backend_common.BackendOutput{
+	outputs := []*backend_common.BackendOutput{
 		{
 			Name:         "forward_declare",
 			ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.forward_declare.h", gd.FilePrefix)),
@@ -123,4 +123,6 @@ func generateBackendOutputs(t *testing.T, config *testConfig, bd *testBuildDescr
 			Metadata:     metadata,
 		},
 	}
+
+	return outputs
 }

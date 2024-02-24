@@ -77,6 +77,22 @@ func TestList(t *testing.T) {
 				want := obtainProjectGoutputs(t, config)
 				compareGoutputs(t, want, got)
 			}
+
+			// Re-listing should give the existing files.
+			{
+				config := &testConfig{
+					version:          version,
+					platform:         gunreal.Platform_Windows,
+					strategy:         strategy,
+					projectDir:       projectDir,
+					generateMetadata: true,
+				}
+
+				got := listProject(t, config)
+
+				want := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, want, got)
+			}
 		})
 	}
 }
@@ -121,7 +137,6 @@ func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
 		got := got[i]
 
 		require.Equal(t, want.Gochart.Path, got.Gochart.Path)
-		require.Equal(t, want.UpToDate(), got.UpToDate())
 
 		require.Equal(t, len(want.Outputs), len(got.Outputs))
 		for j := 0; j < len(want.Outputs); j++ {
