@@ -54,15 +54,7 @@ func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGo
 	return ""
 }
 
-type obtainProjectGoutputsConfig struct {
-	version          string
-	platform         gunreal.Platform
-	strategy         unreal_backend.GenerationStrategy
-	projectDir       string
-	generateMetadata bool
-}
-
-func obtainProjectGoutputs(t *testing.T, config *obtainProjectGoutputsConfig) []*unreal_backend.GochartOutput {
+func obtainProjectGoutputs(t *testing.T, config *testConfig) []*unreal_backend.GochartOutput {
 	bd := &testBuildDescription{
 		Platform:   config.platform,
 		Version:    config.version,
@@ -101,7 +93,7 @@ func obtainProjectGoutputs(t *testing.T, config *obtainProjectGoutputsConfig) []
 	return goutputs
 }
 
-func generateBackendOutputs(t *testing.T, config *obtainProjectGoutputsConfig, bd *testBuildDescription, gd *testGochartDescription) []*backend_common.BackendOutput {
+func generateBackendOutputs(t *testing.T, config *testConfig, bd *testBuildDescription, gd *testGochartDescription) []*backend_common.BackendOutput {
 	baseDir := calculateStrategyBaseDir(t, bd, gd)
 
 	var metadata *backend_common.Metadata
@@ -114,7 +106,7 @@ func generateBackendOutputs(t *testing.T, config *obtainProjectGoutputsConfig, b
 		}
 	}
 
-	return []*backend_common.BackendOutput{
+	outputs := []*backend_common.BackendOutput{
 		{
 			Name:         "forward_declare",
 			ExpectedPath: filepath.Join(baseDir, fmt.Sprintf("%s.gochart.forward_declare.h", gd.FilePrefix)),
@@ -131,4 +123,6 @@ func generateBackendOutputs(t *testing.T, config *obtainProjectGoutputsConfig, b
 			Metadata:     metadata,
 		},
 	}
+
+	return outputs
 }

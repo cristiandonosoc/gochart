@@ -18,7 +18,7 @@ const (
 )
 
 type Config struct {
-    Metadata *common.Metadata
+	Metadata *common.Metadata
 
 	Time              time.Time
 	OutputDir         string
@@ -28,13 +28,13 @@ type Config struct {
 }
 
 func (c *Config) validate() error {
-    if c.Metadata == nil {
-        return fmt.Errorf("no metadata present!")
-    }
+	if c.Metadata == nil {
+		return fmt.Errorf("no metadata present!")
+	}
 
-    if err := c.Metadata.Validate(); err != nil {
-        return fmt.Errorf("validating metadata: %w", err)
-    }
+	if err := c.Metadata.Validate(); err != nil {
+		return fmt.Errorf("validating metadata: %w", err)
+	}
 
 	if c.Time.IsZero() {
 		return fmt.Errorf("non set time")
@@ -78,11 +78,26 @@ func Generate(gc *ir.Gochart, config *Config) ([]*common.BackendOutput, error) {
 	for _, output := range outputs {
 		switch output.Name {
 		case kOutputName_ForwardDeclare:
-			output.Content = forwardDeclare
+			output.Content = forwardDeclare.reader
+			metadata, err := ReadMetadata(forwardDeclare.content)
+			if err != nil {
+				return nil, fmt.Errorf("reading forward declare metadata: %w", err)
+			}
+			output.Metadata = metadata
 		case kOutputName_Declare:
-			output.Content = declare
+			output.Content = declare.reader
+			metadata, err := ReadMetadata(declare.content)
+			if err != nil {
+				return nil, fmt.Errorf("reading declare metadata: %w", err)
+			}
+			output.Metadata = metadata
 		case kOutputName_Define:
-			output.Content = define
+			output.Content = define.reader
+			metadata, err := ReadMetadata(define.content)
+			if err != nil {
+				return nil, fmt.Errorf("reading define metadata: %w", err)
+			}
+			output.Metadata = metadata
 		default:
 			return nil, fmt.Errorf("unknown output %q", output.Name)
 		}

@@ -1,6 +1,7 @@
 package cpp
 
 import (
+	"bufio"
 	"fmt"
 	"regexp"
 	"strings"
@@ -17,29 +18,39 @@ const (
 	kMetadataKey_ModulePath   = "GOCHART_MODULE_PATH"
 )
 
-func ReadMetadata(bo *common.BackendOutput) (*common.Metadata, error) {
+func ReadMetadataFromBackendOutput(bo *common.BackendOutput) (*common.Metadata, error) {
 	if err := bo.EnsureLoadFromDisk(); err != nil {
 		return nil, fmt.Errorf("ensure loaded file: %w", err)
 	}
-
-	metadata, err := parseLines(bo)
-	if err != nil {
-		return nil, fmt.Errorf("parsing lines for metadata: %w", err)
-	}
-
-	return metadata, nil
-}
-
-func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
-	foundBeginMarker := false
-	foundEndMarker := false
-
-	metadata := &common.Metadata{}
 
 	lines, err := bo.DiskContent.Lines()
 	if err != nil {
 		return nil, fmt.Errorf("reading lines from %q: %w", bo.DiskContent.Key, err)
 	}
+
+	return parseLines(lines)
+}
+
+func ReadMetadata(content string) (*common.Metadata, error) {
+	scanner := bufio.NewScanner(strings.NewReader(content))
+
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scanning file line by line: %w", err)
+	}
+
+	return parseLines(lines)
+}
+
+func parseLines(lines []string) (*common.Metadata, error) {
+	foundBeginMarker := false
+	foundEndMarker := false
+
+	metadata := &common.Metadata{}
 
 	for _, line := range lines {
 		line := strings.TrimSpace(line)
@@ -74,9 +85,9 @@ func parseLines(bo *common.BackendOutput) (*common.Metadata, error) {
 	}
 
 	if !foundBeginMarker {
-		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kMetadataHeader_BeginMarker)
+		fmt.Printf("WARNING: did not find %q header marker\n", kMetadataHeader_BeginMarker)
 	} else if !foundEndMarker {
-		fmt.Printf("WARNING: File %q: did not find %q header marker\n", bo.ExpectedPath, kMetadataHeader_EndMarker)
+		fmt.Printf("WARNING: did not find %q header marker\n", kMetadataHeader_EndMarker)
 	}
 
 	return metadata, nil

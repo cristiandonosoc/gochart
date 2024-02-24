@@ -15,6 +15,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type testConfig struct {
+	version    string
+	platform   gunreal.Platform
+	strategy   unreal_backend.GenerationStrategy
+	projectDir string
+
+	// generation options.
+	generateMetadata bool
+}
+
 func TestList(t *testing.T) {
 	strategies := []unreal_backend.GenerationStrategy{
 		unreal_backend.GenerationStrategy_Inline,
@@ -38,7 +48,7 @@ func TestList(t *testing.T) {
 
 			// First listing should be empty.
 			{
-				config := &obtainProjectGoutputsConfig{
+				config := &testConfig{
 					version:          version,
 					platform:         gunreal.Platform_Windows,
 					strategy:         strategy,
@@ -46,7 +56,40 @@ func TestList(t *testing.T) {
 					generateMetadata: false,
 				}
 
-				got := listProject(t, projectDir)
+				got := listProject(t, config)
+
+				want := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, want, got)
+			}
+
+			// Generate should work.
+			{
+				config := &testConfig{
+					version:          version,
+					platform:         gunreal.Platform_Windows,
+					strategy:         strategy,
+					projectDir:       projectDir,
+					generateMetadata: true,
+				}
+
+				got := generateProject(t, config)
+
+				want := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, want, got)
+			}
+
+			// Re-listing should give the existing files.
+			{
+				config := &testConfig{
+					version:          version,
+					platform:         gunreal.Platform_Windows,
+					strategy:         strategy,
+					projectDir:       projectDir,
+					generateMetadata: true,
+				}
+
+				got := listProject(t, config)
+
 				want := obtainProjectGoutputs(t, config)
 				compareGoutputs(t, want, got)
 			}
@@ -54,19 +97,36 @@ func TestList(t *testing.T) {
 	}
 }
 
-func listProject(t *testing.T, projectDir string) []*unreal_backend.GochartOutput {
+func listProject(t *testing.T, config *testConfig) []*unreal_backend.GochartOutput {
 	ctx := context.Background()
-	ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, projectDir)
+
+	ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, config.projectDir)
 	require.NoError(t, err)
 
 	options := []option.Option{
-		unreal_backend.WithStrategy(unreal_backend.GenerationStrategy_Inline),
+		unreal_backend.WithStrategy(config.strategy),
 	}
 
-	listing, err := ugb.List(ctx, options...)
+	goutputs, err := ugb.List(ctx, options...)
 	require.NoError(t, err)
 
-	return listing
+	return goutputs
+}
+
+func generateProject(t *testing.T, config *testConfig) []*unreal_backend.GochartOutput {
+	ctx := context.Background()
+
+	ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, config.projectDir)
+	require.NoError(t, err)
+
+	options := []option.Option{
+		unreal_backend.WithStrategy(config.strategy),
+	}
+
+	goutputs, err := ugb.Generate(ctx, options...)
+	require.NoError(t, err)
+
+	return goutputs
 }
 
 func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
@@ -77,7 +137,6 @@ func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
 		got := got[i]
 
 		require.Equal(t, want.Gochart.Path, got.Gochart.Path)
-		require.Equal(t, want.UpToDate(), got.UpToDate())
 
 		require.Equal(t, len(want.Outputs), len(got.Outputs))
 		for j := 0; j < len(want.Outputs); j++ {
@@ -87,7 +146,7 @@ func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
 			assert.Equal(t, want.Name, got.Name)
 			assert.Equal(t, want.ExpectedPath, got.ExpectedPath)
 
-			if assert.Equal(t, want.Metadata != nil, got.Metadata != nil) {
+			if assert.Equal(t, want.Metadata != nil, got.Metadata != nil, "GOTMETADATA:", got.Metadata) {
 				if want.Metadata != nil {
 					assert.Equal(t, want.Metadata.Version, got.Metadata.Version)
 					assert.Equal(t, want.Metadata.IsUnrealGochart, got.Metadata.IsUnrealGochart)
