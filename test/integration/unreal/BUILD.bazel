@@ -1,16 +1,28 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unreal",
+    srcs = ["helpers.go"],
+    importpath = "github.com/cristiandonosoc/gochart/test/integration/unreal",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/backend/common",
+        "//pkg/backend/unreal",
+        "@com_github_cristiandonosoc_golib//pkg/files",
+        "@com_github_cristiandonosoc_golib//pkg/test_support",
+        "@com_github_cristiandonosoc_gunreal//pkg/unreal",
+        "@com_github_stretchr_testify//require",
+    ],
+)
 
 go_test(
     name = "unreal_test",
-    size = "small",
     srcs = ["unreal_test.go"],
     data = glob(["testdata/**"]),
     deps = [
         "//internal/build",
         "//internal/option",
-        "//pkg/backend/common",
         "//pkg/backend/unreal",
-        "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_cristiandonosoc_golib//pkg/test_support",
         "@com_github_cristiandonosoc_gunreal//pkg/unreal",
         "@com_github_stretchr_testify//assert",

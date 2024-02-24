@@ -1,4 +1,4 @@
-package unreal_test
+package unreal
 
 import (
 	"fmt"
@@ -55,11 +55,11 @@ func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGo
 }
 
 type obtainProjectGoutputsConfig struct {
-	strategy         unreal_backend.GenerationStrategy
+	version          string
 	platform         unreal.Platform
+	strategy         unreal_backend.GenerationStrategy
 	projectDir       string
 	generateMetadata bool
-	version          string
 }
 
 func obtainProjectGoutputs(t *testing.T, config *obtainProjectGoutputsConfig) []*unreal_backend.GochartOutput {
