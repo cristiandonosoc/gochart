@@ -1,4 +1,4 @@
-package unreal_test
+package unreal
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/option"
 	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/golib/pkg/test_support"
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	gunreal "github.com/cristiandonosoc/gunreal/pkg/unreal"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,10 +39,10 @@ func TestList(t *testing.T) {
 			// First listing should be empty.
 			{
 				config := &obtainProjectGoutputsConfig{
-					version: version,
-					platform: unreal.Platform_Windows,
-					strategy: strategy,
-					projectDir: projectDir,
+					version:          version,
+					platform:         gunreal.Platform_Windows,
+					strategy:         strategy,
+					projectDir:       projectDir,
 					generateMetadata: false,
 				}
 

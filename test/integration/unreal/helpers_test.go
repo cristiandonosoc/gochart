@@ -9,7 +9,7 @@ import (
 	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/golib/pkg/files"
 	"github.com/cristiandonosoc/golib/pkg/test_support"
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	gunreal "github.com/cristiandonosoc/gunreal/pkg/unreal"
 
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func copyProject(t *testing.T, dir string) {
 }
 
 type testBuildDescription struct {
-	Platform   unreal.Platform
+	Platform   gunreal.Platform
 	Version    string
 	ProjectDir string
 	Strategy   unreal_backend.GenerationStrategy
@@ -56,7 +56,7 @@ func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGo
 
 type obtainProjectGoutputsConfig struct {
 	version          string
-	platform         unreal.Platform
+	platform         gunreal.Platform
 	strategy         unreal_backend.GenerationStrategy
 	projectDir       string
 	generateMetadata bool
@@ -89,7 +89,7 @@ func obtainProjectGoutputs(t *testing.T, config *obtainProjectGoutputsConfig) []
 
 	for _, gd := range gds {
 		goutput := &unreal_backend.GochartOutput{
-			Gochart: &unreal.File{
+			Gochart: &gunreal.File{
 				Path: gd.Path,
 			},
 		}
