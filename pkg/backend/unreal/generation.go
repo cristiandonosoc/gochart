@@ -3,6 +3,7 @@ package unreal
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -172,33 +173,26 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 	}
 
 	for _, expectedOutput := range expectedOutputs {
-		stat, found, err := files.StatFile(expectedOutput.ExpectedPath)
-		if err != nil {
-			return nil, nil, fmt.Errorf("stating %q: %w", expectedOutput.ExpectedPath, err)
-		}
+		// Attempt to load the files into the cache.
+		if _, err := files.LoadFileFromPath(expectedOutput.ExpectedPath); err != nil {
+			// If the file doesn't exist, it gochart headers will need to be generated.
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
 
-		// If the file doesn't exist, it must be regenerated.
-		if !found {
-			continue
+			return nil, nil, fmt.Errorf("loading file %q: %w", expectedOutput.ExpectedPath, err)
 		}
 
 		// Since the file is in disk, we check if it was made by the same version.
-		if expectedOutput.Metadata == nil {
-			metadata, err := cpp_gen.ReadMetadata(expectedOutput)
-			if err != nil {
-				return nil, nil, fmt.Errorf("loading metadata for %q: %w", expectedOutput.ExpectedPath, err)
-			}
-			expectedOutput.Metadata = metadata
+		metadata, err := cpp_gen.ReadMetadata(expectedOutput)
+		if err != nil {
+			return nil, nil, fmt.Errorf("loading metadata for %q: %w", expectedOutput.ExpectedPath, err)
 		}
+		expectedOutput.Metadata = metadata
 
 		// If they were not made by the same version, we know it must be regenerated.
 		if expectedOutput.Metadata.Version != build.BuildVersion() {
 			continue
-		}
-
-		// If the gochart file was modified before this file, we consider it to be up to date.
-		if gochart.FileInfo.ModTime().Before(stat.ModTime()) {
-			expectedOutput.UpToDate = true
 		}
 
 		expectedOutput.Metadata.IsUnrealGochart = true
@@ -241,16 +235,9 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 
 	// Now that we have the files generated, we check if we need to write them to disk.
 	for _, output := range outputs {
-		written, err := ugb.writeOutputIfDifferentOnDisk(ctx, output)
+		_, err := ugb.writeOutputIfDifferentOnDisk(ctx, output)
 		if err != nil {
 			return nil, fmt.Errorf("writing gochart output to disk: %w", err)
-		}
-
-		// If we didn't write, means that even though it was generated, the output was up to date.
-		// This can happen when someone makes non-structural changes to a gochart (like adding
-		// comments), which will invalidate the mod time, but not change the output.
-		if !written {
-			output.UpToDate = true
 		}
 	}
 
@@ -304,7 +291,7 @@ func (ugb *unrealGochartBackend) writeOutputIfDifferentOnDisk(ctx context.Contex
 	fileData, err := os.ReadFile(output.ExpectedPath)
 	if err != nil {
 		// We ignore file not exists error, because we will need to write it anyway.
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return false, fmt.Errorf("reading file %q: %w", output.ExpectedPath, err)
 		}
 	}

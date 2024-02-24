@@ -2,8 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "unreal_test",
-    size = "small",
-    srcs = ["unreal_generation_test.go"],
+    srcs = [
+        "helpers_test.go",
+        "unreal_test.go",
+    ],
     data = glob(["testdata/**"]),
     deps = [
         "//internal/build",

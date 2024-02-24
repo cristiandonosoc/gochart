@@ -18,10 +18,8 @@ const (
 )
 
 func ReadMetadata(bo *common.BackendOutput) (*common.Metadata, error) {
-	if !bo.IsLoadedFromDisk() {
-		if err := bo.LoadFromDisk(); err != nil {
-			return nil, fmt.Errorf("loading file: %w", err)
-		}
+	if err := bo.EnsureLoadFromDisk(); err != nil {
+		return nil, fmt.Errorf("ensure loaded file: %w", err)
 	}
 
 	metadata, err := parseLines(bo)
