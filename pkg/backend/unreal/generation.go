@@ -198,6 +198,10 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 		expectedOutput.Metadata.IsUnrealGochart = true
 	}
 
+	sort.Slice(expectedOutputs, func(i, j int) bool {
+		return expectedOutputs[i].Name < expectedOutputs[j].Name
+	})
+
 	goutput := &GochartOutput{
 		Gochart: gochart,
 		Outputs: expectedOutputs,

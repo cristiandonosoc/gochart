@@ -11,9 +11,10 @@ go 1.21
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/cristiandonosoc/golib v0.1.5
-	github.com/cristiandonosoc/gunreal v0.1.1
+	github.com/cristiandonosoc/gunreal v0.1.2
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
+	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	gopkg.in/yaml.v2 v2.4.0
 )

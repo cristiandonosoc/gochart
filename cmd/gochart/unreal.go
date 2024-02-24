@@ -92,14 +92,14 @@ func unrealCommands() []*cli.Command {
 							return fmt.Errorf("parsing options from flags: %w", err)
 						}
 
-						goutputs, err := ugb.List(ctx, options...)
+						result, err := ugb.List(ctx, options...)
 						if err != nil {
 							return fmt.Errorf("listing project: %w", err)
 						}
 
 						fmt.Printf("Listing gocharts at Unreal project at %s\n", ugb.Project.ProjectDir)
-						fmt.Printf("Found %v gocharts:\n", len(goutputs))
-						for _, goutput := range goutputs {
+						fmt.Printf("Found %v gocharts:\n", len(result.Gocharts))
+						for _, goutput := range result.Gocharts {
 							fmt.Println("-----------------------------------------------------------------------")
 							uptodate := "[UP TO DATE]"
 							if !goutput.UpToDate() {

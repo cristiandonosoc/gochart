@@ -4,6 +4,7 @@ package cpp
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
@@ -102,6 +103,10 @@ func Generate(gc *ir.Gochart, config *Config) ([]*common.BackendOutput, error) {
 			return nil, fmt.Errorf("unknown output %q", output.Name)
 		}
 	}
+
+	sort.Slice(outputs, func(i, j int) bool {
+		return outputs[i].Name < outputs[j].Name
+	})
 
 	return outputs, nil
 }
