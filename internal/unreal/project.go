@@ -77,8 +77,12 @@ func (up *Project) NewFile(path string) (*File, error) {
 
 // SearchForFilesByExtension goes over all the loaded modules in parallel and finds all the found
 // files with that extension. Useful for things like finding all gochart files.
-// |extension| should be akin to the result of a filepath.Ext call, which includes the dot.
-func (up *Project) SearchForFilesByExtension(ctx context.Context, extension string) ([]string, error) {
+// |extensions| should match a string.HasSuffix over the filepath.Base.
+func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...string) ([]string, error) {
+	if len(extensions) == 0 {
+		return nil, fmt.Errorf("no extension given to search")
+	}
+
 	if len(up.Modules) == 0 {
 		return nil, fmt.Errorf("no modules loaded. Is the project indexed?")
 	}
@@ -124,8 +128,18 @@ func (up *Project) SearchForFilesByExtension(ctx context.Context, extension stri
 
 				for module := range modulesCh {
 					for _, file := range module.Files {
-						ext := filepath.Ext(file)
-						if ext != extension {
+						base := filepath.Base(file)
+
+						// We see if the file matches any of the required extensions.
+						match := false
+						for _, ext := range extensions {
+							if strings.HasSuffix(base, ext) {
+								match = true
+								break
+							}
+						}
+
+						if !match {
 							continue
 						}
 
