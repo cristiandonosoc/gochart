@@ -3,6 +3,7 @@ package unreal
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -175,7 +176,7 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 		// Attempt to load the files into the cache.
 		if _, err := files.LoadFileFromPath(expectedOutput.ExpectedPath); err != nil {
 			// If the file doesn't exist, it gochart headers will need to be generated.
-			if os.IsNotExist(err) {
+			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
 
@@ -290,7 +291,7 @@ func (ugb *unrealGochartBackend) writeOutputIfDifferentOnDisk(ctx context.Contex
 	fileData, err := os.ReadFile(output.ExpectedPath)
 	if err != nil {
 		// We ignore file not exists error, because we will need to write it anyway.
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return false, fmt.Errorf("reading file %q: %w", output.ExpectedPath, err)
 		}
 	}
