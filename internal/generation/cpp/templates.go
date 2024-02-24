@@ -92,25 +92,42 @@ func readTemplate(ep embedPath) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (tm *templateManager) generateTemplates() (_forwardDeclare, _declare, _define io.Reader, _err error) {
+type generatedTemplate struct {
+	reader  io.Reader
+	content string
+}
+
+func (tm *templateManager) generateTemplates() (_forwardDeclare, _declare, _define *generatedTemplate, _err error) {
 	context := newTemplateContext(tm.config, tm.gc)
 
 	var forwardDeclareBuf bytes.Buffer
 	if err := tm.forwardDeclareTemplate.Execute(&forwardDeclareBuf, context); err != nil {
 		return nil, nil, nil, fmt.Errorf("executing forward declare template: %w", err)
 	}
+	forwardDeclare := &generatedTemplate{
+		reader:  &forwardDeclareBuf,
+		content: forwardDeclareBuf.String(),
+	}
 
 	var declareBuf bytes.Buffer
 	if err := tm.declareTemplate.Execute(&declareBuf, context); err != nil {
 		return nil, nil, nil, fmt.Errorf("executing declare template: %w", err)
+	}
+	declare := &generatedTemplate{
+		reader:  &declareBuf,
+		content: declareBuf.String(),
 	}
 
 	var defineBuf bytes.Buffer
 	if err := tm.defineTemplate.Execute(&defineBuf, context); err != nil {
 		return nil, nil, nil, fmt.Errorf("executing define template: %w", err)
 	}
+	define := &generatedTemplate{
+		reader:  &defineBuf,
+		content: defineBuf.String(),
+	}
 
-	return &forwardDeclareBuf, &declareBuf, &defineBuf, nil
+	return forwardDeclare, declare, define, nil
 }
 
 // templateContext is a common struct that has helpers and information needed by the templates.

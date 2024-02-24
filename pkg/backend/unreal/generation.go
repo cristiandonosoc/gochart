@@ -184,7 +184,7 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 		}
 
 		// Since the file is in disk, we check if it was made by the same version.
-		metadata, err := cpp_gen.ReadMetadata(expectedOutput)
+		metadata, err := cpp_gen.ReadMetadataFromBackendOutput(expectedOutput)
 		if err != nil {
 			return nil, nil, fmt.Errorf("loading metadata for %q: %w", expectedOutput.ExpectedPath, err)
 		}
