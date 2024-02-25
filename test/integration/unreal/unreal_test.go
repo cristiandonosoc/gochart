@@ -3,6 +3,7 @@ package unreal
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/cristiandonosoc/gochart/internal/build"
@@ -22,7 +23,9 @@ type testConfig struct {
 	projectDir string
 
 	// generation options.
-	generateMetadata bool
+	generatePositiveFilters []string // Only generate test files don't these words on them.
+	generateNegativeFilters []string // Only generate test files don't these words on them.
+	generateMetadata        bool
 }
 
 func TestList(t *testing.T) {
@@ -59,7 +62,10 @@ func TestList(t *testing.T) {
 				got := listProject(t, config)
 
 				want := obtainProjectGoutputs(t, config)
-				compareGoutputs(t, want, got)
+				compareGoutputs(t, want, got.Gocharts)
+
+				// Should not have any orphaned gocharts.
+				require.Empty(t, got.OrphanedGocharts)
 			}
 
 			// Generate should work.
@@ -79,6 +85,7 @@ func TestList(t *testing.T) {
 			}
 
 			// Re-listing should give the existing files.
+			var counterGochart *gunreal.File
 			{
 				config := &testConfig{
 					version:          version,
@@ -91,13 +98,54 @@ func TestList(t *testing.T) {
 				got := listProject(t, config)
 
 				want := obtainProjectGoutputs(t, config)
-				compareGoutputs(t, want, got)
+				compareGoutputs(t, want, got.Gocharts)
+
+				// Should not have any orphaned gocharts.
+				require.Empty(t, got.OrphanedGocharts)
+
+				// Get the first gochart so it can be eliminated.
+				for _, goutput := range got.Gocharts {
+					if strings.Contains(goutput.Gochart.Path, "Counter") {
+						counterGochart = goutput.Gochart
+						break
+					}
+				}
+			}
+
+			require.NotNil(t, counterGochart)
+
+			// Delete the gochart file.
+			err = os.Remove(counterGochart.Path)
+			require.NoError(t, err)
+
+			// Listing now should give one found and one orphaned.
+			{
+				config := &testConfig{
+					version:                 version,
+					platform:                gunreal.Platform_Windows,
+					strategy:                strategy,
+					projectDir:              projectDir,
+					generateMetadata:        true,
+					generateNegativeFilters: []string{"Counter"},
+				}
+
+				got := listProject(t, config)
+
+				want := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, want, got.Gocharts)
+
+				// Compare the orphaned.
+				config.generateNegativeFilters = nil
+				config.generatePositiveFilters = []string{"Counter"}
+
+				wantOrphaned := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, wantOrphaned, got.OrphanedGocharts)
 			}
 		})
 	}
 }
 
-func listProject(t *testing.T, config *testConfig) []*unreal_backend.GochartOutput {
+func listProject(t *testing.T, config *testConfig) *unreal_backend.ListResult {
 	ctx := context.Background()
 
 	ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, config.projectDir)
@@ -107,10 +155,10 @@ func listProject(t *testing.T, config *testConfig) []*unreal_backend.GochartOutp
 		unreal_backend.WithStrategy(config.strategy),
 	}
 
-	goutputs, err := ugb.List(ctx, options...)
+	result, err := ugb.List(ctx, options...)
 	require.NoError(t, err)
 
-	return goutputs
+	return result
 }
 
 func generateProject(t *testing.T, config *testConfig) []*unreal_backend.GochartOutput {
@@ -138,13 +186,14 @@ func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
 
 		require.Equal(t, want.Gochart.Path, got.Gochart.Path)
 
+		path := want.Gochart.Path
 		require.Equal(t, len(want.Outputs), len(got.Outputs))
 		for j := 0; j < len(want.Outputs); j++ {
 			want := want.Outputs[j]
 			got := got.Outputs[j]
 
-			assert.Equal(t, want.Name, got.Name)
-			assert.Equal(t, want.ExpectedPath, got.ExpectedPath)
+			require.Equal(t, want.Name, got.Name, path)
+			require.Equal(t, want.ExpectedPath, got.ExpectedPath)
 
 			if assert.Equal(t, want.Metadata != nil, got.Metadata != nil, "GOTMETADATA:", got.Metadata) {
 				if want.Metadata != nil {

@@ -5,7 +5,6 @@ package unreal
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -160,6 +159,10 @@ type GochartOutput struct {
 	Outputs []*common.BackendOutput
 }
 
+func (o *GochartOutput) Orphan() bool {
+	return !o.Gochart.Exists()
+}
+
 func (o *GochartOutput) UpToDate() bool {
 	if !o.Gochart.Exists() {
 		return false
@@ -177,46 +180,6 @@ func (o *GochartOutput) UpToDate() bool {
 	}
 
 	return true
-}
-
-// List goes over and encounters all the gocharts and the generated files, without generating them.
-func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
-	// TODO(cdc): Don't make the options global to the backend as it is now.
-	options := defaultOptions()
-	for _, opt := range opts {
-		opt(options)
-	}
-	ugb.options = options
-
-	if err := ugb.validate(); err != nil {
-		return nil, fmt.Errorf("validating: %w", err)
-	}
-
-	gochartPaths, err := ugb.Project.SearchForFilesByExtension(ctx, ".gochart")
-	if err != nil {
-		return nil, fmt.Errorf("searching for gochart files: %w", err)
-	}
-
-	if len(gochartPaths) == 0 {
-		fmt.Println("No gocharts found.")
-		return nil, nil
-	}
-
-	goutputs := make([]*GochartOutput, 0, len(gochartPaths))
-	for _, gochartPath := range gochartPaths {
-		goutput, _, err := ugb.calculateGochartExpectedOutputs(gochartPath)
-		if err != nil {
-			return nil, fmt.Errorf("calculating gochart expected outputs: %w", err)
-		}
-
-		goutputs = append(goutputs, goutput)
-	}
-
-	sort.Slice(goutputs, func(i, j int) bool {
-		return goutputs[i].Gochart.Name() < goutputs[j].Gochart.Name()
-	})
-
-	return goutputs, nil
 }
 
 func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {

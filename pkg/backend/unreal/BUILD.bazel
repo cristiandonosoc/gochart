@@ -4,6 +4,7 @@ go_library(
     name = "unreal",
     srcs = [
         "generation.go",
+        "list.go",
         "unreal.go",
     ],
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/unreal",
@@ -18,6 +19,7 @@ go_library(
         "//pkg/ir",
         "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_cristiandonosoc_gunreal//pkg/unreal",
+        "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
     ],
 )

@@ -3,6 +3,8 @@ package unreal
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 
 	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
@@ -80,6 +82,37 @@ func obtainProjectGoutputs(t *testing.T, config *testConfig) []*unreal_backend.G
 	goutputs := make([]*unreal_backend.GochartOutput, 0, len(gds))
 
 	for _, gd := range gds {
+		// See if there are filters.
+		if len(config.generatePositiveFilters) > 0 {
+			// Only generate that match all of them.
+			nonMatch := false
+			for _, filter := range config.generatePositiveFilters {
+				if !strings.Contains(gd.Path, filter) {
+					nonMatch = true
+					break
+				}
+			}
+
+			if nonMatch {
+				continue
+			}
+		}
+
+		if len(config.generateNegativeFilters) > 0 {
+			// Only generate that don't match any.
+			match := false
+			for _, filter := range config.generateNegativeFilters {
+				if strings.Contains(gd.Path, filter) {
+					match = true
+					break
+				}
+			}
+
+			if match {
+				continue
+			}
+		}
+
 		goutput := &unreal_backend.GochartOutput{
 			Gochart: &gunreal.File{
 				Path: gd.Path,
@@ -89,6 +122,10 @@ func obtainProjectGoutputs(t *testing.T, config *testConfig) []*unreal_backend.G
 
 		goutputs = append(goutputs, goutput)
 	}
+
+	sort.Slice(goutputs, func(i, j int) bool {
+		return goutputs[i].Gochart.Path < goutputs[j].Gochart.Path
+	})
 
 	return goutputs
 }
@@ -123,6 +160,10 @@ func generateBackendOutputs(t *testing.T, config *testConfig, bd *testBuildDescr
 			Metadata:     metadata,
 		},
 	}
+
+	sort.Slice(outputs, func(i, j int) bool {
+		return outputs[i].Name < outputs[j].Name
+	})
 
 	return outputs
 }

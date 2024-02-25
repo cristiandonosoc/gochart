@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gunreal/pkg/unreal"
 )
 
 type Metadata struct {
@@ -44,6 +46,19 @@ func (m *Metadata) Validate() error {
 	}
 
 	return nil
+}
+
+func (m *Metadata) FullGochartPath(project *unreal.Project) (string, error) {
+	// Find the module where the gochart is supposed to be.
+	// TODO(cdc): This might not considered be an error in the future, depending on the clean
+	//			  semantics that we want to express.
+	module, ok := project.Modules[m.UnrealModule]
+	if !ok {
+		return "", fmt.Errorf("module %q not found", m.UnrealModule)
+	}
+
+	path := filepath.Join(module.BaseDir, m.GochartModulePath)
+	return path, nil
 }
 
 // BackendOutput represents an output file as calculated by a backend.
