@@ -1,6 +1,6 @@
 module github.com/cristiandonosoc/gochart
 
-go 1.21
+go 1.21.5
 
 // Activate these replace statements for local development.
 // NOTE(cdc): This file is for local development, so the paths are hardcoded to where they are on my
