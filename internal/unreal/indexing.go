@@ -18,7 +18,7 @@ import (
 // Indexes all the files within a project, for faster in memory searching afterwards.
 func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, error) {
 	// collect all the files in the unreal project.
-	buildFileDescriptions, allFiles, err := collectFiles(ctx, sourceDir)
+	result, err := collectFiles(ctx, sourceDir)
 	if err != nil {
 		return nil, fmt.Errorf("collecting files in %q: %w", sourceDir, err)
 	}
@@ -32,7 +32,7 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 		g.Go(func() error {
 			defer close(buildFileDescriptionsCh)
 
-			for _, bfd := range buildFileDescriptions {
+			for _, bfd := range result.buildFiles {
 				select {
 				case buildFileDescriptionsCh <- bfd:
 					continue
@@ -70,7 +70,7 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 					// We do it by searching for the build file in a binary search and then searching "upwards
 					// and downwards" for the files in the same dir. At soon as we find one that doens't belong,
 					// we can stop searching because the file list is sorted.
-					index, ok := slices.BinarySearch(allFiles, bfd.Path)
+					index, ok := slices.BinarySearch(result.allFiles, bfd.Path)
 					if !ok {
 						return fmt.Errorf("build file %q not found in the all file list", bfd.Path)
 					}
@@ -81,7 +81,7 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 
 					// Search backwards from the build file index.
 					for i := index - 1; i >= 0; i-- {
-						file := allFiles[i]
+						file := result.allFiles[i]
 						if strings.Contains(file, baseDir) {
 							moduleFiles = append(moduleFiles, file)
 							continue
@@ -92,8 +92,8 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 					}
 
 					// Search forward from the build file index.
-					for i := index + 1; i < len(allFiles); i++ {
-						file := allFiles[i]
+					for i := index + 1; i < len(result.allFiles); i++ {
+						file := result.allFiles[i]
 						if strings.Contains(file, baseDir) {
 							moduleFiles = append(moduleFiles, file)
 							continue
@@ -107,7 +107,7 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 					// We sort because sorted lists are cool.
 					sort.Strings(moduleFiles)
 
-					um, err := NewUnrealModule(bfd.ModuleName, bfd.Path, moduleFiles)
+					um, err := newUnrealModule(bfd.ModuleName, bfd.Path, moduleFiles)
 					if err != nil {
 						return fmt.Errorf("creating unreal module %q: %w", bfd.ModuleName, err)
 					}
@@ -153,7 +153,13 @@ type buildFileDescription struct {
 	Path       string
 }
 
-func collectFiles(ctx context.Context, sourceDir string) (_buildFiles []*buildFileDescription, _allFiles []string, _err error) {
+type collectFilesResult struct {
+	buildFiles []*buildFileDescription
+	allFiles   []string
+}
+
+// func collectFiles(ctx context.Context, sourceDir string) (_buildFiles []*buildFileDescription, _allFiles []string, _err error) {
+func collectFiles(ctx context.Context, sourceDir string) (*collectFilesResult, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Produce: generate all the directories to be checked.
@@ -309,11 +315,14 @@ func collectFiles(ctx context.Context, sourceDir string) (_buildFiles []*buildFi
 
 	// We run the whole script.
 	if err := g.Wait(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// We sort all the files so we can do faster searches on it.
 	sort.Strings(allFiles)
 
-	return buildFiles, allFiles, nil
+	return &collectFilesResult{
+		buildFiles: buildFiles,
+		allFiles:   allFiles,
+	}, nil
 }

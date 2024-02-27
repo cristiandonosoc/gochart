@@ -44,10 +44,17 @@ func IndexProject(ctx context.Context, projectDir string) (*Project, error) {
 		return nil, fmt.Errorf("no modules found at %q. Is it an Unreal project?", projectDir)
 	}
 
-	return &Project{
+	project := &Project{
 		ProjectDir: projectDir,
 		Modules:    modules,
-	}, nil
+	}
+
+	// Make sure all the modules point back to the project.
+	for _, module := range modules {
+		module.project = project
+	}
+
+	return project, nil
 }
 
 func (up *Project) NewFile(path string) (*File, error) {
@@ -73,6 +80,7 @@ func (up *Project) NewFile(path string) (*File, error) {
 		FileInfo:     stat,
 		Intermediate: isIntermediate,
 	}, nil
+
 }
 
 // SearchForFilesByExtension goes over all the loaded modules in parallel and finds all the found
