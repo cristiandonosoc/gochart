@@ -31,7 +31,7 @@ type testConfig struct {
 func TestList(t *testing.T) {
 	strategies := []unreal_backend.GenerationStrategy{
 		unreal_backend.GenerationStrategy_Inline,
-		//unreal_backend.GenerationStrategy_ModuleGeneratedDir,
+		unreal_backend.GenerationStrategy_ModuleGeneratedDir,
 		//unreal_backend.GenerationStrategy_UHT,
 	}
 
