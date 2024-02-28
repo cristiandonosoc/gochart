@@ -10,8 +10,8 @@ go 1.21.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/cristiandonosoc/golib v0.1.5
-	github.com/cristiandonosoc/gunreal v0.1.2
+	github.com/cristiandonosoc/golib v0.1.6
+	github.com/cristiandonosoc/gunreal v0.1.3
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225

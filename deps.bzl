@@ -22,14 +22,14 @@ def go_dependencies():
     go_repository(
         name = "com_github_cristiandonosoc_golib",
         importpath = "github.com/cristiandonosoc/golib",
-        sum = "h1:UknrLPb07LqXhbsMFCXR2XdS1MK46EzycQQ/FE1zEKo=",
-        version = "v0.1.5",
+        sum = "h1:Cw4mh86/4dTHs3XSNj6C78IM5otk0Lgqpe8FLXGcrXg=",
+        version = "v0.1.6",
     )
     go_repository(
         name = "com_github_cristiandonosoc_gunreal",
         importpath = "github.com/cristiandonosoc/gunreal",
-        sum = "h1:4DExdVnYp+cy6eXJd9zRwq0ioL39nC6MIqQhQ/nsSLE=",
-        version = "v0.1.2",
+        sum = "h1:ka9ENnO+AV0Kr9tPdjvQCkv8rEw5fggmH5/TpipTsGw=",
+        version = "v0.1.3",
     )
 
     go_repository(
