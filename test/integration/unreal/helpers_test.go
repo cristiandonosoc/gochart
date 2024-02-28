@@ -35,10 +35,10 @@ type testBuildDescription struct {
 }
 
 type testGochartDescription struct {
-	Path       string
-	FilePrefix string
-	ModuleName string
-	ModulePath string
+	Path         string
+	FilePrefix   string
+	ModuleName   string
+	InModulePath string
 }
 
 func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGochartDescription) string {
@@ -46,10 +46,10 @@ func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGo
 	case unreal_backend.GenerationStrategy_Inline:
 		return filepath.Dir(gd.Path)
 	case unreal_backend.GenerationStrategy_ModuleGeneratedDir:
-		return filepath.Join(bd.ProjectDir, "Generated", filepath.Dir(gd.Path))
+		return filepath.Join(bd.ProjectDir, "Source", gd.ModuleName, "Generated", filepath.Dir(gd.InModulePath))
 	case unreal_backend.GenerationStrategy_UHT:
 		base := filepath.Join(bd.ProjectDir, "Intermediate", "Build", bd.Platform.String(), "UnrealEditor", "Inc")
-		return filepath.Join(base, gd.ModuleName, "UHT", filepath.Dir(gd.ModulePath))
+		return filepath.Join(base, gd.ModuleName, "UHT", filepath.Dir(gd.InModulePath))
 	}
 
 	t.Fatalf("unknown strategy %q", bd.Strategy)
@@ -66,16 +66,16 @@ func obtainProjectGoutputs(t *testing.T, config *testConfig) []*unreal_backend.G
 
 	gds := []*testGochartDescription{
 		{
-			Path:       filepath.Join(config.projectDir, "Source", "GochartTest", "AnotherDir", "Counter.gochart"),
-			FilePrefix: "Counter",
-			ModuleName: "GochartTest",
-			ModulePath: filepath.Join("AnotherDir", "Counter.gochart"),
+			Path:         filepath.Join(config.projectDir, "Source", "GochartTest", "AnotherDir", "Counter.gochart"),
+			FilePrefix:   "Counter",
+			ModuleName:   "GochartTest",
+			InModulePath: filepath.Join("AnotherDir", "Counter.gochart"),
 		},
 		{
-			Path:       filepath.Join(config.projectDir, "Source", "GochartTest", "GochartTestActor.gochart"),
-			FilePrefix: "GochartTestActor",
-			ModuleName: "GochartTest",
-			ModulePath: "GochartTestActor.gochart",
+			Path:         filepath.Join(config.projectDir, "Source", "GochartTest", "GochartTestActor.gochart"),
+			FilePrefix:   "GochartTestActor",
+			ModuleName:   "GochartTest",
+			InModulePath: "GochartTestActor.gochart",
 		},
 	}
 
@@ -139,7 +139,7 @@ func generateBackendOutputs(t *testing.T, config *testConfig, bd *testBuildDescr
 			Version:           config.version,
 			IsUnrealGochart:   true,
 			UnrealModule:      gd.ModuleName,
-			GochartModulePath: files.ToUnixPath(gd.ModulePath),
+			GochartModulePath: files.ToUnixPath(gd.InModulePath),
 		}
 	}
 

@@ -2,6 +2,7 @@ package unreal
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -31,9 +32,11 @@ type testConfig struct {
 func TestList(t *testing.T) {
 	strategies := []unreal_backend.GenerationStrategy{
 		unreal_backend.GenerationStrategy_Inline,
-		//unreal_backend.GenerationStrategy_ModuleGeneratedDir,
-		//unreal_backend.GenerationStrategy_UHT,
+		unreal_backend.GenerationStrategy_ModuleGeneratedDir,
+		unreal_backend.GenerationStrategy_UHT,
 	}
+
+	fmt.Println(os.Args[0])
 
 	for _, strategy := range strategies {
 		t.Run(strategy.String(), func(t *testing.T) {
@@ -112,11 +115,13 @@ func TestList(t *testing.T) {
 				}
 			}
 
-			require.NotNil(t, counterGochart)
-
 			// Delete the gochart file.
-			err = os.Remove(counterGochart.Path)
-			require.NoError(t, err)
+			{
+				require.NotNil(t, counterGochart)
+
+				err = os.Remove(counterGochart.Path)
+				require.NoError(t, err)
+			}
 
 			// Listing now should give one found and one orphaned.
 			{

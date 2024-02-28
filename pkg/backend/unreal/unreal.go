@@ -193,7 +193,7 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Op
 		return nil, fmt.Errorf("validating: %w", err)
 	}
 
-	gocharts, err := ugb.Project.SearchForFilesByExtension(ctx, ".gochart")
+	gocharts, err := ugb.Project.SearchForFilesByExtension(ctx, ugb.options.Platform, []string{".gochart"})
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
 	}

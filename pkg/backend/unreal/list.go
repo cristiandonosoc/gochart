@@ -51,7 +51,7 @@ func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option
 }
 
 func (ugb *unrealGochartBackend) listGocharts(ctx context.Context) ([]*GochartOutput, error) {
-	gochartPaths, err := ugb.Project.SearchForFilesByExtension(ctx, ".gochart")
+	gochartPaths, err := ugb.Project.SearchForFilesByExtension(ctx, ugb.options.Platform, []string{".gochart"})
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
 	}
@@ -85,7 +85,7 @@ func (ugb *unrealGochartBackend) listOrphanedGocharts(ctx context.Context) ([]*G
 		"gochart.define.h":          "define",
 	}
 
-	candidatePaths, err := ugb.Project.SearchForFilesByExtension(ctx, maps.Keys(extensionsMap)...)
+	candidatePaths, err := ugb.Project.SearchForFilesByExtension(ctx, ugb.options.Platform, maps.Keys(extensionsMap))
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
 	}
