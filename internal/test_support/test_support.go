@@ -6,48 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/golib/pkg/test_detection"
 )
-
-var bazelCheckOnce sync.Once
-var gRunningAsBazelTest bool
-
-func runningAsBazelTest() bool {
-	bazelCheckOnce.Do(func() {
-		// Sadly this is not send on windows, so we rely on one of the other environment variables
-		// sent by Bazel as a proxy.
-		// See https://github.com/bazelbuild/bazel/issues/21420
-		if os.Getenv("BAZEL_TEST") == "1" {
-			gRunningAsBazelTest = true
-			return
-		}
-
-		// We use a couple of the "Bazel envs". This should give use "some" level of confidence.
-		envs := []string{
-			"TEST_TARGET",
-			"TEST_WORKSPACE",
-			"TEST_TMPDIR",
-		}
-
-		for _, env := range envs {
-			// As soon of any of this is empty, we assume we're not running on Bazel.
-			if os.Getenv(env) == "" {
-				return
-			}
-		}
-
-		gRunningAsBazelTest = true
-	})
-
-	return gRunningAsBazelTest
-}
 
 // TestTmpDir returns a valid base string to be fed to os.MkdirTemp.
 func TestTmpBase() string {
-	if runningAsBazelTest() {
+	if test_detection.RunningAsBazelTest() {
 		os.Getenv("TEST_TMPDIR")
 	}
 
@@ -58,8 +25,12 @@ func TestTmpBase() string {
 // Runfiles returns a list of all the runfiles associated with this test that contains |dir|.
 // Typical use is Runfiles("testdata")
 func Runfiles(dir string) ([]string, error) {
+	if !test_detection.RunningAsTest() {
+		return nil, fmt.Errorf("should only be called for tests")
+	}
+
 	var candidates []string
-	if runningAsBazelTest() {
+	if test_detection.RunningAsBazelTest() {
 		bazelCandidates, err := bazelCandidatesRunfiles(dir)
 		if err != nil {
 			return nil, fmt.Errorf("reading bazel runfiles: %w", err)
@@ -120,7 +91,11 @@ func bazelCandidatesRunfiles(dir string) ([]string, error) {
 // RunfilePath tries to find a testdata file in a build system agnostic way, working for both Bazel
 // environments and default Go ones.
 func RunfilePath(path string) (string, error) {
-	if runningAsBazelTest() {
+	if !test_detection.RunningAsTest() {
+		return "", fmt.Errorf("should only be called for tests")
+	}
+
+	if test_detection.RunningAsBazelTest() {
 		// We attempt to query Bazel to see if it can find runfiles.
 		runfiles, err := bazel.ListRunfiles()
 		if err != nil {
@@ -153,6 +128,10 @@ func RunfilePath(path string) (string, error) {
 
 // LoadRunfile tries to read a file using the loading rules of |RunfilePath|.
 func LoadRunfile(path string) (*files.LoadedFile, error) {
+	if !test_detection.RunningAsTest() {
+		return nil, fmt.Errorf("should only be called for tests")
+	}
+
 	rp, err := RunfilePath(path)
 	if err != nil {
 		return nil, err

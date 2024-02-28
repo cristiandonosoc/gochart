@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/cristiandonosoc/golib/pkg/test_detection"
 )
 
 // Main API ----------------------------------------------------------------------------------------
@@ -46,12 +48,20 @@ var gFileCache *fileCache
 // FileCache represents a view to files loaded in memory.
 type fileCache struct {
 	files map[string]*LoadedFile
+	// useCache is whether we need to track cache or just bypass to loading files every time.
+	// Normally disabled for tests.
+	useCache bool
 }
 
 func GlobalFileCache() *fileCache {
 	once.Do(func() {
 		gFileCache = &fileCache{
-			files: map[string]*LoadedFile{},
+			files:    map[string]*LoadedFile{},
+			useCache: true,
+		}
+
+		if test_detection.RunningAsTest() {
+			gFileCache.useCache = false
 		}
 	})
 
@@ -60,6 +70,10 @@ func GlobalFileCache() *fileCache {
 
 // QueryKey checks the cache to see if that key has already been loaded.
 func (fc *fileCache) QueryKey(key string) (bool, *LoadedFile) {
+	if !fc.useCache {
+		return false, nil
+	}
+
 	if file, ok := fc.files[key]; ok {
 		return true, file
 	}
@@ -71,9 +85,11 @@ func (fc *fileCache) QueryKey(key string) (bool, *LoadedFile) {
 // The key of the file will be the absolute path of the file.
 func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile, error) {
 	// Check if the file is already read.
-	if !overwrite {
-		if lf, ok := fc.files[key]; ok {
-			return lf, nil
+	if fc.useCache {
+		if !overwrite {
+			if lf, ok := fc.files[key]; ok {
+				return lf, nil
+			}
 		}
 	}
 
@@ -101,9 +117,11 @@ func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile
 // This is normally used for in-memory files, usually for testing purposes.
 func (fc *fileCache) NewFromData(key string, data []byte, overwrite bool) (*LoadedFile, error) {
 	// We should not have the key already.
-	if !overwrite {
-		if _, ok := fc.files[key]; ok {
-			return nil, fmt.Errorf("key %q is already in use", key)
+	if fc.useCache {
+		if !overwrite {
+			if _, ok := fc.files[key]; ok {
+				return nil, fmt.Errorf("key %q is already in use", key)
+			}
 		}
 	}
 
@@ -111,7 +129,10 @@ func (fc *fileCache) NewFromData(key string, data []byte, overwrite bool) (*Load
 		Key:  key,
 		Data: data,
 	}
-	fc.files[key] = file
+
+	if fc.useCache {
+		fc.files[key] = file
+	}
 
 	return file, nil
 }
