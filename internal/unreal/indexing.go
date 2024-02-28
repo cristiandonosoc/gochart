@@ -50,13 +50,6 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 	{
 		var wg sync.WaitGroup
 
-		// Make sure the channel will be closed.
-		g.Go(func() error {
-			wg.Wait()
-			close(modulesCh)
-			return nil
-		})
-
 		// Create a new worker to consume the channel.
 		for i := 0; i < kModuleBuilderWorkerCount; i++ {
 			wg.Add(1)
@@ -123,6 +116,13 @@ func collectModules(ctx context.Context, sourceDir string) (map[string]*Module, 
 				return nil
 			})
 		}
+
+		// Make sure the channel will be closed.
+		g.Go(func() error {
+			wg.Wait()
+			close(modulesCh)
+			return nil
+		})
 	}
 
 	// Reduce: Collect all the generated modules.

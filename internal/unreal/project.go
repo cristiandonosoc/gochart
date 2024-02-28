@@ -57,12 +57,12 @@ func IndexProject(ctx context.Context, projectDir string) (*Project, error) {
 	return project, nil
 }
 
-func (up *Project) NewFile(path string) (*File, error) {
+func (p *Project) NewFile(path string) (*File, error) {
 	var module *Module
 
 	isIntermediate := strings.Contains(path, "Intermediate")
 	if !isIntermediate {
-		m, err := up.identifyModule(path)
+		m, err := p.identifyModule(path)
 		if err != nil {
 			return nil, fmt.Errorf("identifying module for %q: %w", path, err)
 		}
@@ -86,12 +86,12 @@ func (up *Project) NewFile(path string) (*File, error) {
 // SearchForFilesByExtension goes over all the loaded modules in parallel and finds all the found
 // files with that extension. Useful for things like finding all gochart files.
 // |extensions| should match a string.HasSuffix over the filepath.Base.
-func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...string) ([]string, error) {
+func (p *Project) SearchForFilesByExtension(ctx context.Context, platform Platform, extensions []string) ([]string, error) {
 	if len(extensions) == 0 {
 		return nil, fmt.Errorf("no extension given to search")
 	}
 
-	if len(up.Modules) == 0 {
+	if len(p.Modules) == 0 {
 		return nil, fmt.Errorf("no modules loaded. Is the project indexed?")
 	}
 
@@ -104,7 +104,7 @@ func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...
 		g.Go(func() error {
 			defer close(modulesCh)
 
-			for _, module := range up.Modules {
+			for _, module := range p.Modules {
 				select {
 				case modulesCh <- module:
 					continue
@@ -122,20 +122,24 @@ func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...
 	{
 		var wg sync.WaitGroup
 
-		// Make sure the channel will be closed.
-		g.Go(func() error {
-			wg.Wait()
-			close(gochartsCh)
-			return nil
-		})
-
 		for i := 0; i < kModuleSearcherWorkerCount; i++ {
 			wg.Add(1)
 			g.Go(func() error {
 				defer wg.Done()
 
 				for module := range modulesCh {
-					for _, file := range module.Files {
+					// Ensure that we have loaded the UHT files.
+					uhtFiles, err := module.LoadUHTFiles(platform, false)
+					if err != nil {
+						return fmt.Errorf("loading uht files for module %q: %w", module.Name, err)
+					}
+
+					// Collect the common + UHT files into one list.
+					files := make([]string, 0, len(module.Files)+len(uhtFiles))
+					files = append(files, module.Files...)
+					files = append(files, uhtFiles...)
+
+					for _, file := range files {
 						base := filepath.Base(file)
 
 						// We see if the file matches any of the required extensions.
@@ -158,11 +162,19 @@ func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...
 							return ctx.Err()
 						}
 					}
+
 				}
 
 				return nil
 			})
 		}
+
+		// Make sure the channel will be closed.
+		g.Go(func() error {
+			wg.Wait()
+			close(gochartsCh)
+			return nil
+		})
 	}
 
 	// Reduce: collect gochart files.
@@ -195,13 +207,13 @@ func (up *Project) SearchForFilesByExtension(ctx context.Context, extensions ...
 	return gocharts, nil
 }
 
-func (up *Project) identifyModule(path string) (*Module, error) {
+func (p *Project) identifyModule(path string) (*Module, error) {
 	// Search over all the modules and see which one this belongs to.
 	// Because a lot of modules could be "candidates", we keep the one with the longest path to be the
 	// one that actually contains the file.
 	// TODO(cdc): If this becomes a slow operation, it could be done in parallel.
 	var candidate *Module
-	for _, module := range up.Modules {
+	for _, module := range p.Modules {
 		if module.Contains(path) {
 			// If there is no current candidate, this is our current candidate.
 			if candidate == nil {
