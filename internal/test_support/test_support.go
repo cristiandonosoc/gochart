@@ -14,8 +14,9 @@ import (
 
 // TestTmpDir returns a valid base string to be fed to os.MkdirTemp.
 func TestTmpBase() string {
+	// If on bazel, we use their temp dir.
 	if test_detection.RunningAsBazelTest() {
-		os.Getenv("TEST_TMPDIR")
+		return os.Getenv("TEST_TMPDIR")
 	}
 
 	// Fallback to the system default.
