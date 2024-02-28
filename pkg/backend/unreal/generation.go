@@ -308,7 +308,7 @@ func (ugb *unrealGochartBackend) writeOutputIfDifferentOnDisk(ctx context.Contex
 	// If we're here, it means we need to write to the file.
 
 	// Ensure the path exists.
-	if err := os.MkdirAll(filepath.Dir(output.ExpectedPath), os.ModeDir); err != nil {
+	if err := os.MkdirAll(filepath.Dir(output.ExpectedPath), 0755); err != nil {
 		return false, fmt.Errorf("creating base directories %q: %w", filepath.Dir(output.ExpectedPath), err)
 	}
 
