@@ -4,3 +4,5 @@ Binaries/Win64/*
 Saved/*
 .vs/*
 GochartTest.sln
+.idea
+.vs

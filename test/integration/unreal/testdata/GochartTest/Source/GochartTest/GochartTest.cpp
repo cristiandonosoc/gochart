@@ -3,4 +3,4 @@
 #include "GochartTest.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, GochartTest, "GochartTest" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, GochartTest, "GochartTest");
