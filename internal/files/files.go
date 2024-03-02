@@ -2,6 +2,7 @@
 package files
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -28,6 +29,19 @@ func DirExists(path string) (bool, error) {
 	}
 
 	return info.IsDir(), nil
+}
+
+// DeleteFile is a convenience function that ignores the error if the file didn't exist already.
+func DeleteFile(path string) error {
+	if err := os.Remove(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 // StatFile returns the file info of the file if it can be done.
@@ -138,7 +152,7 @@ func CopyDirRecursive(from, to string) error {
 		dst := filepath.Join(to, file)
 
 		options := CopyFileAdvancedOptions{
-			DstCreateDir:         true,
+			DstCreateDir: true,
 		}
 		if err := CopyFileAdvanced(src, dst, &options); err != nil {
 			return fmt.Errorf("copying %q -> %q: %w", src, dst, err)
