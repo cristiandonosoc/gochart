@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	kFlag_NonInteractive = "non-interactive"
 	kFlag_UnrealStrategy = "unreal_strategy"
 )
 
@@ -176,6 +177,10 @@ func obtainCleanCommands() []*cli.Command {
 		Name:  kFlag_Clean_Filter,
 		Usage: fmt.Sprintf("The `FILTER` that will be used to narrow which elements it will match. Substring matching"),
 	})
+	flags = append(flags, &cli.BoolFlag{
+		Name:  kFlag_NonInteractive,
+		Usage: fmt.Sprintf("Whether to skip the confirmation prompt. Useful for scripts"),
+	})
 
 	clean := &cli.Command{
 		Name:        "clean",
@@ -233,11 +238,15 @@ func obtainCleanCommands() []*cli.Command {
 						fmt.Println("-----------------------------------------------------------------------")
 					}
 
-					if ok, err := userPrompt("Delete the listed generated Gochart C++ files?"); err != nil {
-						return err
-					} else if !ok {
-						fmt.Println("Aborting.")
-						return nil
+					skipPrompt := cliCtx.Bool(kFlag_NonInteractive)
+
+					if !skipPrompt {
+						if ok, err := userPrompt("Delete the listed generated Gochart C++ files?"); err != nil {
+							return err
+						} else if !ok {
+							fmt.Println("Aborting.")
+							return nil
+						}
 					}
 
 					deleted, err := ugb.CleanOrphaned(ctx, filter, options...)
