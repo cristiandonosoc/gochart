@@ -16,7 +16,7 @@ import (
 
 const (
 	kFlag_NonInteractive = "non-interactive"
-	kFlag_UnrealStrategy = "unreal_strategy"
+	kFlag_UnrealStrategy = "unreal-strategy"
 )
 
 func unrealInvocationFlags() []cli.Flag {
