@@ -127,13 +127,13 @@ func WithStrategy(strategy GenerationStrategy) option.Option {
 
 // Backend -----------------------------------------------------------------------------------------
 
-type unrealGochartBackend struct {
+type UnrealGochartBackend struct {
 	Project         *unreal.Project
 	gochartFrontend frontend.GochartFrontend
 	options         *Options
 }
 
-func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGochartBackend, error) {
+func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*UnrealGochartBackend, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("missing project dir")
 	}
@@ -148,7 +148,7 @@ func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*unrealGoc
 		return nil, fmt.Errorf("creating gochart lang frontend: %w", err)
 	}
 
-	return &unrealGochartBackend{
+	return &UnrealGochartBackend{
 		Project:         project,
 		gochartFrontend: gf,
 	}, nil
@@ -182,7 +182,7 @@ func (o *GochartOutput) UpToDate() bool {
 	return true
 }
 
-func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
+func (ugb *UnrealGochartBackend) Generate(ctx context.Context, opts ...option.Option) ([]*GochartOutput, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -223,7 +223,7 @@ func (ugb *unrealGochartBackend) Generate(ctx context.Context, opts ...option.Op
 	return goutputs, nil
 }
 
-func (ugb *unrealGochartBackend) validate() error {
+func (ugb *UnrealGochartBackend) validate() error {
 	if !ugb.options.Strategy.Valid() {
 		return fmt.Errorf("invalid generation strategy. Is the --unreal_strategy set?")
 	}

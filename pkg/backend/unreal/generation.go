@@ -20,7 +20,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
+func (ugb *UnrealGochartBackend) generateGocharts(ctx context.Context,
 	project *unreal.Project, gocharts []string) ([]*GochartOutput, error) {
 
 	// We generate the gocharts in a parallel fashion.
@@ -102,7 +102,7 @@ func (ugb *unrealGochartBackend) generateGocharts(ctx context.Context,
 	return outputs, nil
 }
 
-func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
+func (ugb *UnrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 	project *unreal.Project, gochartPath string) (*GochartOutput, error) {
 
 	if err := checkIfContextIsValid(ctx); err != nil {
@@ -134,7 +134,7 @@ func (ugb *unrealGochartBackend) generateGochartIfNeeded(ctx context.Context,
 // calculateGochartExpectedOutputs returns the expected gochart output as if it were to be
 // generated. This also returns the cpp_gen.Config used, so it the same can be used if the indeed
 // we want to generate the files.
-func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath string) (*GochartOutput, *cpp_gen.Config, error) {
+func (ugb *UnrealGochartBackend) calculateGochartExpectedOutputs(gochartPath string) (*GochartOutput, *cpp_gen.Config, error) {
 	gochart, err := ugb.Project.NewFile(gochartPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting gochart unreal file: %w", err)
@@ -209,7 +209,7 @@ func (ugb *unrealGochartBackend) calculateGochartExpectedOutputs(gochartPath str
 	return goutput, cppGenConfig, nil
 }
 
-func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
+func (ugb *UnrealGochartBackend) generateGochart(ctx context.Context,
 	gochart *unreal.File, cppGenConfig *cpp_gen.Config) ([]*common.BackendOutput, error) {
 
 	if err := checkIfContextIsValid(ctx); err != nil {
@@ -271,7 +271,7 @@ func calculateGochartOutputDir(project *unreal.Project, platform unreal.Platform
 	return dir, nil
 }
 
-func (ugb *unrealGochartBackend) writeOutput(ctx context.Context, output *common.BackendOutput) error {
+func (ugb *UnrealGochartBackend) writeOutput(ctx context.Context, output *common.BackendOutput) error {
 	// Ensure the path exists.
 	if err := os.MkdirAll(filepath.Dir(output.ExpectedPath), 0755); err != nil {
 		return fmt.Errorf("creating base directories %q: %w", filepath.Dir(output.ExpectedPath), err)

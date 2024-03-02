@@ -22,7 +22,7 @@ type ListResult struct {
 }
 
 // List goes over and encounters all the gocharts and the generated files, without generating them.
-func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option) (*ListResult, error) {
+func (ugb *UnrealGochartBackend) List(ctx context.Context, opts ...option.Option) (*ListResult, error) {
 	// TODO(cdc): Don't make the options global to the backend as it is now.
 	options := defaultOptions()
 	for _, opt := range opts {
@@ -50,7 +50,7 @@ func (ugb *unrealGochartBackend) List(ctx context.Context, opts ...option.Option
 	}, nil
 }
 
-func (ugb *unrealGochartBackend) listGocharts(ctx context.Context) ([]*GochartOutput, error) {
+func (ugb *UnrealGochartBackend) listGocharts(ctx context.Context) ([]*GochartOutput, error) {
 	gochartPaths, err := ugb.Project.SearchForFilesByExtension(ctx, ugb.options.Platform, []string{".gochart"})
 	if err != nil {
 		return nil, fmt.Errorf("searching for gochart files: %w", err)
@@ -78,7 +78,7 @@ func (ugb *unrealGochartBackend) listGocharts(ctx context.Context) ([]*GochartOu
 	return goutputs, nil
 }
 
-func (ugb *unrealGochartBackend) listOrphanedGocharts(ctx context.Context) ([]*GochartOutput, error) {
+func (ugb *UnrealGochartBackend) listOrphanedGocharts(ctx context.Context) ([]*GochartOutput, error) {
 	extensionsMap := map[string]string{
 		"gochart.forward_declare.h": "forward_declare",
 		"gochart.declare.h":         "declare",
