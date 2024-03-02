@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -124,6 +125,7 @@ func TestList(t *testing.T) {
 			}
 
 			// Listing now should give one found and one orphaned.
+			var wantDeleted []string
 			{
 				config := &testConfig{
 					version:                 version,
@@ -145,6 +147,47 @@ func TestList(t *testing.T) {
 
 				wantOrphaned := obtainProjectGoutputs(t, config)
 				compareGoutputs(t, wantOrphaned, got.OrphanedGocharts)
+
+				for _, orphaned := range wantOrphaned {
+					for _, output := range orphaned.Outputs {
+						wantDeleted = append(wantDeleted, output.ExpectedPath)
+					}
+				}
+				sort.Strings(wantDeleted)
+			}
+
+			// Clean the orphaned.
+			{
+				config := &testConfig{
+					version:                 version,
+					platform:                gunreal.Platform_Windows,
+					strategy:                strategy,
+					projectDir:              projectDir,
+					generateMetadata:        true,
+					generateNegativeFilters: []string{"Counter"},
+				}
+
+				got := cleanOrphaned(t, config, "")
+				require.Equal(t, wantDeleted, got)
+			}
+
+			// List should not have any orphaned.
+			{
+				config := &testConfig{
+					version:                 version,
+					platform:                gunreal.Platform_Windows,
+					strategy:                strategy,
+					projectDir:              projectDir,
+					generateMetadata:        true,
+					generateNegativeFilters: []string{"Counter"},
+				}
+
+				got := listProject(t, config)
+
+				want := obtainProjectGoutputs(t, config)
+				compareGoutputs(t, want, got.Gocharts)
+
+				require.Empty(t, got.OrphanedGocharts)
 			}
 		})
 	}
@@ -180,6 +223,22 @@ func generateProject(t *testing.T, config *testConfig) []*unreal_backend.Gochart
 	require.NoError(t, err)
 
 	return goutputs
+}
+
+func cleanOrphaned(t *testing.T, config *testConfig, filter string) []string {
+	ctx := context.Background()
+
+	ugb, err := unreal_backend.NewUnrealGochartBackend(ctx, config.projectDir)
+	require.NoError(t, err)
+
+	options := []option.Option{
+		unreal_backend.WithStrategy(config.strategy),
+	}
+
+	deleted, err := ugb.CleanOrphaned(ctx, filter, options...)
+	require.NoError(t, err)
+
+	return deleted
 }
 
 func compareGoutputs(t *testing.T, want, got []*unreal_backend.GochartOutput) {
