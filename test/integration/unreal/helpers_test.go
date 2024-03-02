@@ -35,10 +35,11 @@ type testBuildDescription struct {
 }
 
 type testGochartDescription struct {
-	Path         string
-	FilePrefix   string
-	ModuleName   string
-	InModulePath string
+	Path               string
+	FilePrefix         string
+	ModuleName         string
+	ModuleRelativePath string
+	InModulePath       string
 }
 
 func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGochartDescription) string {
@@ -46,7 +47,7 @@ func calculateStrategyBaseDir(t *testing.T, bd *testBuildDescription, gd *testGo
 	case unreal_backend.GenerationStrategy_Inline:
 		return filepath.Dir(gd.Path)
 	case unreal_backend.GenerationStrategy_ModuleGeneratedDir:
-		return filepath.Join(bd.ProjectDir, "Source", gd.ModuleName, "Generated", filepath.Dir(gd.InModulePath))
+		return filepath.Join(bd.ProjectDir, "Source", gd.ModuleRelativePath, "Generated", filepath.Dir(gd.InModulePath))
 	case unreal_backend.GenerationStrategy_UHT:
 		base := filepath.Join(bd.ProjectDir, "Intermediate", "Build", bd.Platform.String(), "UnrealEditor", "Inc")
 		return filepath.Join(base, gd.ModuleName, "UHT", filepath.Dir(gd.InModulePath))
@@ -66,16 +67,25 @@ func obtainProjectGoutputs(t *testing.T, config *testConfig) []*unreal_backend.G
 
 	gds := []*testGochartDescription{
 		{
-			Path:         filepath.Join(config.projectDir, "Source", "GochartTest", "AnotherDir", "Counter.gochart"),
-			FilePrefix:   "Counter",
-			ModuleName:   "GochartTest",
-			InModulePath: filepath.Join("AnotherDir", "Counter.gochart"),
+			Path:               filepath.Join(config.projectDir, "Source", "GochartTest", "AnotherDir", "Counter.gochart"),
+			FilePrefix:         "Counter",
+			ModuleName:         "GochartTest",
+			ModuleRelativePath: "GochartTest",
+			InModulePath:       filepath.Join("AnotherDir", "Counter.gochart"),
 		},
 		{
-			Path:         filepath.Join(config.projectDir, "Source", "GochartTest", "GochartTestActor.gochart"),
-			FilePrefix:   "GochartTestActor",
-			ModuleName:   "GochartTest",
-			InModulePath: "GochartTestActor.gochart",
+			Path:               filepath.Join(config.projectDir, "Source", "GochartTest", "GochartTestActor.gochart"),
+			FilePrefix:         "GochartTestActor",
+			ModuleName:         "GochartTest",
+			ModuleRelativePath: "GochartTest",
+			InModulePath:       "GochartTestActor.gochart",
+		},
+		{
+			Path:               filepath.Join(config.projectDir, "Source", "NestedDirectory", "NestedModule", "Some", "Deep", "Hierarchy", "NestedActorFlow.gochart"),
+			FilePrefix:         "NestedActorFlow",
+			ModuleName:         "NestedModule",
+			ModuleRelativePath: filepath.Join("NestedDirectory", "NestedModule"),
+			InModulePath:       filepath.Join("Some", "Deep", "Hierarchy", "NestedActorFlow.gochart"),
 		},
 	}
 

@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+#include <Some/Deep/Hierarchy/NestedActorFlow.gochart.declare.h>
+
 #include "NestedActor.generated.h"
 
 UCLASS()
@@ -19,6 +21,13 @@ protected:
     void Tick(float dt) override;
 
 private:
+    void StateRoot_CaptureUpdate(float dt);
+
+private:
+    using GochartType = gochart::NestedActorFlow::Gochart<ANestedActor>;
+    friend GochartType;
+    GochartType Gochart;
+
     float LastUpdate = 0;
     float TotalTime = 0;
 };
