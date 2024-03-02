@@ -6,6 +6,7 @@ go_library(
         "backend.go",
         "main.go",
         "unreal.go",
+        "unreal_helpers.go",
     ],
     importpath = "github.com/cristiandonosoc/gochart/cmd/gochart",
     visibility = ["//visibility:private"],
