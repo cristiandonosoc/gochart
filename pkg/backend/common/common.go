@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"time"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
 	"github.com/cristiandonosoc/gunreal/pkg/unreal"
@@ -77,6 +78,14 @@ type BackendOutput struct {
 
 func (bo *BackendOutput) IsLoaded() bool {
 	return bo.DiskContent != nil
+}
+
+func (bo *BackendOutput) ModTime() time.Time {
+	if !bo.IsLoaded() {
+		return time.Time{}
+	}
+
+	return bo.DiskContent.Stat.ModTime()
 }
 
 // EnsureLoad makes sure that the file and metadata are loaded.

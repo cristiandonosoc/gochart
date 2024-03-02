@@ -98,19 +98,48 @@ func unrealCommands() []*cli.Command {
 						}
 
 						fmt.Printf("Listing gocharts at Unreal project at %s\n", ugb.Project.ProjectDir)
-						fmt.Printf("Found %v gocharts:\n", len(result.Gocharts))
+						fmt.Printf("Found %v gocharts:\n\n", len(result.Gocharts))
 						for _, goutput := range result.Gocharts {
-							fmt.Println("-----------------------------------------------------------------------")
 							uptodate := "[UP TO DATE]"
 							if !goutput.UpToDate() {
 								uptodate = "[*** WILL REGENERATE ***]"
 							}
 
 							fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
-							fmt.Printf("- PATH: %s [mod: %v]\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path), goutput.Gochart.FileInfo.ModTime())
+
+							fmt.Printf("- PATH: %s", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
+							if modtime := goutput.Gochart.ModTime(); !modtime.IsZero() {
+								fmt.Printf(" [modtime: %v]", modtime.Format("2006/01/02 15:04:05"))
+							}
+							fmt.Printf("\n")
+
 							fmt.Printf("- EXPECTED OUTPUTS:\n")
 							for _, output := range goutput.Outputs {
-								fmt.Printf("  > %s [mod: %v]\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath), output.DiskContent.Stat.ModTime())
+								fmt.Printf("  > %s", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+								if modtime := output.ModTime(); !modtime.IsZero() {
+									fmt.Printf(" [modtime: %v]", modtime.Format("2006/01/02 15:04:05"))
+								} else {
+									fmt.Printf(" [<file not found>]")
+								}
+
+								fmt.Printf("\n")
+							}
+							fmt.Println("-----------------------------------------------------------------------")
+						}
+
+						if len(result.OrphanedGocharts) > 0 {
+							fmt.Println("")
+							fmt.Println("***********************************************************************")
+							fmt.Printf("Found %d Orphaned Gocharts\n\n", len(result.OrphanedGocharts))
+
+							for _, orphaned := range result.OrphanedGocharts {
+								fmt.Printf("%s\n", orphaned.Gochart.Name())
+								fmt.Printf("- PATH: %s [<file not found>]\n", relFilePath(ugb.Project.ProjectDir, orphaned.Gochart.Path))
+								fmt.Printf("- POINTED BY:\n")
+								for _, output := range orphaned.Outputs {
+									fmt.Printf("   > %s\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+								}
+								fmt.Println("-----------------------------------------------------------------------")
 							}
 						}
 
