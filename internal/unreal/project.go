@@ -28,6 +28,12 @@ type Project struct {
 }
 
 func IndexProject(ctx context.Context, projectDir string) (*Project, error) {
+	abs, err := filepath.Abs(projectDir)
+	if err != nil {
+		return nil, fmt.Errorf("making %q abs: %w", projectDir, err)
+	}
+	projectDir = abs
+
 	sourceDir := filepath.Join(projectDir, "Source")
 	if exists, err := files.DirExists(sourceDir); err != nil {
 		return nil, fmt.Errorf("querying source dir %q: %w", sourceDir, err)
