@@ -107,10 +107,10 @@ func unrealCommands() []*cli.Command {
 							}
 
 							fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
-							fmt.Printf("- PATH: %s\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
+							fmt.Printf("- PATH: %s [mod: %v]\n", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path), goutput.Gochart.FileInfo.ModTime())
 							fmt.Printf("- EXPECTED OUTPUTS:\n")
 							for _, output := range goutput.Outputs {
-								fmt.Printf("  > %s\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+								fmt.Printf("  > %s [mod: %v]\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath), output.DiskContent.Stat.ModTime())
 							}
 						}
 

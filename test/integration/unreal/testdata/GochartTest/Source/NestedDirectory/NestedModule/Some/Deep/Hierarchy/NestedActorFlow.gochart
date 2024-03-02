@@ -1,0 +1,9 @@
+gochart NestedActorFlow {
+    // Some update.
+    trigger Update(float dt)
+
+    state Root
+    {
+        capture Update
+    }
+}

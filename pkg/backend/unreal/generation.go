@@ -1,7 +1,6 @@
 package unreal
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -239,8 +238,7 @@ func (ugb *unrealGochartBackend) generateGochart(ctx context.Context,
 
 	// Now that we have the files generated, we check if we need to write them to disk.
 	for _, output := range outputs {
-		_, err := ugb.writeOutputIfDifferentOnDisk(ctx, output)
-		if err != nil {
+		if err := ugb.writeOutput(ctx, output); err != nil {
 			return nil, fmt.Errorf("writing gochart output to disk: %w", err)
 		}
 	}
@@ -273,57 +271,30 @@ func calculateGochartOutputDir(project *unreal.Project, platform unreal.Platform
 	return dir, nil
 }
 
-// writeOutputIfDifferentOnDisk will check the contents of the file on disk and compare them to the
-// generated data. If there was no error, the returned boolean states whether the file was written
-// to disk or not. Returning false means that the contents on disk are the same, so there was no
-// need to write it.
-func (ugb *unrealGochartBackend) writeOutputIfDifferentOnDisk(ctx context.Context, output *common.BackendOutput) (bool, error) {
-	if err := checkIfContextIsValid(ctx); err != nil {
-		return false, fmt.Errorf("context is no longer valid: %w", err)
-	}
-
-	if output.Content == nil {
-		return false, fmt.Errorf("no generated content found")
-	}
-
-	// Read the contents of the generated.
-	generatedData, err := io.ReadAll(output.Content)
-	if err != nil {
-		return false, fmt.Errorf("reading generated data: %w", err)
-	}
-
-	fileData, err := os.ReadFile(output.ExpectedPath)
-	if err != nil {
-		// We ignore file not exists error, because we will need to write it anyway.
-		if !errors.Is(err, os.ErrNotExist) {
-			return false, fmt.Errorf("reading file %q: %w", output.ExpectedPath, err)
-		}
-	}
-
-	// If the file contents are equal, we omit generating, stating that we did not.
-	if bytes.Equal(fileData, generatedData) {
-		return false, nil
-	}
-
-	// If we're here, it means we need to write to the file.
-
+func (ugb *unrealGochartBackend) writeOutput(ctx context.Context, output *common.BackendOutput) error {
 	// Ensure the path exists.
 	if err := os.MkdirAll(filepath.Dir(output.ExpectedPath), 0755); err != nil {
-		return false, fmt.Errorf("creating base directories %q: %w", filepath.Dir(output.ExpectedPath), err)
+		return fmt.Errorf("creating base directories %q: %w", filepath.Dir(output.ExpectedPath), err)
 	}
 
 	// First we create or truncate the file.
 	file, err := os.Create(output.ExpectedPath)
 	if err != nil {
-		return false, fmt.Errorf("creating/truncating %q: %w", output.ExpectedPath, err)
+		return fmt.Errorf("creating/truncating %q: %w", output.ExpectedPath, err)
 	}
 	defer file.Close()
 
-	if _, err := file.Write(generatedData); err != nil {
-		return false, fmt.Errorf("writing to %q: %w", output.ExpectedPath, err)
+	// Read the contents of the generated.
+	generatedData, err := io.ReadAll(output.Content)
+	if err != nil {
+		return fmt.Errorf("reading generated data: %w", err)
 	}
 
-	return true, nil
+	if _, err := file.Write(generatedData); err != nil {
+		return fmt.Errorf("writing to %q: %w", output.ExpectedPath, err)
+	}
+
+	return nil
 }
 
 func checkIfContextIsValid(ctx context.Context) error {
