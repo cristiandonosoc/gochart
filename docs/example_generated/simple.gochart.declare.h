@@ -67,9 +67,10 @@ public:
     void TriggerTransferToWindow();
     // **** TRIGGER API END ****
 
-private:
-	Gochart() = delete;
+public:
+	Gochart() = default;
 
+private:
 	// No copy construction.
 	Gochart(const Gochart&) = delete;
 	Gochart& operator=(const Gochart&) = delete;
