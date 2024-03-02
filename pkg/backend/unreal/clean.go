@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
@@ -50,5 +51,6 @@ func (ugb *UnrealGochartBackend) CleanOrphaned(ctx context.Context, filter strin
 		}
 	}
 
+	sort.Strings(deleted)
 	return deleted, nil
 }
