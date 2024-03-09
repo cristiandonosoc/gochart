@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
 
@@ -53,6 +54,21 @@ func LoadConfig(path string) (*GunrealConfig, error) {
 	return gc, err
 }
 
+func (gc *GunrealConfig) Describe() string {
+	var sb strings.Builder
+
+	sb.WriteString("CONFIG FILE --------------------------------------------------------------\n\n")
+	sb.WriteString(fmt.Sprintf("- PATH: %s\n", gc.Path))
+	sb.WriteString(fmt.Sprintf("- UPROJECT: %s\n", gc.UProject))
+	sb.WriteString(fmt.Sprintf("- PROJECT DIR: %s\n", gc.ProjectDir))
+
+	if gc.EditorDir != "" {
+		sb.WriteString(fmt.Sprintf("- EDITOR DIR: %s\n", gc.EditorDir))
+	}
+
+	return sb.String()
+}
+
 func (gc *GunrealConfig) resolve() error {
 	if err := gc.sanityCheck(); err != nil {
 		return fmt.Errorf("sanity checking config: %w", err)
@@ -67,13 +83,13 @@ func (gc *GunrealConfig) resolve() error {
 }
 
 func (gc *GunrealConfig) sanityCheck() error {
-	if abs, err := checkFile(gc.UProject); err != nil {
+	if abs, err := gc.checkFile(gc.UProject); err != nil {
 		return fmt.Errorf("uproject: %w", err)
 	} else {
 		gc.UProject = abs
 	}
 
-	if abs, err := checkFile(gc.EditorDir); err != nil {
+	if abs, err := gc.checkFile(gc.EditorDir); err != nil {
 		return fmt.Errorf("editor_key: %w", err)
 	} else {
 		gc.EditorDir = abs
@@ -82,16 +98,22 @@ func (gc *GunrealConfig) sanityCheck() error {
 	return nil
 }
 
-func checkFile(path string) (string, error) {
+func (gc *GunrealConfig) checkFile(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("key not set")
 	}
 
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return "", fmt.Errorf("abs %q: %w", path, err)
+	// If the path given is not absolute, we will make it relative to the config file.
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(filepath.Dir(gc.Path), path)
+
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return "", fmt.Errorf("abs %q: %w", path, err)
+		}
+		path = abs
 	}
-	path = abs
+	path = filepath.Clean(path)
 
 	// TODO(cdc): Use StatFileErrorf
 	if _, found, err := files.StatFile(path); err != nil || !found {

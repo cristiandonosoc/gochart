@@ -90,7 +90,7 @@ func (p *Project) IndexModules(ctx context.Context) error {
 	}
 
 	if len(modules) == 0 {
-		return fmt.Errorf("no modules found at %q. Is it an Unreal project?", p.ProjectDir)
+		return fmt.Errorf("no modules found at %q. Is it an Unreal project?", p.ProjectDir())
 	}
 
 	// Make sure all the modules point back to the project.
@@ -279,4 +279,55 @@ func (p *Project) identifyModule(path string) (*Module, error) {
 	}
 
 	return candidate, nil
+}
+
+func (p *Project) Describe() (string, error) {
+	var sb strings.Builder
+
+	sb.WriteString(p.Config.Describe())
+	sb.WriteString("\n")
+
+	if p.UnrealEditor != nil {
+		ed, err := p.UnrealEditor.Describe()
+		if err != nil {
+			return "", fmt.Errorf("describing editor: %w", err)
+		}
+		sb.WriteString(ed)
+		sb.WriteString("\n")
+	}
+
+	// Go over the modules, but in a sorted fashion.
+	modules := make([]*Module, 0, len(p.Modules))
+	for _, module := range p.Modules {
+		modules = append(modules, module)
+
+		// // We prefetch the modules.
+		// _, err := module.LoadUHTFiles(Platform_Windows, true)
+		// if err != nil {
+		// 	return fmt.Errorf("loading UHT files for module %q: %w", module.Name, err)
+		// }
+	}
+	sort.Slice(modules, func(i, j int) bool {
+		return modules[i].Name < modules[j].Name
+	})
+
+	sb.WriteString("MODULES ------------------------------------------------------------------\n\n")
+	for i, module := range modules {
+		if i > 0 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(fmt.Sprintf("- MODULE: %s\n", module.Name))
+		sb.WriteString(fmt.Sprintf("  - BASE DIR: %s\n", module.BaseDir))
+		sb.WriteString(fmt.Sprintf("  - BUILD FILE: %s\n", module.BuildFile))
+		sb.WriteString(fmt.Sprintf("  - FILES: %d\n", len(module.Files)))
+		// for _, file := range module.Files {
+		// 	fmt.Println("-", file)
+		// }
+		//sb.WriteString(fmt.Sprintf("UHT FILES: %d\n", len(uhtFiles)))
+		// for _, file := range uhtFiles {
+		// 	fmt.Println("-", file)
+		// }
+	}
+
+	return sb.String(), nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
 
@@ -74,4 +75,13 @@ func readEditorVersion(path string) (*goversion.Version, *buildVersionJson, erro
 	}
 
 	return version, bvj, nil
+}
+
+func (e *Editor) Describe() (string, error) {
+	var sb strings.Builder
+
+	sb.WriteString("EDITOR -------------------------------------------------------------------\n\n")
+	sb.WriteString(fmt.Sprintf("- VERSION: %s\n", e.Version))
+
+	return sb.String(), nil
 }
