@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gunreal/pkg/config"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -23,31 +24,54 @@ const (
 
 // Project represents an indexed Unreal project.
 type Project struct {
-	ProjectDir string
-	Modules    map[string]*Module
+	Config       *config.GunrealConfig
+	UnrealEditor *Editor
+
+	Modules map[string]*Module
 }
 
-func NewProject(projectDir string) (*Project, error) {
+func NewProjectFromPath(projectDir string) (*Project, error) {
 	abs, err := filepath.Abs(projectDir)
 	if err != nil {
 		return nil, fmt.Errorf("making %q abs: %w", projectDir, err)
 	}
 	projectDir = abs
 
-	sourceDir := filepath.Join(projectDir, "Source")
+	// Create an on-the-fly config.
+	config := &config.GunrealConfig{
+		ProjectDir: projectDir,
+	}
+
+	return NewProject(config)
+}
+
+func NewProject(config *config.GunrealConfig) (*Project, error) {
+	sourceDir := filepath.Join(config.ProjectDir, "Source")
 	if exists, err := files.DirExists(sourceDir); err != nil {
 		return nil, fmt.Errorf("querying source dir %q: %w", sourceDir, err)
 	} else if !exists {
 		return nil, fmt.Errorf("source dir %q does not exists", sourceDir)
 	}
 
-	project := &Project{
-		ProjectDir: projectDir,
+	var editor *Editor
+	if config.EditorDir != "" {
+		e, err := NewEditor(config.EditorDir)
+		if err != nil {
+			return nil, fmt.Errorf("reading editor info: %w", err)
+		}
+		editor = e
 	}
 
-	// TODO(cdc): Determine unreal version.
+	project := &Project{
+		Config:       config,
+		UnrealEditor: editor,
+	}
 
 	return project, nil
+}
+
+func (p *Project) ProjectDir() string {
+	return p.Config.ProjectDir
 }
 
 func (p *Project) IsIndexed() bool {
@@ -55,7 +79,7 @@ func (p *Project) IsIndexed() bool {
 }
 
 func (p *Project) SourceDir() string {
-	return filepath.Join(p.ProjectDir, "Source")
+	return filepath.Join(p.ProjectDir(), "Source")
 }
 
 // IndexModules goes and collects all the modules within the project.
