@@ -68,7 +68,7 @@ func (m *Module) LoadUHTFiles(platform Platform, reload bool) ([]string, error) 
 	}
 
 	// If we're here we need to query the list for this module.
-	uhtDir := filepath.Join(m.project.ProjectDir, "Intermediate", "Build", platform.String())
+	uhtDir := filepath.Join(m.project.ProjectDir(), "Intermediate", "Build", platform.String())
 	uhtDir = filepath.Join(uhtDir, "UnrealEditor", "Inc", m.Name, "UHT")
 
 	var uhtFiles []string
