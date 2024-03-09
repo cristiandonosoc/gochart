@@ -59,6 +59,25 @@ func StatFile(path string) (fs.FileInfo, bool, error) {
 	return stat, true, nil
 }
 
+// StatFileErrorf is an utility function to deal with the two possible error modes of |StatFile|.
+// Useful when we don't care about the difference of an error or file not found.
+//
+// Usage:
+//```
+// stat, found, err := StatFile(path)
+// if err != nil || !found {
+//   return StatFileErrorf(err, "statting %q", path)
+// }
+//```
+func StatFileErrorf(err error, format string, args ...any) error {
+	msg := fmt.Sprintf(format, args...)
+	if err == nil {
+		return fmt.Errorf("%s: file not found", msg)
+	}
+
+	return fmt.Errorf("%s: %w", msg, err)
+}
+
 // CopyFile
 func CopyFile(src, dst string) error {
 	return CopyFileAdvanced(src, dst, nil)
