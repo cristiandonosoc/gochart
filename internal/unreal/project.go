@@ -24,8 +24,7 @@ const (
 
 // Project represents an indexed Unreal project.
 type Project struct {
-	Config       *config.GunrealConfig
-	UnrealEditor *Editor
+	Config *config.GunrealConfig
 
 	Modules map[string]*Module
 }
@@ -53,18 +52,8 @@ func NewProject(config *config.GunrealConfig) (*Project, error) {
 		return nil, fmt.Errorf("source dir %q does not exists", sourceDir)
 	}
 
-	var editor *Editor
-	if config.EditorDir != "" {
-		e, err := NewEditor(config.EditorDir)
-		if err != nil {
-			return nil, fmt.Errorf("reading editor info: %w", err)
-		}
-		editor = e
-	}
-
 	project := &Project{
-		Config:       config,
-		UnrealEditor: editor,
+		Config: config,
 	}
 
 	return project, nil
@@ -286,15 +275,6 @@ func (p *Project) Describe() (string, error) {
 
 	sb.WriteString(p.Config.Describe())
 	sb.WriteString("\n")
-
-	if p.UnrealEditor != nil {
-		ed, err := p.UnrealEditor.Describe()
-		if err != nil {
-			return "", fmt.Errorf("describing editor: %w", err)
-		}
-		sb.WriteString(ed)
-		sb.WriteString("\n")
-	}
 
 	// Go over the modules, but in a sorted fashion.
 	modules := make([]*Module, 0, len(p.Modules))

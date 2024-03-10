@@ -1,4 +1,4 @@
-package unreal
+package config
 
 import (
 	"encoding/json"
@@ -12,56 +12,15 @@ import (
 	goversion "github.com/hashicorp/go-version"
 )
 
-type Editor struct {
+type GunrealEditorConfig struct {
 	Version *goversion.Version
 
 	// Installed determines whether this is considered an installed version (eg. installing via
 	// Unreal Launcher) vs a source build.
 	Installed bool
 
-	// For internal tracking information. Exposed via functions if needed.
-	bvj *buildVersionJson
-}
-
-func NewEditor(path string) (*Editor, error) {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("abs %q: %w", path, err)
-	}
-	path = abs
-
-	// Sanity check that there is an Engine directory.
-	if exists, err := files.DirExists(filepath.Join(path, "Engine")); err != nil {
-		return nil, fmt.Errorf("checking if engine dir exists: %w", err)
-	} else if !exists {
-		return nil, fmt.Errorf("%q does not have an Engine directory. Is it an Unreal Editor installation?", path)
-	}
-
-	version, bvj, err := readEditorVersion(path)
-	if err != nil {
-		return nil, fmt.Errorf("reading editor version: %w", err)
-	}
-
-	installed, err := checkEngineInstalled(path)
-	if err != nil {
-		return nil, fmt.Errorf("checking if engine is installed: %w", err)
-	}
-
-	return &Editor{
-		Version:   version,
-		Installed: installed,
-		bvj:       bvj,
-	}, nil
-}
-
-func (e *Editor) Describe() (string, error) {
-	var sb strings.Builder
-
-	sb.WriteString("EDITOR -------------------------------------------------------------------\n\n")
-	sb.WriteString(fmt.Sprintf("- VERSION: %s\n", e.Version))
-	sb.WriteString(fmt.Sprintf("- INSTALLED: %t\n", e.Installed))
-
-	return sb.String(), nil
+	// For internal tracking information mostly.
+	BuildVersionFile *buildVersionJson
 }
 
 type buildVersionJson struct {
@@ -73,6 +32,41 @@ type buildVersionJson struct {
 	IsLicenseeVersion    int    `json:"IsLicenseeVersion"`
 	IsPromotedbuild      int    `json:"IsPromotedbuild"`
 	BranchName           string `json:"BranchName"`
+}
+
+func (gec *GunrealEditorConfig) Describe() string {
+	var sb strings.Builder
+
+	sb.WriteString("EDITOR -------------------------------------------------------------------\n\n")
+	sb.WriteString(fmt.Sprintf("- VERSION: %s\n", gec.Version))
+	sb.WriteString(fmt.Sprintf("- INSTALLED: %t\n", gec.Installed))
+
+	return sb.String()
+}
+
+func newEditorConfig(editorDir string) (*GunrealEditorConfig, error) {
+	// Sanity check that there is an Engine directory.
+	if exists, err := files.DirExists(filepath.Join(editorDir, "Engine")); err != nil {
+		return nil, fmt.Errorf("checking if engine dir exists: %w", err)
+	} else if !exists {
+		return nil, fmt.Errorf("%q does not have an Engine directory. Is it an Unreal Editor installation?", editorDir)
+	}
+
+	version, bvj, err := readEditorVersion(editorDir)
+	if err != nil {
+		return nil, fmt.Errorf("reading editor version: %w", err)
+	}
+
+	installed, err := checkEngineInstalled(editorDir)
+	if err != nil {
+		return nil, fmt.Errorf("checking if engine is installed: %w", err)
+	}
+
+	return &GunrealEditorConfig{
+		Version:          version,
+		Installed:        installed,
+		BuildVersionFile: bvj,
+	}, nil
 }
 
 func readEditorVersion(path string) (*goversion.Version, *buildVersionJson, error) {

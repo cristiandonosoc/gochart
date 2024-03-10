@@ -22,8 +22,15 @@ type GunrealConfig struct {
 	// *** Editor fields ***
 
 	EditorDir string `yaml:"editor"`
+
+	EditorConfig *GunrealEditorConfig
+
+	// (optional)
 	// UBT will normally be discovered via the editor, but this option can be used to override.
 	UBT string `yaml:"ubt"`
+	// (optional) Which dotnet to use for invoking the tooling.
+	// If not set, it will tried to be found in the Unreal installation.
+	Dotnet string `yaml:"dotnet"`
 
 	Path string
 }
@@ -66,6 +73,11 @@ func (gc *GunrealConfig) Describe() string {
 		sb.WriteString(fmt.Sprintf("- EDITOR DIR: %s\n", gc.EditorDir))
 	}
 
+	if gc.EditorConfig != nil {
+		sb.WriteString("\n")
+		sb.WriteString(gc.EditorConfig.Describe())
+	}
+
 	return sb.String()
 }
 
@@ -74,25 +86,31 @@ func (gc *GunrealConfig) resolve() error {
 		return fmt.Errorf("sanity checking config: %w", err)
 	}
 
-	// Check the project key.
+	// Check the project dir.
 	if gc.ProjectDir == "" {
 		gc.ProjectDir = filepath.Dir(gc.UProject)
+	}
+
+	if gec, err := newEditorConfig(gc.EditorDir); err != nil {
+		return fmt.Errorf("reading editor config: %w", err)
+	} else {
+		gc.EditorConfig = gec
 	}
 
 	return nil
 }
 
 func (gc *GunrealConfig) sanityCheck() error {
-	if abs, err := gc.checkFile(gc.UProject); err != nil {
+	if uproject, err := gc.checkFile(gc.UProject); err != nil {
 		return fmt.Errorf("uproject: %w", err)
 	} else {
-		gc.UProject = abs
+		gc.UProject = uproject
 	}
 
-	if abs, err := gc.checkFile(gc.EditorDir); err != nil {
+	if editorDir, err := gc.checkFile(gc.EditorDir); err != nil {
 		return fmt.Errorf("editor_key: %w", err)
 	} else {
-		gc.EditorDir = abs
+		gc.EditorDir = editorDir
 	}
 
 	return nil
