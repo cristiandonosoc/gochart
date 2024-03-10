@@ -21,16 +21,7 @@ type GunrealConfig struct {
 
 	// *** Editor fields ***
 
-	EditorDir string `yaml:"editor"`
-
-	EditorConfig *GunrealEditorConfig
-
-	// (optional)
-	// UBT will normally be discovered via the editor, but this option can be used to override.
-	UBT string `yaml:"ubt"`
-	// (optional) Which dotnet to use for invoking the tooling.
-	// If not set, it will tried to be found in the Unreal installation.
-	Dotnet string `yaml:"dotnet"`
+	EditorConfig *GunrealEditorConfig `yaml:"editor"`
 
 	Path string
 }
@@ -64,14 +55,12 @@ func LoadConfig(path string) (*GunrealConfig, error) {
 func (gc *GunrealConfig) Describe() string {
 	var sb strings.Builder
 
-	sb.WriteString("CONFIG FILE --------------------------------------------------------------\n\n")
-	sb.WriteString(fmt.Sprintf("- PATH: %s\n", gc.Path))
+	sb.WriteString(fmt.Sprintf("CONFIG PATH: %s\n", gc.Path))
+	sb.WriteString("\n")
+
+	sb.WriteString("PROJECT ------------------------------------------------------------------\n\n")
 	sb.WriteString(fmt.Sprintf("- UPROJECT: %s\n", gc.UProject))
 	sb.WriteString(fmt.Sprintf("- PROJECT DIR: %s\n", gc.ProjectDir))
-
-	if gc.EditorDir != "" {
-		sb.WriteString(fmt.Sprintf("- EDITOR DIR: %s\n", gc.EditorDir))
-	}
 
 	if gc.EditorConfig != nil {
 		sb.WriteString("\n")
@@ -91,39 +80,45 @@ func (gc *GunrealConfig) resolve() error {
 		gc.ProjectDir = filepath.Dir(gc.UProject)
 	}
 
-	if gec, err := newEditorConfig(gc.EditorDir); err != nil {
+	if err := resolveEditorConfig(gc.Path, gc.EditorConfig); err != nil {
 		return fmt.Errorf("reading editor config: %w", err)
-	} else {
-		gc.EditorConfig = gec
 	}
 
 	return nil
 }
 
 func (gc *GunrealConfig) sanityCheck() error {
-	if uproject, err := gc.checkFile(gc.UProject); err != nil {
+	if uproject, err := checkFile(gc.Path, gc.UProject); err != nil {
 		return fmt.Errorf("uproject: %w", err)
 	} else {
 		gc.UProject = uproject
 	}
 
-	if editorDir, err := gc.checkFile(gc.EditorDir); err != nil {
-		return fmt.Errorf("editor_key: %w", err)
-	} else {
-		gc.EditorDir = editorDir
-	}
-
 	return nil
 }
 
-func (gc *GunrealConfig) checkFile(path string) (string, error) {
+func checkFile(configPath, path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("key not set")
 	}
 
+	abs, err := resolveConfigPath(configPath, path)
+	if err != nil {
+		return "", fmt.Errorf("resolving config path: %w", err)
+	}
+	path = abs
+
 	// If the path given is not absolute, we will make it relative to the config file.
+	if _, found, err := files.StatFile(path); err != nil || !found {
+		return "", files.StatFileErrorf(err, "statting %q", path)
+	}
+
+	return path, nil
+}
+
+func resolveConfigPath(configPath, path string) (string, error) {
 	if !filepath.IsAbs(path) {
-		path = filepath.Join(filepath.Dir(gc.Path), path)
+		path = filepath.Join(filepath.Dir(configPath), path)
 
 		abs, err := filepath.Abs(path)
 		if err != nil {
@@ -133,10 +128,6 @@ func (gc *GunrealConfig) checkFile(path string) (string, error) {
 	}
 	path = filepath.Clean(path)
 
-	// TODO(cdc): Use StatFileErrorf
-	if _, found, err := files.StatFile(path); err != nil || !found {
-		return "", files.StatFileErrorf(err, "statting %q", path)
-	}
-
 	return path, nil
+
 }
