@@ -15,6 +15,10 @@ import (
 type Editor struct {
 	Version *goversion.Version
 
+	// Installed determines whether this is considered an installed version (eg. installing via
+	// Unreal Launcher) vs a source build.
+	Installed bool
+
 	// For internal tracking information. Exposed via functions if needed.
 	bvj *buildVersionJson
 }
@@ -38,10 +42,26 @@ func NewEditor(path string) (*Editor, error) {
 		return nil, fmt.Errorf("reading editor version: %w", err)
 	}
 
+	installed, err := checkEngineInstalled(path)
+	if err != nil {
+		return nil, fmt.Errorf("checking if engine is installed: %w", err)
+	}
+
 	return &Editor{
-		Version: version,
-		bvj:     bvj,
+		Version:   version,
+		Installed: installed,
+		bvj:       bvj,
 	}, nil
+}
+
+func (e *Editor) Describe() (string, error) {
+	var sb strings.Builder
+
+	sb.WriteString("EDITOR -------------------------------------------------------------------\n\n")
+	sb.WriteString(fmt.Sprintf("- VERSION: %s\n", e.Version))
+	sb.WriteString(fmt.Sprintf("- INSTALLED: %t\n", e.Installed))
+
+	return sb.String(), nil
 }
 
 type buildVersionJson struct {
@@ -77,11 +97,13 @@ func readEditorVersion(path string) (*goversion.Version, *buildVersionJson, erro
 	return version, bvj, nil
 }
 
-func (e *Editor) Describe() (string, error) {
-	var sb strings.Builder
+func checkEngineInstalled(path string) (bool, error) {
+	installedMarkerPath := filepath.Join(path, "Engine", "Build", "InstalledBuild.txt")
 
-	sb.WriteString("EDITOR -------------------------------------------------------------------\n\n")
-	sb.WriteString(fmt.Sprintf("- VERSION: %s\n", e.Version))
+	_, exists, err := files.StatFile(installedMarkerPath)
+	if err != nil {
+		return false, fmt.Errorf("statting %q: %w", installedMarkerPath, err)
+	}
 
-	return sb.String(), nil
+	return exists, nil
 }
