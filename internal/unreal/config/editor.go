@@ -152,7 +152,7 @@ func resolveDotnet(configPath string, gec *GunrealEditorConfig) (string, error) 
 	}
 
 	if gec.Version.LessThan(gVersion_5_4) {
-		dotnetPath := filepath.Join(gec.EditorDir, "Engine", "Binaries", "ThirdParty", "DotNET", "6.0.302", "windows")
+		dotnetPath := filepath.Join(gec.EditorDir, "Engine", "Binaries", "ThirdParty", "DotNET", "6.0.302", "windows", "dotnet.exe")
 		dotnet, err := checkFile(configPath, dotnetPath)
 		if err != nil {
 			if gec.Installed {
