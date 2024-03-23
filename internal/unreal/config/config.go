@@ -14,6 +14,7 @@ import (
 type GunrealConfig struct {
 	// *** Project fields ***
 
+	ProjectName string `yaml:"project_name"`
 	UProjectPath string `yaml:"uproject"`
 	// (optional) Where the base project is.
 	// If not set, it is calculated as the directory that holds the |UProject| file.
@@ -59,6 +60,7 @@ func (gc *GunrealConfig) Describe() string {
 	sb.WriteString("\n")
 
 	sb.WriteString("PROJECT ------------------------------------------------------------------\n\n")
+	sb.WriteString(fmt.Sprintf("- Name: %s\n", gc.ProjectName))
 	sb.WriteString(fmt.Sprintf("- UPROJECT: %s\n", gc.UProjectPath))
 	sb.WriteString(fmt.Sprintf("- PROJECT DIR: %s\n", gc.ProjectDir))
 
@@ -88,6 +90,10 @@ func (gc *GunrealConfig) resolve() error {
 }
 
 func (gc *GunrealConfig) sanityCheck() error {
+	if gc.ProjectName == "" {
+		return fmt.Errorf("project_name not set")
+	}
+
 	if uproject, err := checkFile(gc.Path, gc.UProjectPath); err != nil {
 		return fmt.Errorf("uproject: %w", err)
 	} else {

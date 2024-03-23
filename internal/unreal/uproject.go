@@ -21,7 +21,7 @@ type UProjectPlugin struct {
 }
 
 type UProject struct {
-	FileVersion       string `json:"FileVersion"`
+	FileVersion       int `json:"FileVersion"`
 	EngineAssociation string `json:"EngineAssociation"`
 	Category          string `json:"Category"`
 	Description       string `json:"Description"`
