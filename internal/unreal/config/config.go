@@ -14,7 +14,7 @@ import (
 type GunrealConfig struct {
 	// *** Project fields ***
 
-	UProject string `yaml:"uproject"`
+	UProjectPath string `yaml:"uproject"`
 	// (optional) Where the base project is.
 	// If not set, it is calculated as the directory that holds the |UProject| file.
 	ProjectDir string `yaml:"project_dir"`
@@ -59,7 +59,7 @@ func (gc *GunrealConfig) Describe() string {
 	sb.WriteString("\n")
 
 	sb.WriteString("PROJECT ------------------------------------------------------------------\n\n")
-	sb.WriteString(fmt.Sprintf("- UPROJECT: %s\n", gc.UProject))
+	sb.WriteString(fmt.Sprintf("- UPROJECT: %s\n", gc.UProjectPath))
 	sb.WriteString(fmt.Sprintf("- PROJECT DIR: %s\n", gc.ProjectDir))
 
 	if gc.EditorConfig != nil {
@@ -77,7 +77,7 @@ func (gc *GunrealConfig) resolve() error {
 
 	// Check the project dir.
 	if gc.ProjectDir == "" {
-		gc.ProjectDir = filepath.Dir(gc.UProject)
+		gc.ProjectDir = filepath.Dir(gc.UProjectPath)
 	}
 
 	if err := resolveEditorConfig(gc.Path, gc.EditorConfig); err != nil {
@@ -88,10 +88,10 @@ func (gc *GunrealConfig) resolve() error {
 }
 
 func (gc *GunrealConfig) sanityCheck() error {
-	if uproject, err := checkFile(gc.Path, gc.UProject); err != nil {
+	if uproject, err := checkFile(gc.Path, gc.UProjectPath); err != nil {
 		return fmt.Errorf("uproject: %w", err)
 	} else {
-		gc.UProject = uproject
+		gc.UProjectPath = uproject
 	}
 
 	return nil

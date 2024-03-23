@@ -19,5 +19,8 @@ func (p *Project) GenerateCompDB() error {
 		return fmt.Errorf("generating project files: %w", err)
 	}
 
+	// compdbName := fmt.Sprintf("compileCommands_%s.json", p.Config.
+	// compdbPath := filepath.Join(p.Config.ProjectDir, ".vscode", fmt.Spri
+
 	return nil
 }

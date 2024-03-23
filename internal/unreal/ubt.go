@@ -50,7 +50,7 @@ func experimentalDirectCmd(p *Project, args []string) *exec.Cmd {
 	var cmdargs []string
 	cmdargs = append(cmdargs, editor.UBTDll)
 	cmdargs = append(cmdargs, args...)
-	cmdargs = append(cmdargs, "-Project", p.Config.UProject)
+	cmdargs = append(cmdargs, "-Project", p.Config.UProjectPath)
 
 	cmd := exec.Command(editor.Dotnet, cmdargs...)
 	cmd.Stdout = os.Stdout
@@ -58,6 +58,5 @@ func experimentalDirectCmd(p *Project, args []string) *exec.Cmd {
 	cmd.Dir = filepath.Join(editor.EditorDir, "Engine", "Source")
 
 	return cmd
-
 
 }
