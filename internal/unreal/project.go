@@ -26,7 +26,8 @@ const (
 type Project struct {
 	Config *config.GunrealConfig
 
-	Modules map[string]*Module
+	LoadedUProject *UProject
+	Modules        map[string]*Module
 }
 
 func NewProjectFromPath(projectDir string) (*Project, error) {
@@ -54,6 +55,15 @@ func NewProject(config *config.GunrealConfig) (*Project, error) {
 
 	project := &Project{
 		Config: config,
+	}
+
+	// Load the uproject if defined.
+	if config.UProjectPath != "" {
+		uproject, err := loadUProjectFile(config.UProjectPath)
+		if err != nil {
+			return nil, fmt.Errorf("loading uproject file: %w", err)
+		}
+		project.LoadedUProject = uproject
 	}
 
 	return project, nil
