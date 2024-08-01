@@ -17,6 +17,21 @@ func ToUnixPath(path string) string {
 	return strings.ReplaceAll(path, "\\", "/")
 }
 
+// RewriteFile will create/truncate the file and write the content.
+func RewriteFile(path, content string) error {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("opening %q: %w", path, err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(strings.TrimSpace(content)); err != nil {
+		return fmt.Errorf("rewriting file: %w", err)
+	}
+
+	return nil
+}
+
 // DirExists check whether the directory exists and is a directory (not another type of file).
 func DirExists(path string) (bool, error) {
 	info, err := os.Stat(path)
@@ -63,12 +78,14 @@ func StatFile(path string) (fs.FileInfo, bool, error) {
 // Useful when we don't care about the difference of an error or file not found.
 //
 // Usage:
-//```
+// ```
 // stat, found, err := StatFile(path)
-// if err != nil || !found {
-//   return StatFileErrorf(err, "statting %q", path)
-// }
-//```
+//
+//	if err != nil || !found {
+//	  return StatFileErrorf(err, "statting %q", path)
+//	}
+//
+// ```
 func StatFileErrorf(err error, format string, args ...any) error {
 	msg := fmt.Sprintf(format, args...)
 	if err == nil {
