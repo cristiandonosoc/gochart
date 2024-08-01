@@ -5,14 +5,14 @@ permissions: write-all
 jobs:
   gofmt:
     name: Run gofmt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: Jerome1337/gofmt-action@v1.0.5
       with:
         gofmt-path: .
         gofmt-flags: -l -d
   linux_tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Load the cache
       uses: actions/cache@v3

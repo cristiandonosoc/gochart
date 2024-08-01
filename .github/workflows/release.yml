@@ -9,7 +9,7 @@ permissions: write-all
 jobs:
   create_release:
     name: Create single release for all builds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -24,7 +24,7 @@ jobs:
   build_linux:
     name: Create the linux release
     needs: create_release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Run tests

@@ -91,7 +91,7 @@ func unrealCommands() []*cli.Command {
 						return fmt.Errorf("listing project: %w", err)
 					}
 
-					fmt.Printf("Listing gocharts at Unreal project at %s\n", ugb.Project.ProjectDir)
+					fmt.Printf("Listing gocharts at Unreal project at %s\n", ugb.Project.ProjectDir())
 					fmt.Printf("Found %v gocharts:\n\n", len(result.Gocharts))
 					for _, goutput := range result.Gocharts {
 						printGoutput(ugb, goutput)
@@ -222,7 +222,7 @@ func obtainCleanCommands() []*cli.Command {
 					// Try to use the filter.
 					filter := cliCtx.String(kFlag_Clean_Filter)
 					if filter != "" {
-						slices.DeleteFunc(result.OrphanedGocharts, func(goutput *unreal_backend.GochartOutput) bool {
+						result.OrphanedGocharts = slices.DeleteFunc(result.OrphanedGocharts, func(goutput *unreal_backend.GochartOutput) bool {
 							return !strings.Contains(goutput.Gochart.Name(), filter)
 						})
 					}
@@ -256,7 +256,7 @@ func obtainCleanCommands() []*cli.Command {
 
 					fmt.Printf("Deleted %d files:\n", len(deleted))
 					for _, d := range deleted {
-						fmt.Printf("- %s\n", relFilePath(ugb.Project.ProjectDir, d))
+						fmt.Printf("- %s\n", relFilePath(ugb.Project.ProjectDir(), d))
 					}
 
 					return nil
