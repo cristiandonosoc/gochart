@@ -51,6 +51,7 @@ type fileCache struct {
 	// useCache is whether we need to track cache or just bypass to loading files every time.
 	// Normally disabled for tests.
 	useCache bool
+	mu sync.Mutex
 }
 
 func GlobalFileCache() *fileCache {
@@ -129,6 +130,9 @@ func (fc *fileCache) NewFromData(key string, data []byte, overwrite bool) (*Load
 		Key:  key,
 		Data: data,
 	}
+
+	fc.mu.Lock()
+	defer fc.mu.Unlock()
 
 	if fc.useCache {
 		fc.files[key] = file
