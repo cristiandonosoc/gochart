@@ -23,8 +23,12 @@ func internalMain() error {
 
 	start := time.Now()
 
-	project, err := unreal.IndexProject(ctx, projectDir)
+	project, err := unreal.NewProjectFromPath(projectDir)
 	if err != nil {
+		return fmt.Errorf("new project from %s: %w", projectDir, err)
+	}
+
+	if err := project.IndexModules(ctx); err != nil {
 		return fmt.Errorf("indexing unreal project at %q: %w", projectDir, err)
 	}
 

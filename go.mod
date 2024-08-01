@@ -10,12 +10,12 @@ go 1.21.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/cristiandonosoc/golib v0.1.8
-	github.com/cristiandonosoc/gunreal v0.1.4
+	github.com/cristiandonosoc/golib v0.1.10
+	github.com/cristiandonosoc/gunreal v0.1.5
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/sync v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -26,6 +26,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.1.2 // indirect
+	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/kr/pretty v0.2.1 // indirect

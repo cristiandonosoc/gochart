@@ -26,7 +26,7 @@ func printGoutput(ugb *unreal_backend.UnrealGochartBackend, goutput *unreal_back
 
 	fmt.Printf("%s %s\n", goutput.Gochart.Name(), uptodate)
 
-	fmt.Printf("- PATH: %s", relFilePath(ugb.Project.ProjectDir, goutput.Gochart.Path))
+	fmt.Printf("- PATH: %s", relFilePath(ugb.Project.ProjectDir(), goutput.Gochart.Path))
 	if modtime := goutput.Gochart.ModTime(); !modtime.IsZero() {
 		fmt.Printf(" [modtime: %v]", modtime.Format("2006/01/02 15:04:05"))
 	}
@@ -34,7 +34,7 @@ func printGoutput(ugb *unreal_backend.UnrealGochartBackend, goutput *unreal_back
 
 	fmt.Printf("- EXPECTED OUTPUTS:\n")
 	for _, output := range goutput.Outputs {
-		fmt.Printf("  > %s", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+		fmt.Printf("  > %s", relFilePath(ugb.Project.ProjectDir(), output.ExpectedPath))
 		if modtime := output.ModTime(); !modtime.IsZero() {
 			fmt.Printf(" [modtime: %v]", modtime.Format("2006/01/02 15:04:05"))
 		} else {
@@ -47,10 +47,10 @@ func printGoutput(ugb *unreal_backend.UnrealGochartBackend, goutput *unreal_back
 
 func printOrphanedGoutput(ugb *unreal_backend.UnrealGochartBackend, orphaned *unreal_backend.GochartOutput) {
 	fmt.Printf("%s\n", orphaned.Gochart.Name())
-	fmt.Printf("- PATH: %s [<file not found>]\n", relFilePath(ugb.Project.ProjectDir, orphaned.Gochart.Path))
+	fmt.Printf("- PATH: %s [<file not found>]\n", relFilePath(ugb.Project.ProjectDir(), orphaned.Gochart.Path))
 	fmt.Printf("- POINTED BY:\n")
 	for _, output := range orphaned.Outputs {
-		fmt.Printf("   > %s\n", relFilePath(ugb.Project.ProjectDir, output.ExpectedPath))
+		fmt.Printf("   > %s\n", relFilePath(ugb.Project.ProjectDir(), output.ExpectedPath))
 	}
 }
 

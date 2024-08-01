@@ -138,9 +138,14 @@ func NewUnrealGochartBackend(ctx context.Context, projectDir string) (*UnrealGoc
 		return nil, fmt.Errorf("missing project dir")
 	}
 
-	project, err := unreal.IndexProject(ctx, projectDir)
+	project, err := unreal.NewProjectFromPath(projectDir)
 	if err != nil {
+		return nil, fmt.Errorf("new project from %s: %w", projectDir, err)
+	}
+
+	if err := project.IndexModules(ctx); err != nil {
 		return nil, fmt.Errorf("indexing unreal project: %w", err)
+
 	}
 
 	gf, err := gochart_lang.NewGochartLangFrontend()
