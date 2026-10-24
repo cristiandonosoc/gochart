@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 type FrontendEntry interface {

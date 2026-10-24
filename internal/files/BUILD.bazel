@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "files",
+    srcs = [
+        "file_cache.go",
+        "files.go",
+        "loaded_file.go",
+    ],
+    importpath = "github.com/cristiandonosoc/gochart/internal/files",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/test_detection"],
+)

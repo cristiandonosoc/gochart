@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 )
 
 func internalMain() error {

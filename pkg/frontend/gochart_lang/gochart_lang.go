@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )

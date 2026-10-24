@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/cristiandonosoc/golib/pkg/test_detection"
+	"github.com/cristiandonosoc/gochart/internal/test_detection"
 )
 
 // Main API ----------------------------------------------------------------------------------------

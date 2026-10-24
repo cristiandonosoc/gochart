@@ -13,7 +13,7 @@ import (
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 )
 
 const (

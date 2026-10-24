@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

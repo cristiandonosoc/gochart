@@ -20,19 +20,6 @@ def go_dependencies():
         version = "v2.0.3",
     )
     go_repository(
-        name = "com_github_cristiandonosoc_golib",
-        importpath = "github.com/cristiandonosoc/golib",
-        sum = "h1:0+Qru5fTOt/vHZHNjzdhmgrOSfj8MZIIfLnqP/AsPAI=",
-        version = "v0.1.10",
-    )
-    go_repository(
-        name = "com_github_cristiandonosoc_gunreal",
-        importpath = "github.com/cristiandonosoc/gunreal",
-        sum = "h1:i05/a89HbVJ6vXkfYnsPv5yA+blWaQW0g+0UEjJ7AHw=",
-        version = "v0.1.5",
-    )
-
-    go_repository(
         name = "com_github_davecgh_go_spew",
         importpath = "github.com/davecgh/go-spew",
         sum = "h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=",

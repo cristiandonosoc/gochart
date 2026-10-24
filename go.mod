@@ -2,16 +2,10 @@ module github.com/cristiandonosoc/gochart
 
 go 1.21.5
 
-// Activate these replace statements for local development.
-// NOTE(cdc): This file is for local development, so the paths are hardcoded to where they are on my
-//             machine. You will need to update them accordingly.
-//replace github.com/cristiandonosoc/golib => D:\projects\go\golib
-//replace github.com/cristiandonosoc/gunreal => D:\projects\go\gunreal
-
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/cristiandonosoc/golib v0.1.10
-	github.com/cristiandonosoc/gunreal v0.1.5
+	github.com/bazelbuild/rules_go v0.41.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
@@ -22,11 +16,9 @@ require (
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
-	github.com/bazelbuild/rules_go v0.41.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.1.2 // indirect
-	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/kr/pretty v0.2.1 // indirect

@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/pkg/backend/common",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_cristiandonosoc_golib//pkg/files",
-        "@com_github_cristiandonosoc_gunreal//pkg/unreal",
+        "//internal/files",
+        "//internal/unreal",
     ],
 )

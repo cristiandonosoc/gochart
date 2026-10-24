@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cristiandonosoc/golib/pkg/files"
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 )
 
 type Metadata struct {

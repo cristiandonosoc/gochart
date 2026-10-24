@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 
 	"gopkg.in/yaml.v2"
 )

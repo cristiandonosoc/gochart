@@ -7,7 +7,7 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 
 	"gopkg.in/yaml.v2"
 )

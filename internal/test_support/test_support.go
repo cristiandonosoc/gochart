@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/cristiandonosoc/golib/pkg/files"
-	"github.com/cristiandonosoc/golib/pkg/test_detection"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/test_detection"
 )
 
 // TestTmpDir returns a valid base string to be fed to os.MkdirTemp.

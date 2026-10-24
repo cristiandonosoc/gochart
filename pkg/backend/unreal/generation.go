@@ -14,8 +14,8 @@ import (
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/golib/pkg/files"
-	"github.com/cristiandonosoc/gunreal/pkg/unreal"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 
 	"golang.org/x/sync/errgroup"
 )

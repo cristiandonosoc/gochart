@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unreal",
+    srcs = [
+        "compdb.go",
+        "file.go",
+        "indexing.go",
+        "module.go",
+        "platform.go",
+        "project.go",
+        "ubt.go",
+        "uproject.go",
+    ],
+    importpath = "github.com/cristiandonosoc/gochart/internal/unreal",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/files",
+        "//internal/unreal/config",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

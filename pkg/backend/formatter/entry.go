@@ -10,7 +10,7 @@ import (
 
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // gochartFormatter --------------------------------------------------------------------------------

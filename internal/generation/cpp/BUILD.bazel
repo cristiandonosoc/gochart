@@ -17,9 +17,9 @@ go_library(
     importpath = "github.com/cristiandonosoc/gochart/internal/generation/cpp",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/files",
         "//pkg/backend/common",
         "//pkg/ir",
-        "@com_github_cristiandonosoc_golib//pkg/files",
         "@com_github_masterminds_sprig_v3//:sprig",
     ],
 )

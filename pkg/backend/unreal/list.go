@@ -10,8 +10,8 @@ import (
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
-	"github.com/cristiandonosoc/golib/pkg/files"
-	gunreal "github.com/cristiandonosoc/gunreal/pkg/unreal"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	gunreal "github.com/cristiandonosoc/gochart/internal/unreal"
 
 	"golang.org/x/exp/maps"
 )

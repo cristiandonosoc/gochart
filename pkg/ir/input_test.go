@@ -10,8 +10,8 @@ import (
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
-	"github.com/cristiandonosoc/golib/pkg/files"
-	"github.com/cristiandonosoc/golib/pkg/test_support"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/test_support"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

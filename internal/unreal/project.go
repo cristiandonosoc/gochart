@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cristiandonosoc/golib/pkg/files"
-	"github.com/cristiandonosoc/gunreal/pkg/config"
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/unreal/config"
 
 	"golang.org/x/sync/errgroup"
 )

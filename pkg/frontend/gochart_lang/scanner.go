@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // ScanError is a custom error associated with scanning.

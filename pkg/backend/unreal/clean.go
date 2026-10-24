@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/option"
-	"github.com/cristiandonosoc/golib/pkg/files"
+	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // CleanOrphaned finds all the orphaned files that match the gochart filter and deletes them.
