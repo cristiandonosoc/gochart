@@ -21,6 +21,5 @@ go_library(
         "//pkg/frontend/gochart_lang",
         "//pkg/ir",
         "@org_golang_x_exp//maps",
-        "@org_golang_x_sync//errgroup",
     ],
 )

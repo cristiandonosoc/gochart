@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/cristiandonosoc/gochart/internal/test_detection"
 )
@@ -42,7 +41,7 @@ func NewFromData(key string, data []byte, overwrite bool) (*LoadedFile, error) {
 
 // Cache Implementation ----------------------------------------------------------------------------
 
-var once sync.Once
+// The cache is not safe for concurrent use. gochart is single-threaded by design.
 var gFileCache *fileCache
 
 // FileCache represents a view to files loaded in memory.
@@ -51,20 +50,15 @@ type fileCache struct {
 	// useCache is whether we need to track cache or just bypass to loading files every time.
 	// Normally disabled for tests.
 	useCache bool
-	mu sync.Mutex
 }
 
 func GlobalFileCache() *fileCache {
-	once.Do(func() {
+	if gFileCache == nil {
 		gFileCache = &fileCache{
 			files:    map[string]*LoadedFile{},
-			useCache: true,
+			useCache: !test_detection.RunningAsTest(),
 		}
-
-		if test_detection.RunningAsTest() {
-			gFileCache.useCache = false
-		}
-	})
+	}
 
 	return gFileCache
 }
@@ -109,6 +103,7 @@ func (fc *fileCache) LoadFromPath(key, path string, overwrite bool) (*LoadedFile
 		return nil, err
 	}
 
+	lf.FromFile = true
 	lf.Stat = stat
 	return lf, nil
 }
@@ -130,9 +125,6 @@ func (fc *fileCache) NewFromData(key string, data []byte, overwrite bool) (*Load
 		Key:  key,
 		Data: data,
 	}
-
-	fc.mu.Lock()
-	defer fc.mu.Unlock()
 
 	if fc.useCache {
 		fc.files[key] = file

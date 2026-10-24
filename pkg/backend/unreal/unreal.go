@@ -10,15 +10,10 @@ import (
 
 	"github.com/cristiandonosoc/gochart/internal/build"
 	"github.com/cristiandonosoc/gochart/internal/option"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
-	"github.com/cristiandonosoc/gochart/internal/unreal"
-)
-
-const (
-	kModuleSearcherWorkerCount = 10
-	kGochartBuilderWorkerCount = 16
 )
 
 type GenerationStrategy int

@@ -8,91 +8,25 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"sync"
 
 	"github.com/cristiandonosoc/gochart/internal/build"
+	"github.com/cristiandonosoc/gochart/internal/files"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
+	"github.com/cristiandonosoc/gochart/internal/unreal"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/internal/unreal"
-
-	"golang.org/x/sync/errgroup"
 )
 
 func (ugb *UnrealGochartBackend) generateGocharts(ctx context.Context,
 	project *unreal.Project, gocharts []string) ([]*GochartOutput, error) {
 
-	// We generate the gocharts in a parallel fashion.
-	g, ctx := errgroup.WithContext(ctx)
-
-	// Produce: all the gocharts to generate.
-	gochartsCh := make(chan string)
-	{
-		g.Go(func() error {
-			defer close(gochartsCh)
-
-			for _, gochart := range gocharts {
-				select {
-				case gochartsCh <- gochart:
-					continue
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			}
-
-			return nil
-		})
-	}
-
-	// Map: for each gochart, generate the backend files.
-	outputsCh := make(chan *GochartOutput)
-	{
-		var wg sync.WaitGroup
-
-		// Make sure the channel will be closed.
-		g.Go(func() error {
-			wg.Wait()
-			close(outputsCh)
-			return nil
-		})
-
-		for i := 0; i < kGochartBuilderWorkerCount; i++ {
-			wg.Add(1)
-			g.Go(func() error {
-				defer wg.Done()
-
-				for gochart := range gochartsCh {
-					output, err := ugb.generateGochartIfNeeded(ctx, project, gochart)
-					if err != nil {
-						return fmt.Errorf("generating gochart %q: %w", gochart, err)
-					}
-
-					select {
-					case outputsCh <- output:
-						continue
-					case <-ctx.Done():
-						return ctx.Err()
-					}
-				}
-				return nil
-			})
+	outputs := make([]*GochartOutput, 0, len(gocharts))
+	for _, gochart := range gocharts {
+		output, err := ugb.generateGochartIfNeeded(ctx, project, gochart)
+		if err != nil {
+			return nil, fmt.Errorf("generating gochart %q: %w", gochart, err)
 		}
-	}
-
-	// Reduce: collect gochart outputs.
-	var outputs []*GochartOutput
-	{
-		g.Go(func() error {
-			for output := range outputsCh {
-				outputs = append(outputs, output)
-			}
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
+		outputs = append(outputs, output)
 	}
 
 	sort.Slice(outputs, func(i, j int) bool {

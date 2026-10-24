@@ -8,18 +8,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/unreal/config"
-
-	"golang.org/x/sync/errgroup"
-)
-
-const (
-	kModuleSearcherWorkerCount    = 100
-	kBuildFileSearcherWorkerCount = 100
-	kModuleBuilderWorkerCount     = 100
 )
 
 // Project represents an indexed Unreal project.
@@ -83,7 +74,7 @@ func (p *Project) SourceDir() string {
 
 // IndexModules goes and collects all the modules within the project.
 func (p *Project) IndexModules(ctx context.Context) error {
-	modules, err := collectModules(ctx, p.SourceDir())
+	modules, err := collectModules(p.SourceDir())
 	if err != nil {
 		return fmt.Errorf("collecting modules: %w", err)
 	}
@@ -127,7 +118,7 @@ func (p *Project) NewFile(path string) (*File, error) {
 
 }
 
-// SearchForFilesByExtension goes over all the loaded modules in parallel and finds all the found
+// SearchForFilesByExtension goes over all the loaded modules and finds all the found
 // files with that extension. Useful for things like finding all gochart files.
 // |extensions| should match a string.HasSuffix over the filepath.Base.
 func (p *Project) SearchForFilesByExtension(ctx context.Context, platform Platform, extensions []string) ([]string, error) {
@@ -139,106 +130,40 @@ func (p *Project) SearchForFilesByExtension(ctx context.Context, platform Platfo
 		return nil, fmt.Errorf("no modules loaded. Is the project indexed?")
 	}
 
-	// We search the gocharts in a parallel fashion.
-	g, ctx := errgroup.WithContext(ctx)
-
-	// Produce: all the modules to check.
-	modulesCh := make(chan *Module)
-	{
-		g.Go(func() error {
-			defer close(modulesCh)
-
-			for _, module := range p.Modules {
-				select {
-				case modulesCh <- module:
-					continue
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			}
-
-			return nil
-		})
-	}
-
-	// Map: for each module, search for gochart files.
-	gochartsCh := make(chan string)
-	{
-		var wg sync.WaitGroup
-
-		for i := 0; i < kModuleSearcherWorkerCount; i++ {
-			wg.Add(1)
-			g.Go(func() error {
-				defer wg.Done()
-
-				for module := range modulesCh {
-					// Ensure that we have loaded the UHT files.
-					uhtFiles, err := module.LoadUHTFiles(platform, false)
-					if err != nil {
-						return fmt.Errorf("loading uht files for module %q: %w", module.Name, err)
-					}
-
-					// Collect the common + UHT files into one list.
-					files := make([]string, 0, len(module.Files)+len(uhtFiles))
-					files = append(files, module.Files...)
-					files = append(files, uhtFiles...)
-
-					for _, file := range files {
-						base := filepath.Base(file)
-
-						// We see if the file matches any of the required extensions.
-						match := false
-						for _, ext := range extensions {
-							if strings.HasSuffix(base, ext) {
-								match = true
-								break
-							}
-						}
-
-						if !match {
-							continue
-						}
-
-						select {
-						case gochartsCh <- file:
-							continue
-						case <-ctx.Done():
-							return ctx.Err()
-						}
-					}
-
-				}
-
-				return nil
-			})
+	gochartSet := map[string]struct{}{}
+	for _, module := range p.Modules {
+		// Ensure that we have loaded the UHT files.
+		uhtFiles, err := module.LoadUHTFiles(platform, false)
+		if err != nil {
+			return nil, fmt.Errorf("loading uht files for module %q: %w", module.Name, err)
 		}
 
-		// Make sure the channel will be closed.
-		g.Go(func() error {
-			wg.Wait()
-			close(gochartsCh)
-			return nil
-		})
-	}
+		// Collect the common + UHT files into one list.
+		files := make([]string, 0, len(module.Files)+len(uhtFiles))
+		files = append(files, module.Files...)
+		files = append(files, uhtFiles...)
 
-	// Reduce: collect gochart files.
-	gochartSet := map[string]struct{}{}
-	{
-		g.Go(func() error {
-			for gochart := range gochartsCh {
-				if _, ok := gochartSet[gochart]; ok {
-					return fmt.Errorf("gochart %q found more than once", gochart)
+		for _, file := range files {
+			base := filepath.Base(file)
+
+			// We see if the file matches any of the required extensions.
+			match := false
+			for _, ext := range extensions {
+				if strings.HasSuffix(base, ext) {
+					match = true
+					break
 				}
-
-				gochartSet[gochart] = struct{}{}
 			}
 
-			return nil
-		})
-	}
+			if !match {
+				continue
+			}
 
-	if err := g.Wait(); err != nil {
-		return nil, err
+			if _, ok := gochartSet[file]; ok {
+				return nil, fmt.Errorf("gochart %q found more than once", file)
+			}
+			gochartSet[file] = struct{}{}
+		}
 	}
 
 	// Collect the results in an array and sort it because sorting is cool.

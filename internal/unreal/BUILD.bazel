@@ -17,6 +17,5 @@ go_library(
     deps = [
         "//internal/files",
         "//internal/unreal/config",
-        "@org_golang_x_sync//errgroup",
     ],
 )

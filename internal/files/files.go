@@ -157,7 +157,6 @@ func CopyFileAdvanced(src, dst string, options *CopyFileAdvancedOptions) error {
 
 // CopyDirRecursive copies all the content of a directory into another path.
 func CopyDirRecursive(from, to string) error {
-	// TODO(cdc): Make this use errgroup.
 	from = filepath.Clean(from)
 
 	var files []string
