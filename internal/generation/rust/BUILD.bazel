@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rust",
+    srcs = [
+        "emit.go",
+        "generate.go",
+        "methods.go",
+        "model.go",
+        "names.go",
+        "rust.go",
+    ],
+    embedsrcs = ["runtime.rs.template"],
+    importpath = "github.com/cristiandonosoc/gochart/internal/generation/rust",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/files",
+        "//pkg/backend/common",
+        "//pkg/ir",
+    ],
+)
+
+go_test(
+    name = "rust_test",
+    srcs = ["rust_test.go"],
+    embed = [":rust"],
+    deps = [
+        "//internal/files",
+        "//pkg/backend/common",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/ir",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

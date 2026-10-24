@@ -11,7 +11,8 @@ import (
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.
 type inputHandler struct {
-	gcdata *frontend_common.GochartData
+	gcdata   *frontend_common.GochartData
+	language Language
 
 	triggers []*Trigger
 	root     *State
@@ -50,12 +51,15 @@ func processGochartDataInternal(gcdata *frontend_common.GochartData) (*Gochart, 
 		Name: gcdata.Name,
 		// By default the namespace is same as the name. This might be override by an option.
 		Namespace:    gcdata.Name,
+		Language:     Language_Cpp,
 		Root:         root,
 		FrontendData: gcdata,
 	}
 	if err := parseGochartOptions(gochart, gcdata.Options); err != nil {
 		return nil, fmt.Errorf("gochart %q: parsing options: %w", gcdata.Name, err)
 	}
+
+	ih.language = gochart.Language
 
 	if err := ih.collectTriggers(); err != nil {
 		return nil, fmt.Errorf("collecting triggers: %w", err)
@@ -113,8 +117,11 @@ func (ih *inputHandler) createTrigger(tdata *frontend_common.TriggerData) (*Trig
 	// Parse the arguments.
 	var args []*TriggerArgument
 	if tdata.ArgsString != "" {
-		// For now we only support C++, but we could support other languages as well if needed.
-		parsedArgs, err := ParseCppArguments(tdata.ArgsString)
+		parse := ParseCppArguments
+		if ih.language == Language_Rust {
+			parse = ParseRustArguments
+		}
+		parsedArgs, err := parse(tdata.ArgsString)
 		if err != nil {
 			return nil, errors.Errorf(tdata.Frontend_ArgsPos, "Semantic", "parsing arguments for trigger %q: %w", tdata.Name, err)
 		}
@@ -310,9 +317,10 @@ func (ih *inputHandler) collectCaptures(frontendCaptures []*frontend_common.Capt
 		}
 
 		captures = append(captures, &StateCapture{
-			Trigger:      trigger,
-			Condition:    fc.Condition,
-			FrontendData: fc,
+			Trigger:           trigger,
+			Condition:         fc.Condition,
+			ConditionCallback: fc.ConditionCallback,
+			FrontendData:      fc,
 		})
 	}
 
@@ -356,12 +364,14 @@ func (ih *inputHandler) createTransition(tdata *frontend_common.TransitionData) 
 	}
 
 	transition := &Transition{
-		From:         from,
-		To:           to,
-		Trigger:      trigger,
-		Condition:    tdata.Condition,
-		Action:       tdata.Action,
-		FrontendData: tdata,
+		From:              from,
+		To:                to,
+		Trigger:           trigger,
+		Condition:         tdata.Condition,
+		Action:            tdata.Action,
+		ConditionCallback: tdata.ConditionCallback,
+		ActionCallback:    tdata.ActionCallback,
+		FrontendData:      tdata,
 	}
 
 	return transition, from, nil

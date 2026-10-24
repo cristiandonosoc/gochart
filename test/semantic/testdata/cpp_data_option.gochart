@@ -1,0 +1,18 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger Tick()
+//  14:
+//  15: 	state Closed(data = "Foo") {
+//      	             ^---> state "Closed": option "data" requires language = "rust"
+//  16: 		capture Tick
+//  17: 	}
+// --- ERROR END
+
+gochart Door {
+	trigger Tick()
+
+	state Closed(data = "Foo") {
+		capture Tick
+	}
+}

@@ -88,6 +88,11 @@ func (cpp *cppGochartBackend) Generate(ctx context.Context, gc *ir.Gochart, opts
 		opt(cpp.options)
 	}
 
+	if gc.Language != ir.Language_Cpp {
+		return nil, fmt.Errorf("gochart %q is written for language %q, the C++ backend needs language = %q",
+			gc.Name, gc.Language, ir.Language_Cpp)
+	}
+
 	config := &cpp_gen.Config{
 		Metadata: &common.Metadata{
 			Version: cpp.options.Version,

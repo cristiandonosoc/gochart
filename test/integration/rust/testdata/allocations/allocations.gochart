@@ -1,0 +1,32 @@
+// A chart with data, parallel regions, null transitions and trigger arguments. Running it should
+// not allocate.
+gochart Allocations(language = "rust") {
+	trigger Tick(dt: u32)
+	trigger Start(units: u32)
+	trigger Stop()
+
+	state Root(parallel) {
+		state Worker {
+			state Idle(data = "Counter", data_default) {
+				capture Tick
+				transition Start > Working
+			}
+
+			state Working(data = "Job") {
+				transition Stop > Idle
+
+				state Busy {
+					transition Tick > Done if finished
+				}
+
+				state Done {
+					transition null > Idle
+				}
+			}
+		}
+
+		state Clock(data = "Counter", data_default) {
+			capture Tick
+		}
+	}
+}

@@ -122,6 +122,10 @@ type CaptureData struct {
 	Trigger   string
 	Condition string
 
+	// ConditionCallback is the name of a condition callback ("if some_condition"), as opposed to an
+	// inlined |Condition|.
+	ConditionCallback string
+
 	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition
 	Frontend_TriggerPos *files.LoadedFilePosition
@@ -140,6 +144,10 @@ type TransitionData struct {
 	Trigger   string
 	Condition string
 	Action    string
+
+	// Named callbacks ("if some_condition", "do some_action"), as opposed to inlined code.
+	ConditionCallback string
+	ActionCallback    string
 
 	Frontend_Index      int
 	Frontend_KeywordPos *files.LoadedFilePosition

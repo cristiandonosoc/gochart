@@ -1,0 +1,23 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state Idle {
+//  16: 		transition Tick > Busy
+//      		           ^---> state "Idle": transition for trigger "Tick" is non-conditional, it must be the last for this trigger
+//  17: 		transition Tick > Idle if docked
+//  18: 	}
+// --- ERROR END
+
+gochart Hauler(language = "rust") {
+	trigger Tick()
+
+	state Idle {
+		transition Tick > Busy
+		transition Tick > Idle if docked
+	}
+
+	state Busy {
+		capture Tick
+	}
+}

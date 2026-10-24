@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load("//:defs.bzl", "generate_gochart_rust")
+
+go_test(
+    name = "rust_test",
+    size = "medium",
+    srcs = ["rust_test.go"],
+    data = glob(["testdata/**"]),
+    # The tests compile the generated code with the rustc in PATH. rustup's proxies need to know
+    # where the toolchains are, and MSVC needs the Windows environment to find the linker.
+    env_inherit = [
+        "PATH",
+        "HOME",
+        "USERPROFILE",
+        "CARGO_HOME",
+        "RUSTUP_HOME",
+        "RUSTUP_TOOLCHAIN",
+        "SYSTEMROOT",
+        "PROGRAMFILES",
+        "PROGRAMFILES(X86)",
+        "PROGRAMDATA",
+        "TEMP",
+        "TMP",
+    ],
+    deps = [
+        "//internal/files",
+        "//internal/generation/rust",
+        "//internal/test_support",
+        "//pkg/backend/common",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/ir",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+# Exercises the Bazel rule that consumers use.
+generate_gochart_rust(
+    name = "gen_routes",
+    src = "testdata/routes/routes.gochart",
+    file_prefix = "routes",
+)

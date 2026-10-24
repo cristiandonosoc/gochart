@@ -349,6 +349,34 @@ func (s *Scanner) longMatch(want string) (bool, error) {
 	return true, nil
 }
 
+// longMatchKeyword works like longMatch, but only matches if the keyword is not the prefix of a
+// longer identifier (eg. "do" should not match "docked").
+func (s *Scanner) longMatchKeyword(want string) (bool, error) {
+	runeCount := utf8.RuneCountInString(want)
+	if s.currentRuneCount+runeCount >= s.totalRunes {
+		return false, nil
+	}
+
+	offset := s.currentByteCount
+	for _, wantRune := range want {
+		gotRune, _ := utf8.DecodeRune(s.lf.Data[offset:])
+		if wantRune != gotRune {
+			return false, nil
+		}
+		offset += utf8.RuneLen(gotRune)
+	}
+
+	// The rune after the keyword cannot continue an identifier.
+	if offset < len(s.lf.Data) {
+		next, _ := utf8.DecodeRune(s.lf.Data[offset:])
+		if unicode.IsLetter(next) || unicode.IsNumber(next) || next == '_' {
+			return false, nil
+		}
+	}
+
+	return s.longMatch(want)
+}
+
 func (s *Scanner) atEnd() bool {
 	return s.currentRuneCount >= s.totalRunes
 }
@@ -625,7 +653,7 @@ func (s *Scanner) handleInteger() (*Token, bool, error) {
 func (s *Scanner) handleConditional() ([]*Token, bool, error) {
 	tokens := make([]*Token, 0, 4)
 
-	ok, err := s.longMatch("if")
+	ok, err := s.longMatchKeyword("if")
 	if err != nil {
 		return nil, false, fmt.Errorf("long matching \"if\": %w", err)
 	} else if !ok {
@@ -638,6 +666,17 @@ func (s *Scanner) handleConditional() ([]*Token, bool, error) {
 		return nil, false, fmt.Errorf("eating whitespace: %w", err)
 	}
 
+	// Named callbacks ("if some_condition") are identifiers rather than code blocks.
+	if peek, err := s.peek(); err != nil {
+		return nil, false, fmt.Errorf("peeking rune: %w", err)
+	} else if unicode.IsLetter(peek) {
+		ids, err := s.handleIdentifier()
+		if err != nil {
+			return nil, false, fmt.Errorf("handling callback name: %w", err)
+		}
+		return append(tokens, ids...), true, nil
+	}
+
 	// We expect a { after if.
 	{
 		startLine := s.line
@@ -647,7 +686,7 @@ func (s *Scanner) handleConditional() ([]*Token, bool, error) {
 			return nil, false, fmt.Errorf("popping rune: %w", err)
 		}
 		if r != '{' {
-			return nil, false, fmt.Errorf("expected \"{\" after \"if\", got %q", r)
+			return nil, false, fmt.Errorf("expected \"{\" or a callback name after \"if\", got %q", r)
 		}
 		tokens = append(tokens, &Token{
 			id:      Token_LeftBrace,
@@ -683,7 +722,7 @@ func (s *Scanner) handleConditional() ([]*Token, bool, error) {
 func (s *Scanner) handleAction() ([]*Token, bool, error) {
 	tokens := make([]*Token, 0, 4)
 
-	ok, err := s.longMatch("do")
+	ok, err := s.longMatchKeyword("do")
 	if err != nil {
 		return nil, false, fmt.Errorf("long matching \"do\": %w", err)
 	} else if !ok {
@@ -696,6 +735,17 @@ func (s *Scanner) handleAction() ([]*Token, bool, error) {
 		return nil, false, fmt.Errorf("eating whitespace: %w", err)
 	}
 
+	// Named callbacks ("if some_condition") are identifiers rather than code blocks.
+	if peek, err := s.peek(); err != nil {
+		return nil, false, fmt.Errorf("peeking rune: %w", err)
+	} else if unicode.IsLetter(peek) {
+		ids, err := s.handleIdentifier()
+		if err != nil {
+			return nil, false, fmt.Errorf("handling callback name: %w", err)
+		}
+		return append(tokens, ids...), true, nil
+	}
+
 	// We expect a { after if.
 	{
 		startLine := s.line
@@ -705,7 +755,7 @@ func (s *Scanner) handleAction() ([]*Token, bool, error) {
 			return nil, false, fmt.Errorf("popping rune: %w", err)
 		}
 		if r != '{' {
-			return nil, false, fmt.Errorf("expected \"{\" after \"do\", got %q", r)
+			return nil, false, fmt.Errorf("expected \"{\" or a callback name after \"do\", got %q", r)
 		}
 		tokens = append(tokens, &Token{
 			id:      Token_LeftBrace,

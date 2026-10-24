@@ -1,0 +1,21 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: // (Keeping it away from the error block.)
+//  14:
+//  15: gochart Door(derives = "Hash") {
+//                   ^---> option "derives" requires language = "rust"
+//  16: 	trigger Tick()
+//  17:
+// --- ERROR END
+
+// The gochart option below is the error.
+// (Keeping it away from the error block.)
+
+gochart Door(derives = "Hash") {
+	trigger Tick()
+
+	state Closed {
+		capture Tick
+	}
+}

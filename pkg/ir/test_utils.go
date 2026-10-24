@@ -13,6 +13,8 @@ import (
 func CompareGochart(t *testing.T, want, got *Gochart) {
 	assert.Equal(t, want.Name, got.Name)
 	assert.Equal(t, want.Namespace, got.Namespace)
+	assert.Equal(t, want.Language, got.Language)
+	assert.Equal(t, want.Derives, got.Derives)
 
 	if assert.Equal(t, len(want.Options), len(got.Options)) {
 		for i := 0; i < len(want.Options); i++ {
@@ -67,6 +69,8 @@ func CompareState(t *testing.T, want, got *State) {
 	// Compare parallelness.
 	assert.Equal(t, want.Parallel, got.Parallel, ctxStr)
 	assert.Equal(t, want.ParallelGroup, got.ParallelGroup, ctxStr)
+	assert.Equal(t, want.DataType, got.DataType, ctxStr)
+	assert.Equal(t, want.DataDefault, got.DataDefault, ctxStr)
 
 	// Compare the enter reactions.
 	CompareReactions(t, want, want.EnterReactions, got.EnterReactions)
@@ -152,6 +156,7 @@ func CompareCaptures(t *testing.T, state *State, want, got []*StateCapture) {
 			assert.NotNil(t, got.Trigger, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
 			assert.Equal(t, want.Trigger.Name, got.Trigger.Name, "%s:\n- %s\n- %s", state.Name, wantList, gotList)
 			assert.Equal(t, want.Condition, got.Condition, "%s:\n- %s\n- %s", state.Name, want.Condition, got.Condition)
+			assert.Equal(t, want.ConditionCallback, got.ConditionCallback, state.Name)
 		}
 	}
 }
@@ -167,4 +172,6 @@ func CompareTransition(t *testing.T, want, got *Transition) {
 	}
 	assert.Equal(t, strings.TrimSpace(want.Condition), strings.TrimSpace(got.Condition))
 	assert.Equal(t, strings.TrimSpace(want.Action), strings.TrimSpace(got.Action))
+	assert.Equal(t, want.ConditionCallback, got.ConditionCallback)
+	assert.Equal(t, want.ActionCallback, got.ActionCallback)
 }

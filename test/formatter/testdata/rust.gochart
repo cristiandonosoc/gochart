@@ -1,0 +1,26 @@
+// Named callbacks, state data and identifiers that start with keywords ("docked", "iffy").
+gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserialize") {
+	trigger Tick()
+	trigger Reserved(job: HaulJob, route: Vec<(Fx, Fx)>)
+
+	state Free(data = "FreeData", data_default) {
+		transition Reserved > ToPickup do start_job
+
+		state Idle {
+			transition Tick > Returning if iffy
+		}
+		state Returning {
+			transition Tick > Idle if docked
+			capture Tick if done
+		}
+	}
+
+	state Hauling(data = "HaulJob") {
+		state ToPickup {
+			transition Tick > Loading if docked
+		}
+		state Loading {
+			transition null > Idle if loaded_all do finish
+		}
+	}
+}

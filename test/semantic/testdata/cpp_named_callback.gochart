@@ -1,0 +1,22 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state Closed {
+//  16: 		transition Tick > Open if docked
+//      		^---> state "Closed": named callbacks require language = "rust", use inlined code instead (eg. "if { ... }")
+//  17: 	}
+//  18:
+// --- ERROR END
+
+gochart Door {
+	trigger Tick()
+
+	state Closed {
+		transition Tick > Open if docked
+	}
+
+	state Open {
+		capture Tick
+	}
+}

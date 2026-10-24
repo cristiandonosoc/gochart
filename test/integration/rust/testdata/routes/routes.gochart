@@ -1,0 +1,82 @@
+// Same chart as the C++ routes test, plus deeper states for routes whose ends are at different
+// depths (which the C++ backend handles by exiting and re-entering the common parent).
+gochart Routes(language = "rust") {
+	trigger GoToFirst()
+	trigger GoToSecond()
+	trigger GoToThird()
+	trigger GoToDeep()
+	trigger Hop()
+	trigger Again()
+	trigger Up()
+	trigger Sideways()
+
+	enter
+	exit
+
+	transition GoToFirst > First
+	transition GoToSecond > Second
+	transition GoToThird > Third
+	transition GoToDeep > Deep
+
+	state First {
+		enter
+		exit
+
+		state FirstSon1 {
+			enter
+			exit
+		}
+
+		state FirstSon2(default) {
+			enter
+			exit
+		}
+	}
+
+	state Second {
+		enter
+		exit
+
+		transition GoToFirst > FirstSon1
+
+		state SecondSon1 {
+			enter
+			exit
+		}
+	}
+
+	state Third {
+		enter
+		exit
+	}
+
+	state Deep {
+		enter
+		exit
+
+		// Target below the source: Deep stays active.
+		transition Sideways > DeepB
+
+		state DeepA {
+			enter
+			exit
+
+			state DeepA1 {
+				enter
+				exit
+
+				// Different depths below Deep: Deep is not exited.
+				transition Hop > DeepB
+				// Self transition: exits and enters DeepA1.
+				transition Again > DeepA1
+				// Ancestor target: exits and enters DeepA, then its default child.
+				transition Up > DeepA
+			}
+		}
+
+		state DeepB {
+			enter
+			exit
+		}
+	}
+}

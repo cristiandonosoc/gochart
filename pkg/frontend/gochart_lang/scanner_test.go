@@ -136,6 +136,32 @@ capture capture if {
 	}
 }
 
+func TestGatherTokensNamedCallbacks(t *testing.T) {
+	// Identifiers that start with a keyword ("docked", "iffy") are identifiers, and "if"/"do" can be
+	// followed by a callback name instead of a code block.
+	input := "docked iffy if docked do done_ok\n"
+
+	want := []*Token{
+		{id: Token_Identifier, literal: "docked", line: 1, char: 1},
+		{id: Token_Identifier, literal: "iffy", line: 1, char: 8},
+		{id: Token_KeywordIf, literal: "if", line: 1, char: 14},
+		{id: Token_Identifier, literal: "docked", line: 1, char: 16},
+		{id: Token_KeywordDo, literal: "do", line: 1, char: 24},
+		{id: Token_Identifier, literal: "done_ok", line: 1, char: 26},
+		{id: Token_EOF, literal: "", line: 2, char: 0},
+	}
+
+	lf, err := files.NewFromData("test_gather_tokens_named_callbacks", []byte(input), true)
+	require.NoError(t, err)
+
+	s := NewScanner()
+	got, errors := s.gatherTokens(lf)
+	assert.Empty(t, errors)
+	if errors == nil {
+		compareTokens(t, want, got)
+	}
+}
+
 func compareTokens(t *testing.T, want, got []*Token) {
 	if !assert.Equal(t, len(want), len(got)) {
 		printTokenErrors(t, want, got)

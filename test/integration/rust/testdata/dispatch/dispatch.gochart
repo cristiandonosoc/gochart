@@ -1,0 +1,34 @@
+// How triggers are handled: from the leaf up, in the order the entries are written, with failed
+// conditions letting the trigger through.
+gochart Dispatch(language = "rust") {
+	trigger Ping(value: u32)
+	trigger Go()
+	trigger Back()
+
+	// Gochart level fallback.
+	capture Ping
+
+	state Outer {
+		capture Ping if big
+
+		state Inner {
+			capture Ping if small
+
+			transition Go > Second if first_choice
+			transition Go > Third if second_choice
+			transition Go > Fallback
+		}
+	}
+
+	state Second {
+		transition Back > Inner
+	}
+
+	state Third {
+		transition Back > Inner
+	}
+
+	state Fallback {
+		transition Back > Inner
+	}
+}

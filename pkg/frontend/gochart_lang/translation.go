@@ -88,6 +88,7 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 		state.Captures = append(state.Captures, &common.CaptureData{
 			Trigger:             c.Trigger,
 			Condition:           c.Condition,
+			ConditionCallback:   c.ConditionCallback,
 			Frontend_Index:      c.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, c.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, c.triggerToken),
@@ -102,6 +103,8 @@ func (ft *frontendTranslator) translateState(ns *ASTNodeState, states []*common.
 			Trigger:             t.Trigger,
 			Condition:           t.Condition,
 			Action:              t.Action,
+			ConditionCallback:   t.ConditionCallback,
+			ActionCallback:      t.ActionCallback,
 			Frontend_Index:      t.entryIndex,
 			Frontend_KeywordPos: tokenToPosition(ft.lf, t.keywordToken),
 			Frontend_TriggerPos: tokenToPosition(ft.lf, t.triggerToken),

@@ -8,6 +8,7 @@ go_library(
         "ir.go",
         "options.go",
         "printer.go",
+        "rust.go",
         "test_utils.go",
         "validator.go",
     ],
@@ -27,6 +28,7 @@ go_test(
     srcs = [
         "cpp_test.go",
         "input_test.go",
+        "rust_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":ir"],
