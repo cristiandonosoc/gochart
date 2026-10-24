@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 // gochartFormatter --------------------------------------------------------------------------------

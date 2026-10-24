@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/internal/test_support"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/gochart_lang"
 	"github.com/cristiandonosoc/gochart/pkg/frontend/yaml"
-	"github.com/cristiandonosoc/gochart/internal/files"
-	"github.com/cristiandonosoc/gochart/internal/test_support"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,8 +88,6 @@ func TestReadSimpleYaml(t *testing.T) {
 	for _, e := range os.Environ() {
 		t.Log("ENV:", e)
 	}
-
-
 
 	path, err := test_support.RunfilePath("testdata/simple.yaml")
 	require.NoError(t, err)

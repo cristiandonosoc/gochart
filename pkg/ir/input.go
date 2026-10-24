@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
-	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/internal/files"
+	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 // inputHandler is a helper struct to keep running state while we process the frontend input.

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -1,8 +1,8 @@
 package gochart_lang
 
 import (
-	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 	"github.com/cristiandonosoc/gochart/internal/files"
+	"github.com/cristiandonosoc/gochart/pkg/frontend/common"
 )
 
 type frontendTranslator struct {

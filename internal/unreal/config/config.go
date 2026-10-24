@@ -14,7 +14,7 @@ import (
 type GunrealConfig struct {
 	// *** Project fields ***
 
-	ProjectName string `yaml:"project_name"`
+	ProjectName  string `yaml:"project_name"`
 	UProjectPath string `yaml:"uproject"`
 	// (optional) Where the base project is.
 	// If not set, it is calculated as the directory that holds the |UProject| file.

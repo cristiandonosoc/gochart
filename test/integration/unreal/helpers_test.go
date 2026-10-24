@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
-	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/test_support"
 	gunreal "github.com/cristiandonosoc/gochart/internal/unreal"
+	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
+	unreal_backend "github.com/cristiandonosoc/gochart/pkg/backend/unreal"
 
 	"github.com/stretchr/testify/require"
 )

@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 const (

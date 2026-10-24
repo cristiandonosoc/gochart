@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	cpp_gen "github.com/cristiandonosoc/gochart/internal/generation/cpp"
 	"github.com/cristiandonosoc/gochart/internal/option"
-	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
-	"github.com/cristiandonosoc/gochart/internal/files"
 	gunreal "github.com/cristiandonosoc/gochart/internal/unreal"
+	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
 
 	"golang.org/x/exp/maps"
 )

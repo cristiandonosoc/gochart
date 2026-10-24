@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cristiandonosoc/gochart/internal/files"
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
-	"github.com/cristiandonosoc/gochart/internal/files"
 )
 
 type GochartCompiler struct {
