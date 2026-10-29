@@ -1,0 +1,323 @@
+// Runtime ------------------------------------------------------------------------------------------
+//
+// The algorithm is the same for every gochart. It relies on the generated tables (rt_parent,
+// rt_children, ...) and tree operations (rt_attach, rt_call_enter, ...) above.
+
+/// Leaf states entered during a transition, whose null transitions are evaluated once the
+/// transition is done.
+#[allow(dead_code)]
+struct RtEntered {
+    leaves: [StateId; RT_LEAF_COUNT],
+    len: usize,
+}
+
+#[allow(dead_code)]
+impl RtEntered {
+    fn new() -> Self {
+        RtEntered { leaves: [RT_ANY_LEAF; RT_LEAF_COUNT], len: 0 }
+    }
+
+    fn push(&mut self, state: StateId) {
+        self.leaves[self.len] = state;
+        self.len += 1;
+    }
+}
+
+#[allow(dead_code)]
+fn rt_index(state: Option<StateId>) -> usize {
+    match state {
+        None => 0,
+        Some(state) => state as usize + 1,
+    }
+}
+
+/// Whether |ancestor| strictly contains |state|.
+#[allow(dead_code)]
+fn rt_is_strict_ancestor(ancestor: StateId, state: StateId) -> bool {
+    let mut current = rt_parent(state);
+    while let Some(parent) = current {
+        if parent == ancestor {
+            return true;
+        }
+        current = rt_parent(parent);
+    }
+    false
+}
+
+/// The state that the transition stays within (None is the root): everything below it on the way
+/// out of |source| is exited, and everything below it on the way into |target| is entered.
+///
+/// If |source| contains |target|, the source stays active (and keeps its data). Otherwise, it is
+/// the lowest state that strictly contains both, so transitions to the source itself or to one of
+/// its parents exit and enter them again.
+#[allow(dead_code)]
+fn rt_lca(source: Option<StateId>, target: StateId) -> Option<StateId> {
+    let source = source?;
+    if rt_is_strict_ancestor(source, target) {
+        return Some(source);
+    }
+
+    let mut candidate = rt_parent(source);
+    while let Some(state) = candidate {
+        if rt_is_strict_ancestor(state, target) {
+            return Some(state);
+        }
+        candidate = rt_parent(state);
+    }
+    None
+}
+
+/// The child of |parent| that is (or contains) |state|.
+#[allow(dead_code)]
+fn rt_child_toward(parent: Option<StateId>, state: StateId) -> StateId {
+    let mut current = state;
+    while rt_parent(current) != parent {
+        current = rt_parent(current).expect("state is not below parent");
+    }
+    current
+}
+
+#[allow(dead_code)]
+fn rt_exit_subtree<D: Delegate>(d: &mut D, c: &mut Chart, state: StateId, event: Option<&Event>) {
+    if rt_is_parallel(Some(state)) {
+        // Parallel regions exit from the bottom of the file upwards, as in the C++ backend.
+        for &child in rt_children(Some(state)).iter().rev() {
+            if rt_is_active(c, child) {
+                rt_exit_subtree(d, c, child, event);
+            }
+        }
+    } else if let Some(child) = rt_active_child(c, Some(state)) {
+        rt_exit_subtree(d, c, child, event);
+    }
+
+    rt_call_exit(d, c, state, event);
+    rt_detach(c, state);
+}
+
+/// Exits everything below |lca| that is in the way of |target|.
+#[allow(dead_code)]
+fn rt_exit_toward<D: Delegate>(d: &mut D, c: &mut Chart, lca: Option<StateId>, target: StateId, event: Option<&Event>) {
+    let child = if rt_is_parallel(lca) {
+        // Only the region of the transition is exited, the other regions keep running.
+        Some(rt_child_toward(lca, target))
+    } else {
+        rt_active_child(c, lca)
+    };
+
+    if let Some(child) = child {
+        if rt_is_active(c, child) {
+            rt_exit_subtree(d, c, child, event);
+        }
+    }
+}
+
+#[allow(dead_code)]
+fn rt_enter_one<D: Delegate>(d: &mut D, c: &mut Chart, state: StateId, event: Option<&Event>) {
+    rt_attach(d, c, state, event);
+    rt_call_enter(d, c, state, event);
+}
+
+/// Enters the default states below |state|, which was just entered (None is the root).
+#[allow(dead_code)]
+fn rt_enter_defaults_below<D: Delegate>(
+    d: &mut D,
+    c: &mut Chart,
+    state: Option<StateId>,
+    event: Option<&Event>,
+    entered: &mut RtEntered,
+) {
+    let children = rt_children(state);
+    if children.is_empty() {
+        if let Some(state) = state {
+            entered.push(state);
+        }
+        return;
+    }
+
+    if rt_is_parallel(state) {
+        for &child in children {
+            rt_enter_one(d, c, child, event);
+            rt_enter_defaults_below(d, c, Some(child), event, entered);
+        }
+    } else {
+        let child = rt_default_child(state).expect("states with children have a default child");
+        rt_enter_one(d, c, child, event);
+        rt_enter_defaults_below(d, c, Some(child), event, entered);
+    }
+}
+
+/// Enters the states in |path|, which is ordered from the deepest (the target) to the shallowest.
+#[allow(dead_code)]
+fn rt_enter_path<D: Delegate>(
+    d: &mut D,
+    c: &mut Chart,
+    path: &[StateId],
+    event: Option<&Event>,
+    entered: &mut RtEntered,
+) {
+    let Some((&state, rest)) = path.split_last() else {
+        return;
+    };
+
+    rt_enter_one(d, c, state, event);
+    let Some(&next) = rest.last() else {
+        // This is the target.
+        rt_enter_defaults_below(d, c, Some(state), event, entered);
+        return;
+    };
+
+    if rt_is_parallel(Some(state)) {
+        // The other regions enter their default states.
+        for &child in rt_children(Some(state)) {
+            if child == next {
+                rt_enter_path(d, c, rest, event, entered);
+            } else {
+                rt_enter_one(d, c, child, event);
+                rt_enter_defaults_below(d, c, Some(child), event, entered);
+            }
+        }
+    } else {
+        rt_enter_path(d, c, rest, event, entered);
+    }
+}
+
+/// Enters everything from below |lca| down to |target| (and |target|'s default states).
+#[allow(dead_code)]
+fn rt_enter_toward<D: Delegate>(
+    d: &mut D,
+    c: &mut Chart,
+    lca: Option<StateId>,
+    target: StateId,
+    event: Option<&Event>,
+    entered: &mut RtEntered,
+) {
+    let mut path = [target; RT_MAX_DEPTH];
+    let mut len = 0;
+    let mut current = Some(target);
+    while current != lca {
+        let state = current.expect("lca is an ancestor of target");
+        path[len] = state;
+        len += 1;
+        current = rt_parent(state);
+    }
+
+    rt_enter_path(d, c, &path[..len], event, entered);
+}
+
+/// Evaluates the null transitions of the leaves that were just entered.
+#[allow(dead_code)]
+fn rt_settle<D: Delegate>(d: &mut D, c: &mut Chart, entered: &RtEntered) {
+    for &leaf in &entered.leaves[..entered.len] {
+        // An earlier null transition could have left this leaf already.
+        if rt_is_active(c, leaf) {
+            rt_null_transitions(d, c, leaf);
+        }
+    }
+}
+
+/// Runs a transition from |source| (None is the gochart level) to |target|. The action of the
+/// transition, if any, has already run.
+#[allow(dead_code)]
+fn rt_transition<D: Delegate>(d: &mut D, c: &mut Chart, source: Option<StateId>, target: StateId, event: Option<&Event>) {
+    let lca = rt_lca(source, target);
+    rt_exit_toward(d, c, lca, target, event);
+
+    let mut entered = RtEntered::new();
+    rt_enter_toward(d, c, lca, target, event, &mut entered);
+
+    d.on_transition(source, target, event.map(Event::id));
+    rt_settle(d, c, &entered);
+}
+
+#[allow(dead_code)]
+fn rt_collect_leaves(c: &Chart, state: Option<StateId>, out: &mut [Option<StateId>; REGION_COUNT]) {
+    let children = rt_children(state);
+    if children.is_empty() {
+        if let Some(state) = state {
+            out[rt_region(state)] = Some(state);
+        }
+        return;
+    }
+
+    if rt_is_parallel(state) {
+        for &child in children {
+            if rt_is_active(c, child) {
+                rt_collect_leaves(c, Some(child), out);
+            }
+        }
+    } else if let Some(child) = rt_active_child(c, state) {
+        rt_collect_leaves(c, Some(child), out);
+    }
+}
+
+#[allow(dead_code)]
+fn rt_leaves(c: &Chart) -> [Option<StateId>; REGION_COUNT] {
+    let mut out = [None; REGION_COUNT];
+    if c.tree.is_some() {
+        rt_collect_leaves(c, None, &mut out);
+    }
+    out
+}
+
+#[allow(dead_code)]
+fn rt_activate<D: Delegate>(d: &mut D, c: &mut Chart) {
+    assert!(c.tree.is_none(), "activating a gochart that is already active");
+    c.tree = Some(ChartChildren::VACANT);
+    rt_call_enter_root(d, c);
+
+    let mut entered = RtEntered::new();
+    rt_enter_defaults_below(d, c, None, None, &mut entered);
+    rt_settle(d, c, &entered);
+}
+
+#[allow(dead_code)]
+fn rt_deactivate<D: Delegate>(d: &mut D, c: &mut Chart) {
+    assert!(c.tree.is_some(), "deactivating a gochart that is not active");
+    if rt_is_parallel(None) {
+        for &child in rt_children(None).iter().rev() {
+            if rt_is_active(c, child) {
+                rt_exit_subtree(d, c, child, None);
+            }
+        }
+    } else if let Some(child) = rt_active_child(c, None) {
+        rt_exit_subtree(d, c, child, None);
+    }
+
+    rt_call_exit_root(d, c);
+    c.tree = None;
+}
+
+#[allow(dead_code)]
+fn rt_dispatch<D: Delegate>(d: &mut D, c: &mut Chart, event: &Event) {
+    if c.tree.is_none() {
+        return;
+    }
+
+    // Each active leaf offers the trigger to itself and then its parents, until one handles it.
+    // A state is offered the trigger at most once, even if several of its regions reach it.
+    let mut visited = [false; RT_STATE_COUNT + 1];
+    for leaf in rt_leaves(c).into_iter().flatten() {
+        if !rt_is_active(c, leaf) {
+            // A transition handled for an earlier region left this one.
+            continue;
+        }
+
+        let mut current = Some(leaf);
+        loop {
+            let index = rt_index(current);
+            if visited[index] {
+                break;
+            }
+            visited[index] = true;
+
+            if rt_handle(d, c, current, event) {
+                break;
+            }
+
+            match current {
+                Some(state) => current = rt_parent(state),
+                None => break,
+            }
+        }
+    }
+}

@@ -1,0 +1,22 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  14:
+//  15: 	state Idle {
+//  16: 		transition Tick > Busy if { return true; }
+//      		^---> state "Idle": inlined code is not supported for language "rust", use a named callback instead (eg. "if some_condition")
+//  17: 	}
+//  18:
+// --- ERROR END
+
+gochart Hauler(language = "rust") {
+	trigger Tick()
+
+	state Idle {
+		transition Tick > Busy if { return true; }
+	}
+
+	state Busy {
+		capture Tick
+	}
+}

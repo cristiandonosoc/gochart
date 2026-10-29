@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/cristiandonosoc/gochart/internal/errors"
 	frontend_common "github.com/cristiandonosoc/gochart/pkg/frontend/common"
@@ -27,6 +28,8 @@ var (
 
 	kGochartOption_Parallel  = "parallel"
 	kGochartOption_Namespace = "namespace"
+	kGochartOption_Language  = "language"
+	kGochartOption_Derives   = "derives"
 
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
@@ -65,12 +68,48 @@ gochart(namespace = "SomeOtherNamespace") {
 `,
 			Handler: GochartOptionHandler(parseGochartOption_Namespace),
 		},
+		kGochartOption_Language: {
+			Name:     kGochartOption_Language,
+			FlagName: kGochartOption_Language,
+			Kind:     frontend_common.OptionValueKind_String,
+			Description: `The language the gochart is written for: "cpp" (default) or "rust".
+
+It determines how trigger arguments are parsed and which backend can generate the gochart.
+Rust gocharts use named callbacks ("if some_condition", "do some_action") instead of inlined code,
+and support state data (see the state "data" option).
+
+See https://github.com/cristiandonosoc/gochart/docs/rust.md for more details.`,
+			Synopsis: `
+gochart Hauler(language = "rust") {
+	trigger Reserved(job: HaulJob)
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_Language),
+		},
+		kGochartOption_Derives: {
+			Name:     kGochartOption_Derives,
+			FlagName: kGochartOption_Derives,
+			Kind:     frontend_common.OptionValueKind_String,
+			Description: `Extra derives for the generated Rust types, comma separated (Rust only).
+
+The generated chart always derives Clone, Debug, PartialEq and Eq. This option adds more, such as
+serde's, so the chart can be saved or hashed as part of its owner.`,
+			Synopsis: `
+gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserialize") {
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_Derives),
+		},
 	})
 
 	// State Options ---------------------------------------------------------------------------------
 
-	kStateOption_Default  = "default"
-	kStateOption_Parallel = "parallel"
+	kStateOption_Default     = "default"
+	kStateOption_Parallel    = "parallel"
+	kStateOption_Data        = "data"
+	kStateOption_DataDefault = "data_default"
 
 	kStateOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kStateOption_Default: {
@@ -118,6 +157,36 @@ state SomeState(parallel) {
 	}
 }`,
 			Handler: StateOptionHandler(parseStateOption_Parallel),
+		},
+		kStateOption_Data: {
+			Name:     kStateOption_Data,
+			FlagName: kStateOption_Data,
+			Kind:     frontend_common.OptionValueKind_String,
+			Description: `The type of the data that lives while this state is active (Rust only).
+
+The data is created when the state is entered (by a callback, or with Default::default() if
+"data_default" is set) and dropped when the state is exited. Callbacks of the state and its
+children receive it.`,
+			Synopsis: `
+state Hauling(data = "HaulJob") {
+	...
+}
+`,
+			Handler: StateOptionHandler(parseStateOption_Data),
+		},
+		kStateOption_DataDefault: {
+			Name:     kStateOption_DataDefault,
+			FlagName: kStateOption_DataDefault,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Create the state data with Default::default() instead of a constructor callback (Rust only).
+
+Requires the "data" option.`,
+			Synopsis: `
+state Loading(data = "Transfer", data_default) {
+	...
+}
+`,
+			Handler: StateOptionHandler(parseStateOption_DataDefault),
 		},
 	})
 )
@@ -336,6 +405,27 @@ func parseGochartOption_Namespace(gc *Gochart, option *Option) error {
 	return nil
 }
 
+func parseGochartOption_Language(gc *Gochart, option *Option) error {
+	switch language := Language(option.StringValue()); language {
+	case Language_Cpp, Language_Rust:
+		gc.Language = language
+		return nil
+	default:
+		return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic",
+			"unknown language %q, expected %q or %q", option.StringValue(), Language_Cpp, Language_Rust)
+	}
+}
+
+func parseGochartOption_Derives(gc *Gochart, option *Option) error {
+	gc.Derives = nil
+	for _, derive := range strings.Split(option.StringValue(), ",") {
+		if derive = strings.TrimSpace(derive); derive != "" {
+			gc.Derives = append(gc.Derives, derive)
+		}
+	}
+	return nil
+}
+
 // State Options -----------------------------------------------------------------------------------
 
 type StateOptionHandler func(state *State, option *Option) error
@@ -369,5 +459,28 @@ func parseStateOption_Default(state *State, option *Option) error {
 
 func parseStateOption_Parallel(state *State, option *Option) error {
 	state.Parallel = option.BoolValue()
+	return nil
+}
+
+func parseStateOption_Data(state *State, option *Option) error {
+	state.DataType = strings.TrimSpace(option.StringValue())
+	if state.DataType == "" {
+		return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic", "state %q: empty data type", state.Name)
+	}
+	return nil
+}
+
+func parseStateOption_DataDefault(state *State, option *Option) error {
+	state.DataDefault = option.BoolValue()
+	return nil
+}
+
+// FindOption returns the option with the given name, or nil.
+func FindOption(options []*Option, name string) *Option {
+	for _, option := range options {
+		if option.Name() == name {
+			return option
+		}
+	}
 	return nil
 }

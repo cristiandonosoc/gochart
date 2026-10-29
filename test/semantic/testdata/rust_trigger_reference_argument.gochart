@@ -1,0 +1,20 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13:
+//  14: gochart Hauler(language = "rust") {
+//  15: 	trigger Reserved(job: &HaulJob)
+//      	                ^---> char 5: references and lifetimes are not allowed in trigger arguments (arguments are owned by the generated event)
+//  16:
+//  17: 	state Idle {
+//
+//Full context: parsing arguments for trigger "Reserved": splitting arguments for "job: &HaulJob": char 5: references and lifetimes are not allowed in trigger arguments (arguments are owned by the generated event)
+// --- ERROR END
+
+gochart Hauler(language = "rust") {
+	trigger Reserved(job: &HaulJob)
+
+	state Idle {
+		capture Reserved
+	}
+}

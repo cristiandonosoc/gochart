@@ -397,6 +397,8 @@ func (f *formatCapture) Write(w io.Writer) {
 	writeStringf(w, "capture %s ", f.capture.Trigger.Name)
 	if f.capture.HasCondition() {
 		writeCondition(w, f.capture.Condition)
+	} else if f.capture.ConditionCallback != "" {
+		writeStringf(w, "if %s ", f.capture.ConditionCallback)
 	}
 }
 func (f *formatCapture) Pop(w io.Writer) {}
@@ -443,10 +445,14 @@ func (f *formatTransition) Write(w io.Writer) {
 
 	if f.transition.HasCondition() {
 		writeCondition(w, f.transition.Condition)
+	} else if f.transition.ConditionCallback != "" {
+		writeStringf(w, "if %s ", f.transition.ConditionCallback)
 	}
 
 	if f.transition.HasAction() {
 		writeAction(w, f.transition.Action)
+	} else if f.transition.ActionCallback != "" {
+		writeStringf(w, "do %s ", f.transition.ActionCallback)
 	}
 }
 func (f *formatTransition) Pop(w io.Writer) {}

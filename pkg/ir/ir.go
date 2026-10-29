@@ -19,10 +19,24 @@ type ParallelHead struct {
 	HeadState *State
 }
 
+// Language is the language a gochart is written for. It determines how trigger arguments are parsed
+// and which backend can generate it.
+type Language string
+
+const (
+	Language_Cpp  Language = "cpp"
+	Language_Rust Language = "rust"
+)
+
 // Gochart represents a single gochart state machine.
 type Gochart struct {
 	Name      string
 	Namespace string
+
+	Language Language
+	// Derives are extra derives for the generated types (Rust only), as written in the option
+	// (eg. "serde::Serialize, serde::Deserialize").
+	Derives []string
 
 	Options []*Option
 
@@ -90,6 +104,11 @@ func (ta *TriggerArgument) String() string {
 	return fmt.Sprintf("%s %s", ta.Type, ta.Name)
 }
 
+// RustString returns the argument as written in a Rust signature.
+func (ta *TriggerArgument) RustString() string {
+	return fmt.Sprintf("%s: %s", ta.Name, ta.Type)
+}
+
 // STATE -------------------------------------------------------------------------------------------
 
 // State represents a single state withing a gochart.
@@ -99,6 +118,11 @@ type State struct {
 
 	Parallel      bool
 	ParallelGroup int
+
+	// DataType is the type of the data that lives while this state is active (Rust only).
+	DataType string
+	// DataDefault is whether the data is created with |Default::default()| rather than a callback.
+	DataDefault bool
 
 	Options []*Option
 
@@ -337,6 +361,8 @@ func (sr *StateReaction) String() string {
 type StateCapture struct {
 	Trigger   *Trigger
 	Condition string
+	// ConditionCallback is the name of the condition callback ("if some_condition").
+	ConditionCallback string
 
 	FrontendData *frontend_common.CaptureData
 }
@@ -349,6 +375,11 @@ func (sc *StateCapture) HasCondition() bool {
 	return sc.Condition != ""
 }
 
+// IsConditional is whether the capture has a condition, either inlined or as a named callback.
+func (sc *StateCapture) IsConditional() bool {
+	return sc.Condition != "" || sc.ConditionCallback != ""
+}
+
 // TRANSITION --------------------------------------------------------------------------------------
 
 // Transition represents a transition from one state to another given a particular trigger.
@@ -358,6 +389,10 @@ type Transition struct {
 	Trigger   *Trigger
 	Condition string
 	Action    string
+
+	// Named callbacks ("if some_condition", "do some_action").
+	ConditionCallback string
+	ActionCallback    string
 
 	FrontendData *frontend_common.TransitionData
 }
@@ -372,4 +407,9 @@ func (t *Transition) HasCondition() bool {
 
 func (t *Transition) HasAction() bool {
 	return t.Action != ""
+}
+
+// IsConditional is whether the transition has a condition, either inlined or as a named callback.
+func (t *Transition) IsConditional() bool {
+	return t.Condition != "" || t.ConditionCallback != ""
 }

@@ -4,9 +4,9 @@
     <img src="./extras/images/gochart_logo.png" width="200" />
 </p>
 
-Gochart is statechart code generator capable of targeting multiple backends, though currently C++ is
-the only one available. While not bound to it at all, it was thought to be used within Unreal as a
-way of describing gameplay state machines in a more robust manner.
+Gochart is statechart code generator capable of targeting multiple backends: C++ and Rust. While
+not bound to it at all, it was thought to be used within Unreal as a way of describing gameplay
+state machines in a more robust manner.
 
 It is meant to be performance oriented, geared to be used in games, such as the ones made in Unreal:
 - Low memory footprint: The generated class is 24 bytes big in the best case, 32 in normal cases.
@@ -43,6 +43,16 @@ Gameplay\elevator.gochart.define.h
 
 > [!TIP]
 > What those headers mean is explained in the [docs](docs/gochart.md#c++-integration)
+
+### Rust
+
+Gocharts written with `language = "rust"` generate a single Rust file:
+```
+gochart backend rust generate [STATECHART_FILE] [OUTPUT_PATH] [FILE_PREFIX]
+```
+
+> [!TIP]
+> See the [Rust backend docs](docs/rust.md) for the language differences and the generated API.
 
 ### Unreal
 

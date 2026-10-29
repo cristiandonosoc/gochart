@@ -1,0 +1,21 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: // (Keeping it away from the error block.)
+//  14:
+//  15: gochart Door(language = "go") {
+//                   ^---> unknown language "go", expected "cpp" or "rust"
+//  16: 	trigger Tick()
+//  17:
+// --- ERROR END
+
+// The gochart option below is the error.
+// (Keeping it away from the error block.)
+
+gochart Door(language = "go") {
+	trigger Tick()
+
+	state Closed {
+		capture Tick
+	}
+}

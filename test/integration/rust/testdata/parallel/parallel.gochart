@@ -1,0 +1,112 @@
+// The chart of the C++ parallel test. The C++ version raises SpawningActuatorDone from the null
+// transition of SpawnDone. Rust callbacks cannot raise triggers, so the test sends it.
+gochart Parallel(language = "rust") {
+	trigger ActivateActuator(actuator: Actuator, activate: bool)
+
+	trigger StartSpawning()
+	trigger Spawned()
+	trigger SpawningActuatorDone()
+
+	trigger TargetAcquired()
+	trigger TargetConfirmed()
+	trigger TargetDispatched()
+
+	trigger Update(dt: u32)
+
+	state Root(parallel) {
+		exit
+
+		// Reached by every region, but offered the trigger only once.
+		capture Update
+
+		state MainActuator {
+			exit
+
+			transition TargetDispatched > Attack
+
+			state Idle {
+				transition StartSpawning > WaitingOnSpawning
+			}
+
+			state WaitingOnSpawning {
+				transition SpawningActuatorDone > Ready
+			}
+
+			state Ready {
+				enter
+			}
+
+			state Attack {
+				enter
+				exit
+			}
+		}
+
+		state SpawnActuator {
+			exit
+
+			state SpawnInactive {
+				transition ActivateActuator > SpawnActive if spawn_on
+			}
+
+			state SpawnActive {
+				exit
+
+				transition ActivateActuator > SpawnInactive if spawn_off
+
+				state SpawnIdle {
+					transition StartSpawning > SpawnInProgress
+				}
+
+				state SpawnInProgress {
+					transition Spawned > SpawnDone
+				}
+
+				state SpawnDone {
+					enter
+
+					transition null > SpawnIdle do done
+				}
+			}
+		}
+
+		state AimingActuator {
+			enter
+			exit
+
+			state AimingInactive {
+				transition ActivateActuator > AimingActive if aiming_on
+			}
+
+			state AimingActive(parallel) {
+				transition ActivateActuator > AimingInactive if aiming_off
+
+				enter
+				exit
+
+				state AimingSearcher {
+					capture Update
+				}
+
+				state AimingAnalyzer {
+					enter
+					exit
+
+					capture TargetAcquired
+				}
+
+				state AimingDispatcher {
+					exit
+
+					state AimingDispatcherIdle {
+						transition TargetConfirmed > AimingDispatcherDispatching
+					}
+
+					state AimingDispatcherDispatching {
+						transition TargetDispatched > AimingDispatcherIdle
+					}
+				}
+			}
+		}
+	}
+}

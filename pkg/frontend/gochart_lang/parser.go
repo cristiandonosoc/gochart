@@ -776,6 +776,10 @@ type ASTNodeStateTransition struct {
 	Condition   string
 	Action      string
 
+	// Named callbacks ("if some_condition", "do some_action"), as opposed to inlined code.
+	ConditionCallback string
+	ActionCallback    string
+
 	keywordToken *Token
 	triggerToken *Token
 	targetToken  *Token
@@ -822,51 +826,35 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 	}
 
 	// Check if there is a condition.
-	var condition string
+	var condition, conditionCallback string
 	if _, ok := p.match(Token_KeywordIf); ok {
-		// We should get a right brace.
-		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
-			return nil, p.pushErrorf(0, "after \"if\": %w", err)
+		code, callback, err := p.parseCodeOrCallback("if")
+		if err != nil {
+			return nil, err
 		}
-		// After we should get a code token.
-		if token, err := p.consumeToken(Token_Code); err != nil {
-			return nil, p.pushErrorf(0, "expected a code token: %w", err)
-		} else {
-			condition = token.literal
-		}
-		// We need a right brace.
-		if _, err := p.consumeToken(Token_RightBrace); err != nil {
-			return nil, p.pushErrorf(0, "expected closing brace: %w", err)
-		}
+		condition, conditionCallback = code, callback
 	}
 
 	// Check if there is an action.
-	var action string
+	var action, actionCallback string
 	if _, ok := p.match(Token_KeywordDo); ok {
-		// We should get a right brace.
-		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
-			return nil, p.pushErrorf(0, "after \"if\": %w", err)
+		code, callback, err := p.parseCodeOrCallback("do")
+		if err != nil {
+			return nil, err
 		}
-		// After we should get a code token.
-		if token, err := p.consumeToken(Token_Code); err != nil {
-			return nil, p.pushErrorf(0, "expected a code token: %w", err)
-		} else {
-			action = token.literal
-		}
-		// We need a right brace.
-		if _, err := p.consumeToken(Token_RightBrace); err != nil {
-			return nil, p.pushErrorf(0, "expected closing brace: %w", err)
-		}
+		action, actionCallback = code, callback
 	}
 
 	transition := &ASTNodeStateTransition{
-		Trigger:      triggerName,
-		TargetState:  stateToken.literal,
-		Condition:    condition,
-		Action:       action,
-		keywordToken: baseToken,
-		triggerToken: triggerToken,
-		targetToken:  stateToken,
+		Trigger:           triggerName,
+		TargetState:       stateToken.literal,
+		Condition:         condition,
+		Action:            action,
+		ConditionCallback: conditionCallback,
+		ActionCallback:    actionCallback,
+		keywordToken:      baseToken,
+		triggerToken:      triggerToken,
+		targetToken:       stateToken,
 	}
 
 	p.debuglog("-> parsed transition: %+v", transition)
@@ -880,6 +868,9 @@ func (p *Parser) parseStateTransition(baseToken *Token) (*ASTNodeStateTransition
 type ASTNodeStateCapture struct {
 	Trigger   string
 	Condition string
+
+	// Named condition callback ("if some_condition"), as opposed to inlined code.
+	ConditionCallback string
 
 	keywordToken *Token
 	triggerToken *Token
@@ -907,34 +898,50 @@ func (p *Parser) parseStateCapture(baseToken *Token) (*ASTNodeStateCapture, erro
 	triggerName := triggerToken.literal
 
 	// Check if there is a condition.
-	var condition string
+	var condition, conditionCallback string
 	if _, ok := p.match(Token_KeywordIf); ok {
-		// We should get a right brace.
-		if _, err := p.consumeToken(Token_LeftBrace); err != nil {
-			return nil, p.pushErrorf(0, "after \"if\": %w", err)
+		code, callback, err := p.parseCodeOrCallback("if")
+		if err != nil {
+			return nil, err
 		}
-		// After we should get a code token.
-		if token, err := p.consumeToken(Token_Code); err != nil {
-			return nil, p.pushErrorf(0, "expected a code token: %w", err)
-		} else {
-			condition = token.literal
-		}
-		// We need a right brace.
-		if _, err := p.consumeToken(Token_RightBrace); err != nil {
-			return nil, p.pushErrorf(0, "expected closing brace: %w", err)
-		}
+		condition, conditionCallback = code, callback
 	}
 
 	capture := &ASTNodeStateCapture{
-		Trigger:      triggerName,
-		Condition:    condition,
-		keywordToken: baseToken,
-		triggerToken: triggerToken,
+		Trigger:           triggerName,
+		Condition:         condition,
+		ConditionCallback: conditionCallback,
+		keywordToken:      baseToken,
+		triggerToken:      triggerToken,
 	}
 
 	p.debuglog("-> parsed capture: %+v", capture)
 
 	return capture, nil
+}
+
+// parseCodeOrCallback parses what comes after an "if" or "do" keyword: either an inlined code block
+// ('{' CODE '}') or the name of a callback (IDENTIFIER). Returns one of the two.
+func (p *Parser) parseCodeOrCallback(keyword string) (string, string, error) {
+	if token, ok := p.match(Token_Identifier); ok {
+		return "", token.literal, nil
+	}
+
+	// We should get a left brace.
+	if _, err := p.consumeToken(Token_LeftBrace); err != nil {
+		return "", "", p.pushErrorf(0, "after %q: %w", keyword, err)
+	}
+	// After we should get a code token.
+	token, err := p.consumeToken(Token_Code)
+	if err != nil {
+		return "", "", p.pushErrorf(0, "expected a code token: %w", err)
+	}
+	// We need a right brace.
+	if _, err := p.consumeToken(Token_RightBrace); err != nil {
+		return "", "", p.pushErrorf(0, "expected closing brace: %w", err)
+	}
+
+	return token.literal, "", nil
 }
 
 // Comment -----------------------------------------------------------------------------------------

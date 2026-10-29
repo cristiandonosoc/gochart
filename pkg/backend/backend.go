@@ -11,6 +11,7 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend/common"
 	"github.com/cristiandonosoc/gochart/pkg/backend/cpp"
+	"github.com/cristiandonosoc/gochart/pkg/backend/rust"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 
 	"github.com/urfave/cli/v2"
@@ -26,7 +27,8 @@ type GochartBackend interface {
 type backendFactory func(*cli.Context) (GochartBackend, error)
 
 var factories = map[string]backendFactory{
-	"cpp": newCppBackend,
+	"cpp":  newCppBackend,
+	"rust": newRustBackend,
 }
 
 // SetFlags adds all the flags available to configure the given backend.
@@ -40,6 +42,8 @@ func SetFlags(backendKind string) ([]cli.Flag, error) {
 	switch strings.ToLower(backendKind) {
 	case "cpp":
 		return setCppFlags(), nil
+	case "rust":
+		return []cli.Flag{}, nil
 	default:
 		return nil, fmt.Errorf("unknown backend %q. Valid values: %v", backendKind, keys)
 	}
@@ -70,4 +74,10 @@ func setCppFlags() []cli.Flag {
 func newCppBackend(cliCtx *cli.Context) (GochartBackend, error) {
 	var options []option.Option
 	return cpp.NewCppGochartBackend(options...)
+}
+
+// Rust Backend ------------------------------------------------------------------------------------
+
+func newRustBackend(cliCtx *cli.Context) (GochartBackend, error) {
+	return rust.NewRustGochartBackend()
 }

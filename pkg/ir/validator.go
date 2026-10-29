@@ -16,6 +16,16 @@ func validate(ih *inputHandler) error {
 		return errors.Errorf(ih.gcdata.Frontend_NamePos, "Semantic", "no root states found")
 	}
 
+	// Options that only make sense for some languages.
+	if ih.language != Language_Rust {
+		for _, option := range ih.gcdata.Options {
+			if option.Name == kGochartOption_Derives {
+				return errors.Errorf(option.Frontend_NamePos, "Semantic",
+					"option %q requires language = %q", option.Name, Language_Rust)
+			}
+		}
+	}
+
 	// Validate states.
 	for _, state := range ih.states {
 		sv := newStateValidator(ih, state)
@@ -57,6 +67,87 @@ func (sv *stateValidator) validate() error {
 
 	if err := sv.validateTriggerBasedEntries(); err != nil {
 		return fmt.Errorf("validating trigger based entries: %w", err)
+	}
+
+	if err := sv.validateLanguage(); err != nil {
+		return fmt.Errorf("validating language features: %w", err)
+	}
+
+	return nil
+}
+
+// validateLanguage checks that the state only uses the features of the gochart language: inlined
+// code for C++, named callbacks and state data for Rust.
+func (sv *stateValidator) validateLanguage() error {
+	state := sv.state
+
+	if sv.ih.language == Language_Rust {
+		inlinedErr := func(pos *files.LoadedFilePosition) error {
+			return errors.Errorf(pos, "Semantic",
+				"state %q: inlined code is not supported for language %q, use a named callback instead (eg. \"if some_condition\")",
+				state.Name, Language_Rust)
+		}
+		callbackNameErr := func(name string, pos *files.LoadedFilePosition) error {
+			if IsRustIdentifier(name) {
+				return nil
+			}
+			return errors.Errorf(pos, "Semantic", "state %q: invalid callback name %q", state.Name, name)
+		}
+		for _, transition := range state.Transitions {
+			if transition.HasCondition() || transition.HasAction() {
+				return inlinedErr(transition.FrontendData.Frontend_KeywordPos)
+			}
+			for _, name := range []string{transition.ConditionCallback, transition.ActionCallback} {
+				if name == "" {
+					continue
+				}
+				if err := callbackNameErr(name, transition.FrontendData.Frontend_KeywordPos); err != nil {
+					return err
+				}
+			}
+		}
+		for _, capture := range state.Captures {
+			if capture.HasCondition() {
+				return inlinedErr(capture.FrontendData.Frontend_KeywordPos)
+			}
+			if capture.ConditionCallback != "" {
+				if err := callbackNameErr(capture.ConditionCallback, capture.FrontendData.Frontend_KeywordPos); err != nil {
+					return err
+				}
+			}
+		}
+
+		if state.DataDefault && state.DataType == "" {
+			option := FindOption(state.Options, kStateOption_DataDefault)
+			return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic",
+				"state %q: option %q requires the %q option", state.Name, kStateOption_DataDefault, kStateOption_Data)
+		}
+
+		return nil
+	}
+
+	// Non-Rust languages.
+	for _, name := range []string{kStateOption_Data, kStateOption_DataDefault} {
+		if option := FindOption(state.Options, name); option != nil {
+			return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic",
+				"state %q: option %q requires language = %q", state.Name, name, Language_Rust)
+		}
+	}
+
+	callbackErr := func(pos *files.LoadedFilePosition) error {
+		return errors.Errorf(pos, "Semantic",
+			"state %q: named callbacks require language = %q, use inlined code instead (eg. \"if { ... }\")",
+			state.Name, Language_Rust)
+	}
+	for _, transition := range state.Transitions {
+		if transition.ConditionCallback != "" || transition.ActionCallback != "" {
+			return callbackErr(transition.FrontendData.Frontend_KeywordPos)
+		}
+	}
+	for _, capture := range state.Captures {
+		if capture.ConditionCallback != "" {
+			return callbackErr(capture.FrontendData.Frontend_KeywordPos)
+		}
 	}
 
 	return nil
@@ -109,7 +200,7 @@ func (tbt *triggerBasedTracker) appendTransition(transition *Transition) {
 
 	tbt.entries[transition.Trigger] = append(tbt.entries[transition.Trigger], &triggerBasedEntry{
 		index:       transition.FrontendData.Frontend_Index,
-		conditional: transition.HasCondition(),
+		conditional: transition.IsConditional(),
 		kind:        "transition",
 		position:    transition.FrontendData.Frontend_TriggerPos,
 	})
@@ -124,7 +215,7 @@ func (tbt *triggerBasedTracker) appendCapture(capture *StateCapture) {
 
 	tbt.entries[capture.Trigger] = append(tbt.entries[capture.Trigger], &triggerBasedEntry{
 		index:       capture.FrontendData.Frontend_Index,
-		conditional: capture.HasCondition(),
+		conditional: capture.IsConditional(),
 		kind:        "capture",
 		position:    capture.FrontendData.Frontend_TriggerPos,
 	})

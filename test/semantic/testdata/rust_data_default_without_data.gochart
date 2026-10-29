@@ -1,0 +1,18 @@
+// --- ERROR BEGIN
+//
+//Semantic error:
+//  13: 	trigger Tick()
+//  14:
+//  15: 	state Idle(data_default) {
+//      	           ^---> state "Idle": option "data_default" requires the "data" option
+//  16: 		capture Tick
+//  17: 	}
+// --- ERROR END
+
+gochart Hauler(language = "rust") {
+	trigger Tick()
+
+	state Idle(data_default) {
+		capture Tick
+	}
+}

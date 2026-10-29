@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rust",
+    srcs = ["rust.go"],
+    importpath = "github.com/cristiandonosoc/gochart/pkg/backend/rust",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/build",
+        "//internal/generation/rust",
+        "//internal/option",
+        "//pkg/backend/common",
+        "//pkg/ir",
+    ],
+)

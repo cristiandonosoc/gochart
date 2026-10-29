@@ -1,0 +1,38 @@
+// State data: created on enter (by a callback or with Default), given to the callbacks of the state
+// and its children, and dropped on exit.
+gochart Hauler(language = "rust", derives = "Hash") {
+	trigger Tick()
+	trigger Reserved(job: Job)
+	trigger Loaded(units: u32)
+	trigger Retry(at: u64)
+	trigger Cancel()
+
+	state Free(data = "FreeData") {
+		capture Retry
+		transition Reserved > Hauling if job_fits do accept
+
+		state Idle(data = "IdleData", data_default) {
+			capture Tick
+		}
+	}
+
+	state Hauling(data = "Job") {
+		enter
+		exit
+
+		transition Cancel > Idle
+
+		state ToPickup {
+			transition Tick > Loading if docked
+		}
+
+		state Loading(data = "Transfer") {
+			enter Tick
+			exit
+
+			capture Loaded
+			transition Tick > Idle if loaded_all
+			transition null > Idle if empty_job
+		}
+	}
+}

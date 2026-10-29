@@ -57,6 +57,52 @@ state Foo(boolean_without_value, boolean_with_value = false, int_flag = 33, stri
 
 These are options that are supported on the Gochart element, which defines the Gochart as a whole.
 
+### derives
+
+| Name | Description |
+| --- | --- |
+| Flag | derives |
+| Kind | string |
+
+**Description**
+
+Extra derives for the generated Rust types, comma separated (Rust only).
+
+The generated chart always derives Clone, Debug, PartialEq and Eq. This option adds more, such as
+serde's, so the chart can be saved or hashed as part of its owner.
+
+**Synopsis:**
+```
+gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserialize") {
+	...
+}
+```
+
+### language
+
+| Name | Description |
+| --- | --- |
+| Flag | language |
+| Kind | string |
+
+**Description**
+
+The language the gochart is written for: "cpp" (default) or "rust".
+
+It determines how trigger arguments are parsed and which backend can generate the gochart.
+Rust gocharts use named callbacks ("if some_condition", "do some_action") instead of inlined code,
+and support state data (see the state "data" option).
+
+See https://github.com/cristiandonosoc/gochart/docs/rust.md for more details.
+
+**Synopsis:**
+```
+gochart Hauler(language = "rust") {
+	trigger Reserved(job: HaulJob)
+	...
+}
+```
+
 ### namespace
 
 | Name | Description |
@@ -109,6 +155,48 @@ gochart(parallel) {
 ## State-level options
 
 These are options that are supported on the State element and change the behavior for that state only.
+
+### data
+
+| Name | Description |
+| --- | --- |
+| Flag | data |
+| Kind | string |
+
+**Description**
+
+The type of the data that lives while this state is active (Rust only).
+
+The data is created when the state is entered (by a callback, or with Default::default() if
+"data_default" is set) and dropped when the state is exited. Callbacks of the state and its
+children receive it.
+
+**Synopsis:**
+```
+state Hauling(data = "HaulJob") {
+	...
+}
+```
+
+### data_default
+
+| Name | Description |
+| --- | --- |
+| Flag | data_default |
+| Kind | boolean |
+
+**Description**
+
+Create the state data with Default::default() instead of a constructor callback (Rust only).
+
+Requires the "data" option.
+
+**Synopsis:**
+```
+state Loading(data = "Transfer", data_default) {
+	...
+}
+```
 
 ### default
 
