@@ -288,14 +288,15 @@ fn rt_deactivate<D: Delegate>(d: &mut D, c: &mut Chart) {
 }
 
 #[allow(dead_code)]
-fn rt_dispatch<D: Delegate>(d: &mut D, c: &mut Chart, event: &Event) {
+fn rt_dispatch<D: Delegate>(d: &mut D, c: &mut Chart, event: &Event) -> bool {
     if c.tree.is_none() {
-        return;
+        return false;
     }
 
     // Each active leaf offers the trigger to itself and then its parents, until one handles it.
     // A state is offered the trigger at most once, even if several of its regions reach it.
     let mut visited = [false; RT_STATE_COUNT + 1];
+    let mut handled = false;
     for leaf in rt_leaves(c).into_iter().flatten() {
         if !rt_is_active(c, leaf) {
             // A transition handled for an earlier region left this one.
@@ -311,6 +312,7 @@ fn rt_dispatch<D: Delegate>(d: &mut D, c: &mut Chart, event: &Event) {
             visited[index] = true;
 
             if rt_handle(d, c, current, event) {
+                handled = true;
                 break;
             }
 
@@ -320,4 +322,5 @@ fn rt_dispatch<D: Delegate>(d: &mut D, c: &mut Chart, event: &Event) {
             }
         }
     }
+    handled
 }

@@ -79,7 +79,7 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, Hash") {
 		"fn hauling_done(&self, hauling: &HaulJob) -> bool;",
 		"pub fn hauling(&self) -> Option<&HaulJob> {",
 		"pub fn hauling_mut(&mut self) -> Option<&mut HaulJob> {",
-		"pub fn trigger_reserved<D: Delegate>(delegate: &mut D, job: HaulJob) {",
+		"pub fn trigger_reserved<D: Delegate>(delegate: &mut D, job: HaulJob) -> bool {",
 		"fn rt_dispatch<D: Delegate>(",
 	} {
 		assert.Contains(t, content, want)

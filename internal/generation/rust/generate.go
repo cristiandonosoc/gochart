@@ -325,12 +325,14 @@ func (m *model) writeApi(w *writer) {
 	w.line("*delegate.chart() = c;")
 	w.close("}")
 	w.line("")
-	w.line("/// Processes a trigger to completion. Does nothing if the chart is not active.")
+	w.line("/// Processes a trigger to completion. Returns whether a state handled it (a transition or a")
+	w.line("/// capture whose condition passed). An inactive chart handles nothing.")
 	w.line("#[allow(dead_code)]")
-	w.open("pub fn dispatch<D: Delegate>(delegate: &mut D, event: Event) {")
+	w.open("pub fn dispatch<D: Delegate>(delegate: &mut D, event: Event) -> bool {")
 	w.line("let mut c = ::core::mem::take(delegate.chart());")
-	w.line("rt_dispatch(delegate, &mut c, &event);")
+	w.line("let handled = rt_dispatch(delegate, &mut c, &event);")
 	w.line("*delegate.chart() = c;")
+	w.line("handled")
 	w.close("}")
 
 	for _, t := range m.Triggers {
@@ -343,10 +345,10 @@ func (m *model) writeApi(w *writer) {
 		if len(t.Args) > 0 {
 			event += " { " + strings.Join(argNames(t), ", ") + " }"
 		}
-		w.line("/// Sends trigger %s.", t.Name)
+		w.line("/// Sends trigger %s. Returns whether a state handled it (see |dispatch|).", t.Name)
 		w.line("#[allow(dead_code)]")
-		w.open("pub fn trigger_%s<D: Delegate>(%s) {", t.Snake, strings.Join(params, ", "))
-		w.line("dispatch(delegate, %s);", event)
+		w.open("pub fn trigger_%s<D: Delegate>(%s) -> bool {", t.Snake, strings.Join(params, ", "))
+		w.line("dispatch(delegate, %s)", event)
 		w.close("}")
 	}
 	w.line("")

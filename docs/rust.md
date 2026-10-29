@@ -99,7 +99,7 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserializ
 | `Chart` | The state: which states are active and their data. A default chart is inactive. |
 | `Delegate` | The trait with the callbacks. The chart lives in the delegate (`fn chart(&mut self)`). |
 | `activate`, `deactivate` | Enter the default states, exit every state. |
-| `trigger_<name>(delegate, args...)` | Send a trigger. `dispatch(delegate, Event)` does the same with an `Event`. |
+| `trigger_<name>(delegate, args...)` | Send a trigger. `dispatch(delegate, Event)` does the same with an `Event`. Both return whether a state handled it. |
 | `StateId`, `Leaf`, `TriggerId` | Enums of every state, of the leaf states and of the triggers, with `ALL` and `name()`. |
 | `Event` | A trigger with its arguments. `Event::id()` returns its `TriggerId`. |
 | `REGION_COUNT` | The number of parallel regions. |
@@ -160,7 +160,10 @@ chart). Callbacks get the data they need as arguments instead.
 - **Callbacks cannot send triggers.** There is no trigger queue. Chains of triggers are written as
   conditions on the next trigger (eg. a `Tick` trigger with `transition Tick > Done if finished`) or
   as null transitions.
-- **Inactive charts** ignore triggers.
+- **Handled triggers.** `dispatch` and `trigger_<name>` return true when a transition or a capture
+  took the trigger (its condition, if any, passed), in any region. A trigger that no state takes
+  changes nothing and returns false.
+- **Inactive charts** ignore triggers (and return false).
 
 ## Differences with the C++ Backend
 

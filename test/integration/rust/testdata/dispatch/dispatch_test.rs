@@ -70,9 +70,9 @@ fn triggers_bubble_up_until_handled() {
     dispatch::activate(&mut p);
     assert_eq!(p.take_log(), vec!["+Outer", "+Inner"]);
 
-    dispatch::trigger_ping(&mut p, 1);
-    dispatch::trigger_ping(&mut p, 50);
-    dispatch::trigger_ping(&mut p, 200);
+    assert!(dispatch::trigger_ping(&mut p, 1));
+    assert!(dispatch::trigger_ping(&mut p, 50));
+    assert!(dispatch::trigger_ping(&mut p, 200));
     assert_eq!(p.take_log(), vec!["inner 1", "gochart 50", "outer 200"]);
 }
 
@@ -83,7 +83,7 @@ fn entries_are_evaluated_in_order() {
         dispatch::activate(&mut p);
         p.take_log();
 
-        dispatch::trigger_go(&mut p);
+        assert!(dispatch::trigger_go(&mut p));
         assert_eq!(p.chart.leaf(), leaf);
         assert_eq!(
             p.take_log(),
@@ -106,8 +106,16 @@ fn unhandled_triggers_do_nothing() {
     dispatch::activate(&mut p);
     p.take_log();
 
-    dispatch::trigger_back(&mut p);
+    assert!(!dispatch::trigger_back(&mut p));
     assert_eq!(p.chart.leaf(), Leaf::Inner);
+    assert!(p.log.is_empty());
+}
+
+#[test]
+fn inactive_charts_handle_nothing() {
+    let mut p = Pinger::default();
+    assert!(!dispatch::trigger_ping(&mut p, 1));
+    assert!(!dispatch::dispatch(&mut p, dispatch::Event::Go));
     assert!(p.log.is_empty());
 }
 
