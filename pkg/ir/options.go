@@ -32,6 +32,7 @@ var (
 	kGochartOption_Derives   = "derives"
 
 	kGochartOption_DelegateDefaults = "delegate_defaults"
+	kGochartOption_DefaultActive    = "default_active"
 
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
@@ -119,6 +120,22 @@ gochart Hauler(language = "rust", delegate_defaults) {
 }
 `,
 			Handler: GochartOptionHandler(parseGochartOption_DelegateDefaults),
+		},
+		kGochartOption_DefaultActive: {
+			Name:     kGochartOption_DefaultActive,
+			FlagName: kGochartOption_DefaultActive,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Makes the default chart start in its default states, instead of inactive (Rust only).
+
+The chart can then be built with Default (or derived with its owner) without a delegate. Entering
+the default states must not call any callback: no enter reactions, no null transitions on the
+default leaves, and state data only through "data_default".`,
+			Synopsis: `
+gochart Hauler(language = "rust", default_active) {
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_DefaultActive),
 		},
 	})
 
@@ -436,6 +453,11 @@ func parseGochartOption_Language(gc *Gochart, option *Option) error {
 
 func parseGochartOption_DelegateDefaults(gc *Gochart, option *Option) error {
 	gc.DelegateDefaults = option.BoolValue()
+	return nil
+}
+
+func parseGochartOption_DefaultActive(gc *Gochart, option *Option) error {
+	gc.DefaultActive = option.BoolValue()
 	return nil
 }
 

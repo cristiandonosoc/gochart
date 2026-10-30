@@ -40,6 +40,8 @@ type Gochart struct {
 	// DelegateDefaults gives every callback of the Delegate trait a default body that panics
 	// (Rust only).
 	DelegateDefaults bool
+	// DefaultActive makes the default chart start in its default states (Rust only).
+	DefaultActive bool
 
 	Options []*Option
 

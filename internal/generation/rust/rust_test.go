@@ -207,3 +207,76 @@ gochart Door(language = "rust") {
 		})
 	}
 }
+
+func TestDefaultActiveRejectsActivationCallbacks(t *testing.T) {
+	testcases := map[string]struct {
+		source string
+		want   string
+	}{
+		"data without data_default": {
+			source: `
+gochart Door(language = "rust", default_active) {
+	trigger Open()
+	state Shut(data = "u32") {
+		transition Open > Ajar
+	}
+	state Ajar {
+		transition Open > Shut
+	}
+}`,
+			want: "calls shut_data",
+		},
+		"enter reaction of a default child": {
+			source: `
+gochart Door(language = "rust", default_active) {
+	trigger Open()
+	state Shut {
+		state Latched {
+			enter
+			transition Open > Ajar
+		}
+	}
+	state Ajar {
+		transition Open > Shut
+	}
+}`,
+			want: "calls latched_enter",
+		},
+		"null transition of a default leaf": {
+			source: `
+gochart Door(language = "rust", default_active) {
+	trigger Open()
+	state Shut {
+		transition null > Ajar if stuck
+	}
+	state Ajar {
+		transition Open > Shut
+	}
+}`,
+			want: "calls the null transitions of state Shut",
+		},
+	}
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			_, err := generate(t, tc.source)
+			assert.ErrorContains(t, err, tc.want)
+		})
+	}
+}
+
+func TestDefaultActiveAllowsCallbacksOffTheDefaultPath(t *testing.T) {
+	content, err := generate(t, `
+gochart Door(language = "rust", default_active) {
+	trigger Open()
+	state Shut(data = "u32", data_default) {
+		transition Open > Ajar
+	}
+	state Ajar(data = "u32") {
+		enter
+		transition Open > Shut
+	}
+}`)
+	require.NoError(t, err)
+	assert.Contains(t, content, "impl Default for Chart {")
+	assert.NotContains(t, content, "Default, PartialEq")
+}

@@ -96,7 +96,7 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserializ
 
 | Item | What it is |
 | --- | --- |
-| `Chart` | The state: which states are active and their data. A default chart is inactive. |
+| `Chart` | The state: which states are active and their data. A default chart is inactive (or in its default states, with `default_active`). `Chart::INACTIVE` is an inactive chart. |
 | `Delegate` | The trait with the callbacks. The chart lives in the delegate (`fn chart(&mut self)`). |
 | `activate`, `deactivate` | Enter the default states, exit every state. |
 | `trigger_<name>(delegate, args...)` | Send a trigger. `dispatch(delegate, Event)` does the same with an `Event`. Both return whether a state handled it. |
@@ -166,6 +166,32 @@ impl worker::Delegate for Apply<'_> {
 `chart()` stays required. Without the option, the compiler checks that a delegate implements every
 callback. With it, a missing one panics when it is reached:
 `gochart Worker: idle_bored is not implemented by this delegate`.
+
+#### Charts that start active
+
+A default chart is inactive, so an owner that derives `Default` gets a chart that needs `activate`
+(and a delegate) before it is used. With the `default_active` option, `Chart::default()` is the
+chart in its default states instead:
+
+```
+gochart Door(language = "rust", default_active) {
+	...
+}
+```
+
+```rust
+#[derive(Default)]
+struct House {
+    chart: door::Chart, // Already in Shut > Latched.
+}
+```
+
+Entering the default states must not call any callback, as there is no delegate to call: no enter
+reactions on the way in (at the gochart level or in a default state), state data only through
+`data_default`, and no null transitions on the default leaves. The generator rejects the gochart
+otherwise, naming the callbacks. Callbacks elsewhere (enter reactions of states entered later, data
+of other states) are fine. The `on_enter_state` hook isn't called for the default states either.
+`activate` does nothing on an active chart, and `deactivate` still leaves the chart inactive.
 
 ## Semantics
 

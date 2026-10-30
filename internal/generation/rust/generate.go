@@ -225,15 +225,26 @@ func (m *model) writeChart(w *writer) {
 	w.line("")
 	w.line("/// The state of gochart %s: which states are active and their data.", m.gc.Name)
 	w.line("///")
-	w.line("/// A default chart is inactive. Use |activate| to enter the default states.")
-	w.line("%s", m.derives("Clone", "Debug", "Default", "PartialEq", "Eq"))
+	if m.gc.DefaultActive {
+		w.line("/// A default chart is in its default states (the gochart has |default_active|).")
+		w.line("%s", m.derives("Clone", "Debug", "PartialEq", "Eq"))
+	} else {
+		w.line("/// A default chart is inactive. Use |activate| to enter the default states.")
+		w.line("%s", m.derives("Clone", "Debug", "Default", "PartialEq", "Eq"))
+	}
 	w.line("#[allow(dead_code)]")
 	w.open("pub struct Chart {")
 	w.line("tree: Option<ChartChildren>,")
 	w.close("}")
 	w.line("")
+	if m.gc.DefaultActive {
+		m.writeDefaultActive(w)
+	}
 	w.line("#[allow(dead_code)]")
 	w.open("impl Chart {")
+	w.line("/// A chart with no active state. |activate| enters the default states.")
+	w.line("pub const INACTIVE: Chart = Chart { tree: None };")
+	w.line("")
 	w.open("pub fn is_active(&self) -> bool {")
 	w.line("self.tree.is_some()")
 	w.close("}")
@@ -280,6 +291,37 @@ func (m *model) writeChart(w *writer) {
 	w.line("")
 }
 
+// writeDefaultActive implements Default for a |default_active| chart: activation calls no callback
+// (see |checkDefaultActive|), so it runs with a delegate that implements none.
+func (m *model) writeDefaultActive(w *writer) {
+	w.line("/// Activates the default chart. Activation calls no callback, so none is implemented.")
+	w.line("#[allow(dead_code)]")
+	w.line("struct RtNoDelegate(Chart);")
+	w.line("")
+	w.open("impl Delegate for RtNoDelegate {")
+	w.open("fn chart(&mut self) -> &mut Chart {")
+	w.line("&mut self.0")
+	w.close("}")
+	for _, method := range m.Methods {
+		w.line("")
+		w.line("#[allow(unused_variables)]")
+		w.open("%s {", method.Signature())
+		w.line("unreachable!(\"activation calls no callback\")")
+		w.close("}")
+	}
+	w.close("}")
+	w.line("")
+	w.open("impl Default for Chart {")
+	w.open("fn default() -> Chart {")
+	w.line("let mut d = RtNoDelegate(Chart::INACTIVE);")
+	w.line("let mut c = Chart::INACTIVE;")
+	w.line("rt_activate(&mut d, &mut c);")
+	w.line("c")
+	w.close("}")
+	w.close("}")
+	w.line("")
+}
+
 func (m *model) writeDelegate(w *writer) {
 	w.line("/// The callbacks of gochart %s. The chart lives in the delegate (see |chart|).", m.gc.Name)
 	w.line("///")
@@ -317,10 +359,19 @@ func (m *model) writeDelegate(w *writer) {
 }
 
 func (m *model) writeApi(w *writer) {
-	w.line("/// Enters the default states. The chart must be inactive.")
+	if m.gc.DefaultActive {
+		w.line("/// Enters the default states. Does nothing if the chart is active (a default chart is).")
+	} else {
+		w.line("/// Enters the default states. The chart must be inactive.")
+	}
 	w.line("#[allow(dead_code)]")
 	w.open("pub fn activate<D: Delegate>(delegate: &mut D) {")
-	w.line("let mut c = ::core::mem::take(delegate.chart());")
+	if m.gc.DefaultActive {
+		w.open("if delegate.chart().is_active() {")
+		w.line("return;")
+		w.close("}")
+	}
+	w.line("let mut c = ::core::mem::replace(delegate.chart(), Chart::INACTIVE);")
 	w.line("rt_activate(delegate, &mut c);")
 	w.line("*delegate.chart() = c;")
 	w.close("}")
@@ -328,7 +379,7 @@ func (m *model) writeApi(w *writer) {
 	w.line("/// Exits every state. The chart must be active.")
 	w.line("#[allow(dead_code)]")
 	w.open("pub fn deactivate<D: Delegate>(delegate: &mut D) {")
-	w.line("let mut c = ::core::mem::take(delegate.chart());")
+	w.line("let mut c = ::core::mem::replace(delegate.chart(), Chart::INACTIVE);")
 	w.line("rt_deactivate(delegate, &mut c);")
 	w.line("*delegate.chart() = c;")
 	w.close("}")
@@ -337,7 +388,7 @@ func (m *model) writeApi(w *writer) {
 	w.line("/// capture whose condition passed). An inactive chart handles nothing.")
 	w.line("#[allow(dead_code)]")
 	w.open("pub fn dispatch<D: Delegate>(delegate: &mut D, event: Event) -> bool {")
-	w.line("let mut c = ::core::mem::take(delegate.chart());")
+	w.line("let mut c = ::core::mem::replace(delegate.chart(), Chart::INACTIVE);")
 	w.line("let handled = rt_dispatch(delegate, &mut c, &event);")
 	w.line("*delegate.chart() = c;")
 	w.line("handled")

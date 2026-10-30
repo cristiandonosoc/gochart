@@ -57,6 +57,28 @@ state Foo(boolean_without_value, boolean_with_value = false, int_flag = 33, stri
 
 These are options that are supported on the Gochart element, which defines the Gochart as a whole.
 
+### default_active
+
+| Name | Description |
+| --- | --- |
+| Flag | default_active |
+| Kind | boolean |
+
+**Description**
+
+Makes the default chart start in its default states, instead of inactive (Rust only).
+
+The chart can then be built with Default (or derived with its owner) without a delegate. Entering
+the default states must not call any callback: no enter reactions, no null transitions on the
+default leaves, and state data only through "data_default".
+
+**Synopsis:**
+```
+gochart Hauler(language = "rust", default_active) {
+	...
+}
+```
+
 ### delegate_defaults
 
 | Name | Description |
