@@ -292,7 +292,15 @@ func (m *model) writeDelegate(w *writer) {
 	for _, method := range m.Methods {
 		w.line("")
 		w.line("/// %s", method.Doc)
-		w.line("%s", method.Declaration())
+		if !m.gc.DelegateDefaults {
+			w.line("%s", method.Declaration())
+			continue
+		}
+		// The default body panics, so a delegate implements only the callbacks it can reach.
+		w.line("#[allow(unused_variables)]")
+		w.open("%s {", method.Signature())
+		w.line("unreachable!(\"gochart %s: %s is not implemented by this delegate\")", m.gc.Name, method.Name)
+		w.close("}")
 	}
 	w.line("")
 	w.line("/// Called after |state| is entered (and its enter reactions ran).")

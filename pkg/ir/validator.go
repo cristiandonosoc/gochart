@@ -19,7 +19,8 @@ func validate(ih *inputHandler) error {
 	// Options that only make sense for some languages.
 	if ih.language != Language_Rust {
 		for _, option := range ih.gcdata.Options {
-			if option.Name == kGochartOption_Derives {
+			switch option.Name {
+			case kGochartOption_Derives, kGochartOption_DelegateDefaults:
 				return errors.Errorf(option.Frontend_NamePos, "Semantic",
 					"option %q requires language = %q", option.Name, Language_Rust)
 			}

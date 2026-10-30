@@ -57,6 +57,28 @@ state Foo(boolean_without_value, boolean_with_value = false, int_flag = 33, stri
 
 These are options that are supported on the Gochart element, which defines the Gochart as a whole.
 
+### delegate_defaults
+
+| Name | Description |
+| --- | --- |
+| Flag | delegate_defaults |
+| Kind | boolean |
+
+**Description**
+
+Gives every callback of the generated Delegate trait a default body that panics (Rust only).
+
+A delegate then implements only the callbacks the triggers it sends can reach. Without this option,
+the compiler checks that every callback is implemented; with it, a missing callback panics when it
+is reached.
+
+**Synopsis:**
+```
+gochart Hauler(language = "rust", delegate_defaults) {
+	...
+}
+```
+
 ### derives
 
 | Name | Description |

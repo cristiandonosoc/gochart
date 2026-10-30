@@ -140,6 +140,33 @@ every chart. They are meant for generic tooling (inspectors, logs, animation eve
 While a trigger is processed, the chart is taken out of the delegate (`chart()` returns an inactive
 chart). Callbacks get the data they need as arguments instead.
 
+#### Delegates for some triggers only
+
+A chart can be sent triggers from places that have different things at hand, for example a game
+tick where the agent sees the world and a later phase that only touches the chart. With the
+`delegate_defaults` option, every callback gets a default body that panics with its name, so each
+of those places can use a delegate that implements only the callbacks its triggers reach:
+
+```
+gochart Worker(language = "rust", delegate_defaults) {
+	...
+}
+```
+
+```rust
+/// Only sends Reserved, which enters Busy.
+struct Apply<'a>(&'a mut worker::Chart);
+
+impl worker::Delegate for Apply<'_> {
+    fn chart(&mut self) -> &mut worker::Chart { self.0 }
+    fn busy_data(&mut self, event: Option<&Event>) -> u32 { ... }
+}
+```
+
+`chart()` stays required. Without the option, the compiler checks that a delegate implements every
+callback. With it, a missing one panics when it is reached:
+`gochart Worker: idle_bored is not implemented by this delegate`.
+
 ## Semantics
 
 - **Dispatch.** A trigger is offered to each current leaf, then to its parents, until one handles

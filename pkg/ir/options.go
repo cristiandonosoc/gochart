@@ -31,6 +31,8 @@ var (
 	kGochartOption_Language  = "language"
 	kGochartOption_Derives   = "derives"
 
+	kGochartOption_DelegateDefaults = "delegate_defaults"
+
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
 			Name:     kGochartOption_Parallel,
@@ -101,6 +103,22 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserializ
 }
 `,
 			Handler: GochartOptionHandler(parseGochartOption_Derives),
+		},
+		kGochartOption_DelegateDefaults: {
+			Name:     kGochartOption_DelegateDefaults,
+			FlagName: kGochartOption_DelegateDefaults,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Gives every callback of the generated Delegate trait a default body that panics (Rust only).
+
+A delegate then implements only the callbacks the triggers it sends can reach. Without this option,
+the compiler checks that every callback is implemented; with it, a missing callback panics when it
+is reached.`,
+			Synopsis: `
+gochart Hauler(language = "rust", delegate_defaults) {
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_DelegateDefaults),
 		},
 	})
 
@@ -414,6 +432,11 @@ func parseGochartOption_Language(gc *Gochart, option *Option) error {
 		return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic",
 			"unknown language %q, expected %q or %q", option.StringValue(), Language_Cpp, Language_Rust)
 	}
+}
+
+func parseGochartOption_DelegateDefaults(gc *Gochart, option *Option) error {
+	gc.DelegateDefaults = option.BoolValue()
+	return nil
 }
 
 func parseGochartOption_Derives(gc *Gochart, option *Option) error {

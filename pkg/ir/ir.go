@@ -37,6 +37,9 @@ type Gochart struct {
 	// Derives are extra derives for the generated types (Rust only), as written in the option
 	// (eg. "serde::Serialize, serde::Deserialize").
 	Derives []string
+	// DelegateDefaults gives every callback of the Delegate trait a default body that panics
+	// (Rust only).
+	DelegateDefaults bool
 
 	Options []*Option
 

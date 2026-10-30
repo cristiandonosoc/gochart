@@ -26,6 +26,7 @@ import (
 var kCases = []string{
 	"allocations",
 	"data",
+	"delegate_defaults",
 	"dispatch",
 	"parallel",
 	"routes",
