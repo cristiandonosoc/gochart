@@ -11,6 +11,7 @@ import (
 	"github.com/cristiandonosoc/gochart/internal/option"
 	"github.com/cristiandonosoc/gochart/pkg/backend"
 	backend_common "github.com/cristiandonosoc/gochart/pkg/backend/common"
+	"github.com/cristiandonosoc/gochart/pkg/diagram"
 	"github.com/cristiandonosoc/gochart/pkg/frontend"
 	"github.com/cristiandonosoc/gochart/pkg/ir"
 )
@@ -63,6 +64,29 @@ func (gc *GochartCompiler) PrintIR(path string, w io.Writer) error {
 	printer := ir.NewPrinter(w)
 	printer.PrintGochart(irData)
 
+	return nil
+}
+
+// Diagram writes the gochart at |path| as a Mermaid state diagram. It needs no backend.
+func (gc *GochartCompiler) Diagram(path string, w io.Writer) error {
+	lf, err := files.LoadFileFromPath(path)
+	if err != nil {
+		return fmt.Errorf("loading file: %w", err)
+	}
+
+	frontendData, err := gc.Frontend.Process(lf)
+	if err != nil {
+		return fmt.Errorf("processing gochart: %w", err)
+	}
+
+	irData, err := ir.ProcessGochartData(frontendData)
+	if err != nil {
+		return fmt.Errorf("processing gochart: %w", err)
+	}
+
+	if _, err := io.WriteString(w, diagram.Mermaid(irData)); err != nil {
+		return fmt.Errorf("writing diagram: %w", err)
+	}
 	return nil
 }
 

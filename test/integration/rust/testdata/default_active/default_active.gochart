@@ -1,0 +1,23 @@
+// With default_active, Default builds the chart in its default states.
+gochart Door(language = "rust", default_active) {
+	trigger Open()
+	trigger Close()
+
+	state Shut(data = "u32", data_default) {
+		transition Open > Ajar
+
+		state Latched {
+			transition Open > Unlatched
+		}
+
+		state Unlatched {
+			enter
+			transition Close > Latched
+		}
+	}
+
+	state Ajar {
+		enter
+		transition Close > Shut
+	}
+}

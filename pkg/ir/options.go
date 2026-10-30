@@ -31,6 +31,9 @@ var (
 	kGochartOption_Language  = "language"
 	kGochartOption_Derives   = "derives"
 
+	kGochartOption_DelegateDefaults = "delegate_defaults"
+	kGochartOption_DefaultActive    = "default_active"
+
 	kGochartOptionDefinitions = addHiddenTestingOptions(map[string]*OptionDefinition{
 		kGochartOption_Parallel: {
 			Name:     kGochartOption_Parallel,
@@ -101,6 +104,38 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserializ
 }
 `,
 			Handler: GochartOptionHandler(parseGochartOption_Derives),
+		},
+		kGochartOption_DelegateDefaults: {
+			Name:     kGochartOption_DelegateDefaults,
+			FlagName: kGochartOption_DelegateDefaults,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Gives every callback of the generated Delegate trait a default body that panics (Rust only).
+
+A delegate then implements only the callbacks the triggers it sends can reach. Without this option,
+the compiler checks that every callback is implemented; with it, a missing callback panics when it
+is reached.`,
+			Synopsis: `
+gochart Hauler(language = "rust", delegate_defaults) {
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_DelegateDefaults),
+		},
+		kGochartOption_DefaultActive: {
+			Name:     kGochartOption_DefaultActive,
+			FlagName: kGochartOption_DefaultActive,
+			Kind:     frontend_common.OptionValueKind_Boolean,
+			Description: `Makes the default chart start in its default states, instead of inactive (Rust only).
+
+The chart can then be built with Default (or derived with its owner) without a delegate. Entering
+the default states must not call any callback: no enter reactions, no null transitions on the
+default leaves, and state data only through "data_default".`,
+			Synopsis: `
+gochart Hauler(language = "rust", default_active) {
+	...
+}
+`,
+			Handler: GochartOptionHandler(parseGochartOption_DefaultActive),
 		},
 	})
 
@@ -414,6 +449,16 @@ func parseGochartOption_Language(gc *Gochart, option *Option) error {
 		return errors.Errorf(option.frontendData.Frontend_NamePos, "Semantic",
 			"unknown language %q, expected %q or %q", option.StringValue(), Language_Cpp, Language_Rust)
 	}
+}
+
+func parseGochartOption_DelegateDefaults(gc *Gochart, option *Option) error {
+	gc.DelegateDefaults = option.BoolValue()
+	return nil
+}
+
+func parseGochartOption_DefaultActive(gc *Gochart, option *Option) error {
+	gc.DefaultActive = option.BoolValue()
+	return nil
 }
 
 func parseGochartOption_Derives(gc *Gochart, option *Option) error {

@@ -10,6 +10,7 @@ go_library(
         "//internal/option",
         "//pkg/backend",
         "//pkg/backend/common",
+        "//pkg/diagram",
         "//pkg/frontend",
         "//pkg/ir",
     ],

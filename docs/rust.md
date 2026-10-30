@@ -96,10 +96,10 @@ gochart Hauler(language = "rust", derives = "serde::Serialize, serde::Deserializ
 
 | Item | What it is |
 | --- | --- |
-| `Chart` | The state: which states are active and their data. A default chart is inactive. |
+| `Chart` | The state: which states are active and their data. A default chart is inactive (or in its default states, with `default_active`). `Chart::INACTIVE` is an inactive chart. |
 | `Delegate` | The trait with the callbacks. The chart lives in the delegate (`fn chart(&mut self)`). |
 | `activate`, `deactivate` | Enter the default states, exit every state. |
-| `trigger_<name>(delegate, args...)` | Send a trigger. `dispatch(delegate, Event)` does the same with an `Event`. |
+| `trigger_<name>(delegate, args...)` | Send a trigger. `dispatch(delegate, Event)` does the same with an `Event`. Both return whether a state handled it. |
 | `StateId`, `Leaf`, `TriggerId` | Enums of every state, of the leaf states and of the triggers, with `ALL` and `name()`. |
 | `Event` | A trigger with its arguments. `Event::id()` returns its `TriggerId`. |
 | `REGION_COUNT` | The number of parallel regions. |
@@ -140,6 +140,59 @@ every chart. They are meant for generic tooling (inspectors, logs, animation eve
 While a trigger is processed, the chart is taken out of the delegate (`chart()` returns an inactive
 chart). Callbacks get the data they need as arguments instead.
 
+#### Delegates for some triggers only
+
+A chart can be sent triggers from places that have different things at hand, for example a game
+tick where the agent sees the world and a later phase that only touches the chart. With the
+`delegate_defaults` option, every callback gets a default body that panics with its name, so each
+of those places can use a delegate that implements only the callbacks its triggers reach:
+
+```
+gochart Worker(language = "rust", delegate_defaults) {
+	...
+}
+```
+
+```rust
+/// Only sends Reserved, which enters Busy.
+struct Apply<'a>(&'a mut worker::Chart);
+
+impl worker::Delegate for Apply<'_> {
+    fn chart(&mut self) -> &mut worker::Chart { self.0 }
+    fn busy_data(&mut self, event: Option<&Event>) -> u32 { ... }
+}
+```
+
+`chart()` stays required. Without the option, the compiler checks that a delegate implements every
+callback. With it, a missing one panics when it is reached:
+`gochart Worker: idle_bored is not implemented by this delegate`.
+
+#### Charts that start active
+
+A default chart is inactive, so an owner that derives `Default` gets a chart that needs `activate`
+(and a delegate) before it is used. With the `default_active` option, `Chart::default()` is the
+chart in its default states instead:
+
+```
+gochart Door(language = "rust", default_active) {
+	...
+}
+```
+
+```rust
+#[derive(Default)]
+struct House {
+    chart: door::Chart, // Already in Shut > Latched.
+}
+```
+
+Entering the default states must not call any callback, as there is no delegate to call: no enter
+reactions on the way in (at the gochart level or in a default state), state data only through
+`data_default`, and no null transitions on the default leaves. The generator rejects the gochart
+otherwise, naming the callbacks. Callbacks elsewhere (enter reactions of states entered later, data
+of other states) are fine. The `on_enter_state` hook isn't called for the default states either.
+`activate` does nothing on an active chart, and `deactivate` still leaves the chart inactive.
+
 ## Semantics
 
 - **Dispatch.** A trigger is offered to each current leaf, then to its parents, until one handles
@@ -160,7 +213,10 @@ chart). Callbacks get the data they need as arguments instead.
 - **Callbacks cannot send triggers.** There is no trigger queue. Chains of triggers are written as
   conditions on the next trigger (eg. a `Tick` trigger with `transition Tick > Done if finished`) or
   as null transitions.
-- **Inactive charts** ignore triggers.
+- **Handled triggers.** `dispatch` and `trigger_<name>` return true when a transition or a capture
+  took the trigger (its condition, if any, passed), in any region. A trigger that no state takes
+  changes nothing and returns false.
+- **Inactive charts** ignore triggers (and return false).
 
 ## Differences with the C++ Backend
 

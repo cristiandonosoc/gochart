@@ -1,0 +1,21 @@
+// With delegate_defaults, a delegate implements only the callbacks its triggers reach.
+gochart Worker(language = "rust", delegate_defaults) {
+	trigger Tick()
+	trigger Reserved(job: u32)
+
+	state Free {
+		transition Reserved > Busy
+
+		state Idle {
+			transition Tick > Wandering if bored do wander
+		}
+
+		state Wandering {
+			transition Tick > Idle
+		}
+	}
+
+	state Busy(data = "u32") {
+		transition Tick > Free if done
+	}
+}

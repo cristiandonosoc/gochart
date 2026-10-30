@@ -149,8 +149,54 @@ func newModel(gc *ir.Gochart) (*model, error) {
 	if err := m.checkNames(); err != nil {
 		return nil, err
 	}
+	if err := m.checkDefaultActive(); err != nil {
+		return nil, err
+	}
 
 	return m, nil
+}
+
+// checkDefaultActive checks that a |default_active| chart can enter its default states without a
+// delegate: activating it must not call any callback.
+func (m *model) checkDefaultActive() error {
+	if !m.gc.DefaultActive {
+		return nil
+	}
+
+	var calls []string
+	var visit func(s *rustState)
+	visit = func(s *rustState) {
+		for _, reaction := range s.ir.EnterReactions {
+			// Activation has no trigger, so only the plain enter reactions run.
+			if reaction.Trigger == nil {
+				calls = append(calls, reactionMethodName(s, "enter", nil))
+			}
+		}
+		if s.HasData() && !s.DataDefault {
+			calls = append(calls, dataMethodName(s))
+		}
+		if s.IsLeaf() && len(s.ir.GetNullTransitions()) > 0 {
+			calls = append(calls, fmt.Sprintf("the null transitions of state %s", s.Name))
+		}
+		if !s.HasChildren() {
+			return
+		}
+		if s.IsParallel() {
+			for _, child := range s.Children {
+				visit(child)
+			}
+			return
+		}
+		visit(m.stateMap[s.ir.DefaultChild()])
+	}
+	visit(m.Root)
+
+	if len(calls) > 0 {
+		return fmt.Errorf("gochart %q has default_active, but entering its default states calls %s "+
+			"(use data_default for state data, or drop default_active and call activate)",
+			m.gc.Name, strings.Join(calls, ", "))
+	}
+	return nil
 }
 
 func (m *model) collectTriggers() error {
@@ -300,6 +346,7 @@ func (m *model) checkNames() error {
 		"Delegate":      "the generated delegate trait",
 		"ChartChildren": "the generated children of the gochart level",
 		"RtEntered":     "a generated runtime helper",
+		"RtNoDelegate":  "a generated runtime helper",
 	}
 	addType := func(name, what string) error {
 		if other, ok := generated[name]; ok {

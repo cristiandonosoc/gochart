@@ -21,6 +21,11 @@ type delegateMethod struct {
 }
 
 func (dm *delegateMethod) Declaration() string {
+	return dm.Signature() + ";"
+}
+
+// Signature is the declaration without the final ";", to give the method a body.
+func (dm *delegateMethod) Signature() string {
 	self := "&self"
 	if dm.Mutable {
 		self = "&mut self"
@@ -30,7 +35,7 @@ func (dm *delegateMethod) Declaration() string {
 	if dm.Return != "" {
 		ret = " -> " + dm.Return
 	}
-	return fmt.Sprintf("fn %s(%s)%s;", dm.Name, strings.Join(params, ", "), ret)
+	return fmt.Sprintf("fn %s(%s)%s", dm.Name, strings.Join(params, ", "), ret)
 }
 
 // kReservedMethods are the methods the trait always has.

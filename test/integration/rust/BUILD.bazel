@@ -1,5 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
-load("//:defs.bzl", "generate_gochart_rust")
+load("//:defs.bzl", "generate_gochart_diagram", "generate_gochart_rust")
 
 go_test(
     name = "rust_test",
@@ -38,4 +38,9 @@ generate_gochart_rust(
     name = "gen_routes",
     src = "testdata/routes/routes.gochart",
     file_prefix = "routes",
+)
+
+generate_gochart_diagram(
+    name = "routes_diagram",
+    src = "testdata/routes/routes.gochart",
 )
