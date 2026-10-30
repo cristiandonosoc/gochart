@@ -65,6 +65,16 @@ gochart unreal generate [UNREAL_PROJECT_SOURCE_DIR]
 > Refer to the [unreal integration docs](docs/unreal.md) for the options, as those will determine
 > where the generated code will be created.
 
+### Diagrams
+
+Any gochart can be drawn as a Mermaid state diagram, which renders in GitHub markdown:
+```
+gochart diagram [STATECHART_FILE] [OUTPUT_FILE]
+```
+
+> [!TIP]
+> See the [diagram docs](docs/diagram.md) for what the diagram shows and the Bazel rule.
+
 ## Roadmap
 
 There is no current timeline, but you can check the [TODO.md](TODO.md) file for some ideas on things

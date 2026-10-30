@@ -92,6 +92,38 @@ func internalMain() error {
 		},
 	}
 
+	commands = append(commands, &cli.Command{
+		Name:        "diagram",
+		Description: "Draws a gochart as a Mermaid state diagram (stateDiagram-v2), for any language.",
+		Usage:       "diagram [STATECHART_FILE] [OUTPUT_FILE]",
+		Flags:       frontend.SetFlags(),
+		Action: func(cliCtx *cli.Context) error {
+			gc, err := getGochartCompiler("", cliCtx)
+			if err != nil {
+				return err
+			}
+
+			args := cliCtx.Args()
+			if args.Len() != 1 && args.Len() != 2 {
+				return fmt.Errorf("Incorrect amount of arguments. Usage: %s", cliCtx.Command.Usage)
+			}
+
+			// Without an output file, the diagram goes to stdout.
+			if args.Len() == 1 {
+				return gc.Diagram(args.Get(0), os.Stdout)
+			}
+
+			out, err := os.Create(args.Get(1))
+			if err != nil {
+				return fmt.Errorf("creating output file: %w", err)
+			}
+			if err := gc.Diagram(args.Get(0), out); err != nil {
+				out.Close()
+				return err
+			}
+			return out.Close()
+		},
+	})
 	commands = append(commands, backendCommands()...)
 	commands = append(commands, unrealCommands()...)
 

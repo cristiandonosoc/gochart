@@ -68,3 +68,41 @@ declares the module) and include it with:
         ),
     },
 )
+
+def _generate_gochart_diagram_impl(ctx):
+    out = ctx.actions.declare_file(ctx.attr.out or "{}.mmd".format(ctx.label.name))
+
+    # The tool runs directly (no shell), so this also works with remote execution on another OS.
+    ctx.actions.run(
+        executable = ctx.executable._gochart,
+        arguments = ["diagram", ctx.file.src.path, out.path],
+        inputs = [ctx.file.src],
+        outputs = [out],
+        mnemonic = "GochartDiagram",
+        progress_message = "Drawing gochart %{output}",
+    )
+
+    return [DefaultInfo(files = depset([out]))]
+
+generate_gochart_diagram = rule(
+    implementation = _generate_gochart_diagram_impl,
+    doc = """Draws a gochart (of any language) as a Mermaid state diagram (stateDiagram-v2).
+
+The output holds the diagram only. Put it in a ```mermaid block of a markdown file to render it.
+""",
+    attrs = {
+        "src": attr.label(
+            doc = "The .gochart file.",
+            allow_single_file = [".gochart"],
+            mandatory = True,
+        ),
+        "out": attr.string(
+            doc = "The name of the output file. Defaults to <name>.mmd.",
+        ),
+        "_gochart": attr.label(
+            default = Label("//cmd/gochart"),
+            executable = True,
+            cfg = "exec",
+        ),
+    },
+)

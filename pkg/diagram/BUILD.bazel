@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "diagram",
+    srcs = ["diagram.go"],
+    importpath = "github.com/cristiandonosoc/gochart/pkg/diagram",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/ir"],
+)
+
+go_test(
+    name = "diagram_test",
+    srcs = ["diagram_test.go"],
+    embed = [":diagram"],
+    deps = [
+        "//internal/files",
+        "//pkg/frontend/gochart_lang",
+        "//pkg/ir",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
